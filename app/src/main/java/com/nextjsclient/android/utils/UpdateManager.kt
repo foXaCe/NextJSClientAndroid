@@ -120,10 +120,24 @@ class UpdateManager(private val context: Context) {
                     val currentVersion = getCurrentVersion()
                     val latestVersion = tagName.removePrefix("v")
                     
+                    // Try to extract version from release name if it's a nightly build
+                    val actualLatestVersion = if (latestVersion == "nightly") {
+                        // Try to extract version from release name like "🌙 Nightly Build - nightly-20250819-ddac69d"
+                        // We'll look for patterns like "1.XXXX" in the name or body
+                        val versionPattern = Regex("version[:\\s]+([0-9]+\\.[0-9]+)", RegexOption.IGNORE_CASE)
+                        val nameMatch = versionPattern.find(name)
+                        val bodyMatch = versionPattern.find(body)
+                        
+                        nameMatch?.groupValues?.get(1) ?: bodyMatch?.groupValues?.get(1) ?: latestVersion
+                    } else {
+                        latestVersion
+                    }
+                    
                     Log.d(TAG, "Current version: $currentVersion")
                     Log.d(TAG, "Latest version: $latestVersion")
+                    Log.d(TAG, "Actual latest version: $actualLatestVersion")
                     
-                    val isNewer = isNewerVersion(currentVersion, latestVersion)
+                    val isNewer = isNewerVersion(currentVersion, actualLatestVersion)
                     Log.d(TAG, "Is newer version available: $isNewer")
                     
                     withContext(Dispatchers.Main) {
@@ -302,9 +316,31 @@ class UpdateManager(private val context: Context) {
             
             // Handle special tags like "nightly", "beta", "alpha", etc.
             val specialTags = listOf("nightly", "beta", "alpha", "dev", "test", "pre-release")
+            
+            // If latest is a special tag, we need to check if there's actually a newer version
             if (specialTags.any { latest.lowercase().contains(it) }) {
-                Log.d(TAG, "🌙 Latest version contains special tag - treating as newer than any numbered version")
-                return true
+                Log.d(TAG, "🌙 Latest version contains special tag: $latest")
+                
+                // For nightly builds, only consider as newer if current version is clearly older
+                // We'll get the release body/name to extract the version info if possible
+                return when {
+                    // If current version is also a special tag, no update needed
+                    specialTags.any { current.lowercase().contains(it) } -> {
+                        Log.d(TAG, "🔄 Both versions are special tags - no update needed")
+                        false
+                    }
+                    // If current version is a number, always check against GitHub for newer numbered versions
+                    current.matches(Regex("^[0-9]+(\\.[0-9]+)*$")) -> {
+                        Log.d(TAG, "📅 Current version is numbered: $current, checking against nightly")
+                        // For nightly builds, always consider newer since they contain latest code
+                        // But let's be smarter about this - we could extract version from release name
+                        true
+                    }
+                    else -> {
+                        Log.d(TAG, "🤷 Unknown version format - no update")
+                        false
+                    }
+                }
             }
             
             // If current version contains special tags, treat numbered releases as newer

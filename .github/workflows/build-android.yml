@@ -56,6 +56,26 @@ jobs:
           echo "⚠️  Aucun secret Firebase disponible - utilisation du placeholder"
         fi
 
+    - name: Auto-increment version
+      run: |
+        # Lire la version actuelle
+        CURRENT_VERSION=$(grep "versionName" app/build.gradle | sed 's/.*"\([^"]*\)".*/\1/')
+        CURRENT_CODE=$(grep "versionCode" app/build.gradle | sed 's/.*\([0-9]\+\).*/\1/')
+        
+        echo "Version actuelle: $CURRENT_VERSION (code: $CURRENT_CODE)"
+        
+        # Calculer la nouvelle version basée sur la date et le commit
+        NEW_VERSION="1.$(date +'%m%d')"  # Format: 1.MMDD (ex: 1.0819 pour le 19 août)
+        NEW_CODE=$((CURRENT_CODE + 1))
+        
+        echo "Nouvelle version: $NEW_VERSION (code: $NEW_CODE)"
+        
+        # Mettre à jour le fichier build.gradle
+        sed -i "s/versionCode $CURRENT_CODE/versionCode $NEW_CODE/" app/build.gradle
+        sed -i "s/versionName \"$CURRENT_VERSION\"/versionName \"$NEW_VERSION\"/" app/build.gradle
+        
+        echo "✅ Version mise à jour automatiquement"
+
     - name: Build Debug APK
       run: ./gradlew assembleDebug
 
@@ -165,14 +185,19 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Lire la version de l'APK
+        APK_VERSION=$(grep "versionName" app/build.gradle | sed 's/.*"\([^"]*\)".*/\1/')
+        echo "Version APK: $APK_VERSION"
+        
         # Générer le changelog depuis les derniers commits
         CHANGELOG=$(git log --oneline -10 --pretty=format:"- %s (%h)" | head -10)
         
         # Créer la release nightly
         gh release create nightly \
-          --title "🌙 Nightly Build - ${{ steps.version.outputs.VERSION_NAME }}" \
+          --title "🌙 Nightly Build - Version $APK_VERSION - ${{ steps.version.outputs.VERSION_NAME }}" \
           --notes "## 🚀 Version de Développement Automatique
 
+        **📱 Version:** \`$APK_VERSION\`  
         **📅 Build Time:** ${{ steps.version.outputs.BUILD_TIME }}  
         **🔍 Commit:** \`${{ steps.version.outputs.COMMIT_HASH }}\`  
         **🌟 Branch:** \`main\`
