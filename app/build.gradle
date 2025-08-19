@@ -23,19 +23,26 @@ android {
 
     signingConfigs {
         release {
-            // Configuration pour GitHub Actions
+            // Configuration for GitHub Actions
             if (System.getenv("KEYSTORE_BASE64")) {
-                storeFile file("../my-release-key.keystore")
+                storeFile file("../release-keystore.jks")
                 storePassword System.getenv("KEYSTORE_PASSWORD")
                 keyAlias System.getenv("KEY_ALIAS")
                 keyPassword System.getenv("KEY_PASSWORD")
             }
-            // Configuration locale (fallback)
+            // Local configuration (fallback)
             else if (file('../nextjs-client-release.keystore').exists()) {
                 storeFile file('../nextjs-client-release.keystore')
                 storePassword 'NextJS2024!'
                 keyAlias 'nextjs-client'
                 keyPassword 'NextJS2024!'
+            }
+            // Default values to prevent build errors
+            else {
+                storeFile file('../dummy.keystore')
+                storePassword 'dummy'
+                keyAlias 'dummy'
+                keyPassword 'dummy'
             }
         }
     }
