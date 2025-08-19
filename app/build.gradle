@@ -22,6 +22,9 @@ android {
     }
 
     signingConfigs {
+        debug {
+            // Use debug keystore
+        }
         release {
             // Configuration for GitHub Actions
             if (System.getenv("KEYSTORE_BASE64")) {
@@ -37,12 +40,10 @@ android {
                 keyAlias 'nextjs-client'
                 keyPassword 'NextJS2024!'
             }
-            // Default values to prevent build errors
+            // Use debug keystore as fallback to prevent build errors
             else {
-                storeFile file('../dummy.keystore')
-                storePassword 'dummy'
-                keyAlias 'dummy'
-                keyPassword 'dummy'
+                // This will create an unsigned APK when no release keystore is available
+                storeFile = null
             }
         }
     }
@@ -51,7 +52,10 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            // Only use signing config if keystore is available
+            if (System.getenv("KEYSTORE_BASE64") || file('../nextjs-client-release.keystore').exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     

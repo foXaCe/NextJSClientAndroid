@@ -140,4 +140,26 @@
     <!-- Modern Card Colors -->
     <color name="card_stroke_light">#E0E0E0</color>       <!-- Light stroke -->
     <color name="ripple_color">#20000000</color>          <!-- Subtle ripple -->
+    
+    <!-- Dark Theme Colors for Settings -->
+    <color name="background_dark">#0A0A0A</color>
+    <color name="surface_dark">#1A1A1A</color>
+    <color name="surface_elevated_dark">#242424</color>
+    <color name="text_primary_dark">#FFFFFF</color>
+    <color name="text_secondary_dark">#999999</color>
+    <color name="divider_dark">#2A2A2A</color>
+    <color name="accent">#8DD46A</color>
+    <color name="accent_dark">#6BB050</color>
+    <color name="error_dark">#CF6679</color>
+    <color name="error_ripple">#33CF6679</color>
+    
+    <!-- Colored Circle Backgrounds -->
+    <color name="purple_500">#9C27B0</color>
+    <color name="green_500">#4CAF50</color>
+    <color name="blue_500">#2196F3</color>
+    <color name="orange_500">#FF9800</color>
+    
+    <!-- Switch Track Colors -->
+    <color name="switch_track_on">#338DD46A</color>
+    <color name="switch_track_off">#33999999</color>
 </resources>

@@ -66,7 +66,14 @@ jobs:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      run: ./gradlew assembleRelease
+      run: |
+        if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "Building signed release APK"
+          ./gradlew assembleRelease
+        else
+          echo "Building unsigned release APK (no keystore configured)"
+          ./gradlew assembleRelease
+        fi
     
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
