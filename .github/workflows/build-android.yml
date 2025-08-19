@@ -30,7 +30,9 @@ jobs:
         echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
     
     - name: Create google-services.json
-      if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+      env:
+        GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      if: env.GOOGLE_SERVICES_JSON != ''
       run: |
         echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
     
@@ -57,7 +59,12 @@ jobs:
     
     # Build APK signé (optionnel - nécessite configuration des secrets)
     - name: Sign Release APK
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      if: env.KEYSTORE_BASE64 != ''
       run: |
         # Décoder le keystore depuis base64
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.keystore
@@ -75,7 +82,9 @@ jobs:
         rm my-release-key.keystore
     
     - name: Upload Signed Release APK
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      if: env.KEYSTORE_BASE64 != ''
       uses: actions/upload-artifact@v4
       with:
         name: app-release-signed
