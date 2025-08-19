@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "986147761260",
+    "project_id": "anecsolamdd",
+    "storage_bucket": "anecsolamdd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:986147761260:android:4dad852860fd930d13fc49",
+        "android_client_info": {
+          "package_name": "com.nextjsclient.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "986147761260-abc123.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCihMXeK-_khOtJDOxa2-g3jQUVUOhZn8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "986147761260-web.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
