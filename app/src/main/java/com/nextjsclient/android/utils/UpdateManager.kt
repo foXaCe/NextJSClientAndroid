@@ -120,15 +120,18 @@ class UpdateManager(private val context: Context) {
                     val currentVersion = getCurrentVersion()
                     val latestVersion = tagName.removePrefix("v")
                     
-                    // Try to extract version from release name if it's a nightly build
+                    // For nightly builds, we want to check the commit hash to see if it's newer
                     val actualLatestVersion = if (latestVersion == "nightly") {
-                        // Try to extract version from release name like "🌙 Nightly Build - nightly-20250819-ddac69d"
-                        // We'll look for patterns like "1.XXXX" in the name or body
-                        val versionPattern = Regex("version[:\\s]+([0-9]+\\.[0-9]+)", RegexOption.IGNORE_CASE)
-                        val nameMatch = versionPattern.find(name)
-                        val bodyMatch = versionPattern.find(body)
+                        // Extract commit hash from release name like "nightly-20250819-dc10f7d"
+                        val commitPattern = Regex("nightly-\\d+-([a-f0-9]+)")
+                        val commitMatch = commitPattern.find(name)
+                        val latestCommit = commitMatch?.groupValues?.get(1) ?: ""
                         
-                        nameMatch?.groupValues?.get(1) ?: bodyMatch?.groupValues?.get(1) ?: latestVersion
+                        Log.d(TAG, "Found commit hash in release: $latestCommit")
+                        
+                        // For nightly builds, always consider as potentially newer
+                        // We'll use the commit hash as version identifier
+                        "nightly-$latestCommit"
                     } else {
                         latestVersion
                     }
@@ -317,27 +320,33 @@ class UpdateManager(private val context: Context) {
             // Handle special tags like "nightly", "beta", "alpha", etc.
             val specialTags = listOf("nightly", "beta", "alpha", "dev", "test", "pre-release")
             
-            // If latest is a special tag, we need to check if there's actually a newer version
+            // If latest is a special tag (like nightly), check if it's actually different
             if (specialTags.any { latest.lowercase().contains(it) }) {
                 Log.d(TAG, "🌙 Latest version contains special tag: $latest")
                 
-                // For nightly builds, only consider as newer if current version is clearly older
-                // We'll get the release body/name to extract the version info if possible
                 return when {
-                    // If current version is also a special tag, no update needed
+                    // If current version is also a special tag, compare commit hashes
                     specialTags.any { current.lowercase().contains(it) } -> {
-                        Log.d(TAG, "🔄 Both versions are special tags - no update needed")
-                        false
+                        Log.d(TAG, "🔄 Both versions are special tags - comparing commits")
+                        // Extract commit hashes and compare
+                        val currentCommit = current.substringAfterLast("-", "")
+                        val latestCommit = latest.substringAfterLast("-", "")
+                        val isNewer = currentCommit != latestCommit && latestCommit.isNotEmpty()
+                        Log.d(TAG, "🔍 Commit comparison: current=$currentCommit vs latest=$latestCommit, newer=$isNewer")
+                        isNewer
                     }
-                    // If current version is a number, always check against GitHub for newer numbered versions
+                    // If current version is numbered, only offer nightly if commit is different from what we expect
                     current.matches(Regex("^[0-9]+(\\.[0-9]+)*$")) -> {
-                        Log.d(TAG, "📅 Current version is numbered: $current, checking against nightly")
-                        // For nightly builds, always consider newer since they contain latest code
-                        // But let's be smarter about this - we could extract version from release name
-                        true
+                        Log.d(TAG, "📅 Current version is numbered: $current, checking if nightly is actually newer")
+                        // For numbered versions, we assume nightly is newer unless we can determine otherwise
+                        val latestCommit = latest.substringAfterLast("-", "")
+                        // Only offer update if there's a valid commit hash in the nightly build
+                        val hasValidCommit = latestCommit.isNotEmpty() && latestCommit.matches(Regex("[a-f0-9]+"))
+                        Log.d(TAG, "🔍 Nightly has valid commit: $hasValidCommit (commit: $latestCommit)")
+                        hasValidCommit
                     }
                     else -> {
-                        Log.d(TAG, "🤷 Unknown version format - no update")
+                        Log.d(TAG, "🤷 Unknown current version format - being conservative")
                         false
                     }
                 }
