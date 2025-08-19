@@ -55,7 +55,8 @@ prepare-github-secrets.sh
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-google-services.json
+# google-services.json - Keep tracked (with placeholders only)
+google-services-dev.json
 !google-services-placeholder.json
 
 # Secrets files
