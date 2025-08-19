@@ -3,13 +3,8 @@ name: Build Android APK
 on:
   push:
     branches: [ main, develop ]
-    paths:
-      - 'NextJSClientAndroid/**'
-      - '.github/workflows/build-android.yml'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'NextJSClientAndroid/**'
   workflow_dispatch:
 
 jobs:
@@ -39,17 +34,15 @@ jobs:
           ${{ runner.os }}-gradle-
 
     - name: Make gradlew executable
-      working-directory: ./NextJSClientAndroid
       run: chmod +x gradlew
 
     - name: Create local.properties
-      working-directory: ./NextJSClientAndroid
       run: |
         echo "sdk.dir=$ANDROID_HOME" > local.properties
         echo "ndk.dir=$ANDROID_HOME/ndk-bundle" >> local.properties
 
     - name: Setup Firebase config (if available)
-      working-directory: ./NextJSClientAndroid/app
+      working-directory: ./app
       run: |
         if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
@@ -60,18 +53,15 @@ jobs:
         fi
 
     - name: Build Debug APK
-      working-directory: ./NextJSClientAndroid
       run: ./gradlew assembleDebug
 
     - name: Build Release APK (unsigned)
-      working-directory: ./NextJSClientAndroid
       run: ./gradlew assembleRelease
 
     - name: Sign Release APK (if keystore available)
       if: ${{ env.KEYSTORE_BASE64 != '' }}
       env:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      working-directory: ./NextJSClientAndroid
       run: |
         # Décoder le keystore depuis les secrets
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release-keystore.keystore
@@ -101,14 +91,14 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: app-debug-${{ steps.version.outputs.COMMIT_HASH }}
-        path: NextJSClientAndroid/app/build/outputs/apk/debug/app-debug.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
 
     - name: Upload Release APK (unsigned)
       uses: actions/upload-artifact@v4
       with:
         name: app-release-unsigned-${{ steps.version.outputs.COMMIT_HASH }}
-        path: NextJSClientAndroid/app/build/outputs/apk/release/app-release-unsigned.apk
+        path: app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 90
 
     - name: Upload Release APK (signed)
@@ -118,12 +108,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: app-release-signed-${{ steps.version.outputs.COMMIT_HASH }}
-        path: NextJSClientAndroid/app/build/outputs/apk/release/app-release-signed.apk
+        path: app/build/outputs/apk/release/app-release-signed.apk
         retention-days: 90
 
     - name: Get APK info
       id: apk_info
-      working-directory: ./NextJSClientAndroid
       run: |
         DEBUG_SIZE=$(du -h app/build/outputs/apk/debug/app-debug.apk | cut -f1)
         RELEASE_SIZE=$(du -h app/build/outputs/apk/release/app-release-unsigned.apk | cut -f1)
