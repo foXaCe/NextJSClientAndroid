@@ -68,7 +68,7 @@ jobs:
       run: ./gradlew assembleRelease
 
     - name: Sign Release APK (if keystore available)
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      if: ${{ secrets.KEYSTORE_BASE64 }}
       working-directory: ./NextJSClientAndroid
       run: |
         # Décoder le keystore depuis les secrets
@@ -110,7 +110,7 @@ jobs:
         retention-days: 90
 
     - name: Upload Release APK (signed)
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      if: ${{ secrets.KEYSTORE_BASE64 }}
       uses: actions/upload-artifact@v4
       with:
         name: app-release-signed-${{ steps.version.outputs.COMMIT_HASH }}
