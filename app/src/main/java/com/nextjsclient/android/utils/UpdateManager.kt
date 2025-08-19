@@ -52,7 +52,8 @@ class UpdateManager(private val context: Context) {
     suspend fun checkForUpdates() {
         withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Starting update check...")
+                Log.d(TAG, "🔍 Starting update check...")
+                Log.d(TAG, "🏛️ Repository: foXaCe/NextJSClientAndroid")
                 withContext(Dispatchers.Main) {
                     listener?.onUpdateChecking()
                 }
@@ -129,10 +130,11 @@ class UpdateManager(private val context: Context) {
                     withContext(Dispatchers.Main) {
                         if (isNewer) {
                             val release = Release(tagName, name, body, downloadUrl, publishedAt)
-                            Log.d(TAG, "Update available: ${release.tagName}")
+                            Log.d(TAG, "✅ Update available: ${release.tagName}")
+                            Log.d(TAG, "📦 Download URL: ${release.downloadUrl}")
                             listener?.onUpdateAvailable(release)
                         } else {
-                            Log.d(TAG, "App is up to date")
+                            Log.d(TAG, "✅ App is up to date - no update needed")
                             listener?.onUpToDate()
                         }
                     }
@@ -173,6 +175,8 @@ class UpdateManager(private val context: Context) {
             
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadId = downloadManager.enqueue(request)
+            Log.d(TAG, "📥 Download started with ID: $downloadId")
+            Log.d(TAG, "📂 File will be saved as: $fileName")
             
             listener?.onDownloadStarted()
             

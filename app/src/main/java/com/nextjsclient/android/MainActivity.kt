@@ -17,6 +17,7 @@ import com.nextjsclient.android.ui.scamark.ScamarkFragment
 import com.nextjsclient.android.ui.overview.OverviewFragment
 import com.nextjsclient.android.utils.ThemeManager
 import com.nextjsclient.android.utils.SupplierThemeManager
+import com.nextjsclient.android.utils.SupplierPreferences
 
 class MainActivity : AppCompatActivity() {
     
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var themeManager: ThemeManager
     private lateinit var supplierThemeManager: SupplierThemeManager
+    private lateinit var supplierPreferences: SupplierPreferences
     private var currentScamarkFragment: ScamarkFragment? = null
     private var currentSupplier: String = "anecoop"
     
@@ -41,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         
         auth = FirebaseAuth.getInstance()
         supplierThemeManager = SupplierThemeManager(this)
+        supplierPreferences = SupplierPreferences(this)
         
         // Check if user is logged in
         if (auth.currentUser == null) {
@@ -79,7 +82,16 @@ class MainActivity : AppCompatActivity() {
         applySupplierTheme(currentSupplier)
     }
     
+    override fun onResume() {
+        super.onResume()
+        // Mettre à jour la visibilité du menu quand on revient de la page paramètres
+        updateNavigationVisibility()
+    }
+    
     private fun setupSupplierNavigation() {
+        // Mettre à jour la visibilité du menu selon les préférences
+        updateNavigationVisibility()
+        
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_overview -> {
@@ -97,6 +109,16 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+    }
+    
+    private fun updateNavigationVisibility() {
+        val menu = binding.bottomNavigation.menu
+        
+        // Cacher/afficher les éléments de navigation selon les préférences
+        menu.findItem(R.id.navigation_anecoop)?.isVisible = supplierPreferences.isAnecoopEnabled
+        menu.findItem(R.id.navigation_solagora)?.isVisible = supplierPreferences.isSolagoraEnabled
+        
+        android.util.Log.d("MainActivity", "🧭 Navigation visibility updated - Anecoop: ${supplierPreferences.isAnecoopEnabled}, Solagora: ${supplierPreferences.isSolagoraEnabled}")
     }
     
     private fun switchToOverview() {

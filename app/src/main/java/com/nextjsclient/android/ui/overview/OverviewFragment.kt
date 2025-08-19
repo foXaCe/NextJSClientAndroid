@@ -1,7 +1,11 @@
 package com.nextjsclient.android.ui.overview
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -41,6 +45,19 @@ class OverviewFragment : Fragment() {
     private var preloadedAnecoopWeeks: List<com.nextjsclient.android.data.models.AvailableWeek> = emptyList()
     private var preloadedSolagoraWeeks: List<com.nextjsclient.android.data.models.AvailableWeek> = emptyList()
     
+    // BroadcastReceiver pour écouter les changements de préférences
+    private val preferencesReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == SupplierPreferences.ACTION_SUPPLIER_PREFERENCES_CHANGED) {
+                android.util.Log.d("OverviewFragment", "📡 Received preferences changed broadcast - refreshing cards")
+                // Recalculer et afficher les stats avec les nouvelles préférences
+                viewModel.products.value?.let { products ->
+                    calculateAndDisplayStats(products)
+                }
+            }
+        }
+    }
+    
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,6 +78,9 @@ class OverviewFragment : Fragment() {
         
         // Initialiser le helper moderne
         modernHelper = ModernOverviewHelper(this)
+        
+        // Initialiser la visibilité des cartes selon les préférences
+        initializeCardVisibility()
         
         setupButtons()
         setupSwipeRefresh()
@@ -89,6 +109,62 @@ class OverviewFragment : Fragment() {
         }
         
         android.util.Log.d("OverviewFragment", "✅ OverviewFragment.onViewCreated() FIN")
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Enregistrer le BroadcastReceiver pour écouter les changements de préférences
+        val filter = IntentFilter(SupplierPreferences.ACTION_SUPPLIER_PREFERENCES_CHANGED)
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(preferencesReceiver, filter)
+        android.util.Log.d("OverviewFragment", "📡 BroadcastReceiver registered for preferences changes")
+        
+        // Mettre à jour la visibilité des cartes au cas où les préférences auraient changé
+        // pendant que le fragment était en pause (ex: dans les paramètres)
+        updateCardVisibilityOnResume()
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // Désenregistrer le BroadcastReceiver
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(preferencesReceiver)
+        android.util.Log.d("OverviewFragment", "📡 BroadcastReceiver unregistered")
+    }
+    
+    private fun initializeCardVisibility() {
+        // Appliquer immédiatement la visibilité des cartes selon les préférences
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        anecoopCard?.visibility = if (supplierPreferences.isAnecoopEnabled) View.VISIBLE else View.GONE
+        solagoraCard?.visibility = if (supplierPreferences.isSolagoraEnabled) View.VISIBLE else View.GONE
+        
+        android.util.Log.d("OverviewFragment", "🎬 Initial card visibility - Anecoop: ${if (supplierPreferences.isAnecoopEnabled) "VISIBLE" else "GONE"}, Solagora: ${if (supplierPreferences.isSolagoraEnabled) "VISIBLE" else "GONE"}")
+    }
+    
+    private fun updateCardVisibilityOnResume() {
+        // Mettre à jour la visibilité et recalculer les stats si nécessaire
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        val newAnecoopVisibility = if (supplierPreferences.isAnecoopEnabled) View.VISIBLE else View.GONE
+        val newSolagoraVisibility = if (supplierPreferences.isSolagoraEnabled) View.VISIBLE else View.GONE
+        
+        val visibilityChanged = (anecoopCard?.visibility != newAnecoopVisibility) || 
+                               (solagoraCard?.visibility != newSolagoraVisibility)
+        
+        if (visibilityChanged) {
+            anecoopCard?.visibility = newAnecoopVisibility
+            solagoraCard?.visibility = newSolagoraVisibility
+            
+            android.util.Log.d("OverviewFragment", "🔄 Card visibility changed on resume - recalculating stats")
+            
+            // Recalculer et afficher les stats avec les nouvelles préférences
+            viewModel.products.value?.let { products ->
+                calculateAndDisplayStats(products)
+            }
+        } else {
+            android.util.Log.d("OverviewFragment", "✅ Card visibility unchanged on resume")
+        }
     }
     
     private fun loadInitialData() {

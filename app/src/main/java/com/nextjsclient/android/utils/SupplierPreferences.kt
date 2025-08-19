@@ -1,7 +1,9 @@
 package com.nextjsclient.android.utils
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class SupplierPreferences(context: Context) {
     
@@ -13,19 +15,29 @@ class SupplierPreferences(context: Context) {
         // Default values
         private const val DEFAULT_ANECOOP = true
         private const val DEFAULT_SOLAGORA = true
+        
+        // Broadcast action for preference changes
+        const val ACTION_SUPPLIER_PREFERENCES_CHANGED = "com.nextjsclient.android.SUPPLIER_PREFERENCES_CHANGED"
     }
     
+    private val context: Context = context
     private val prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     
     // Anecoop preferences
     var isAnecoopEnabled: Boolean
         get() = prefs.getBoolean(KEY_ANECOOP_ENABLED, DEFAULT_ANECOOP)
-        set(value) = prefs.edit().putBoolean(KEY_ANECOOP_ENABLED, value).apply()
+        set(value) {
+            prefs.edit().putBoolean(KEY_ANECOOP_ENABLED, value).apply()
+            notifyPreferencesChanged()
+        }
     
     // Solagora preferences
     var isSolagoraEnabled: Boolean
         get() = prefs.getBoolean(KEY_SOLAGORA_ENABLED, DEFAULT_SOLAGORA)
-        set(value) = prefs.edit().putBoolean(KEY_SOLAGORA_ENABLED, value).apply()
+        set(value) {
+            prefs.edit().putBoolean(KEY_SOLAGORA_ENABLED, value).apply()
+            notifyPreferencesChanged()
+        }
     
     // Helper methods
     fun getEnabledSuppliers(): List<String> {
@@ -65,5 +77,12 @@ class SupplierPreferences(context: Context) {
             .putBoolean(KEY_ANECOOP_ENABLED, DEFAULT_ANECOOP)
             .putBoolean(KEY_SOLAGORA_ENABLED, DEFAULT_SOLAGORA)
             .apply()
+        notifyPreferencesChanged()
+    }
+    
+    private fun notifyPreferencesChanged() {
+        val intent = Intent(ACTION_SUPPLIER_PREFERENCES_CHANGED)
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+        android.util.Log.d("SupplierPreferences", "📡 Broadcast sent: preferences changed")
     }
 }
