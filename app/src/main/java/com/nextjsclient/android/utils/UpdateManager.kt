@@ -9,8 +9,7 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.json.JSONArray
 import java.io.File
@@ -180,32 +179,88 @@ class UpdateManager(private val context: Context) {
             
             listener?.onDownloadStarted()
             
-            // Register broadcast receiver for download completion
-            val receiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                    if (id == downloadId) {
-                        val downloadFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
-                        if (downloadFile.exists()) {
-                            listener?.onDownloadCompleted(downloadFile)
-                        } else {
-                            listener?.onError("Fichier téléchargé non trouvé")
-                        }
-                        context?.unregisterReceiver(this)
-                    }
-                }
-            }
-            
-            // Pour Android 14+ (API 34+), spécifier RECEIVER_NOT_EXPORTED
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED)
-            } else {
-                context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
-            }
+            // Start monitoring download progress
+            startDownloadMonitoring(fileName)
             
         } catch (e: Exception) {
             Log.e(TAG, "Error downloading update", e)
             listener?.onError("Erreur de téléchargement: ${e.message}")
+        }
+    }
+    
+    private fun startDownloadMonitoring(fileName: String) {
+        // Use a coroutine to monitor download progress periodically
+        CoroutineScope(Dispatchers.IO).launch {
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            
+            while (true) {
+                delay(1000) // Check every second
+                
+                val query = DownloadManager.Query().setFilterById(downloadId)
+                val cursor = downloadManager.query(query)
+                
+                if (cursor.moveToFirst()) {
+                    val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    val status = cursor.getInt(statusIndex)
+                    
+                    val bytesDownloadedIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                    val bytesTotalIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                    
+                    val bytesDownloaded = cursor.getLong(bytesDownloadedIndex)
+                    val bytesTotal = cursor.getLong(bytesTotalIndex)
+                    
+                    Log.d(TAG, "📊 Download status: $status, Progress: $bytesDownloaded/$bytesTotal bytes")
+                    
+                    when (status) {
+                        DownloadManager.STATUS_SUCCESSFUL -> {
+                            Log.d(TAG, "✅ Download completed successfully!")
+                            cursor.close()
+                            
+                            // Check if file exists and notify completion
+                            val downloadFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
+                            Log.d(TAG, "   • Looking for file: ${downloadFile.absolutePath}")
+                            Log.d(TAG, "   • File exists: ${downloadFile.exists()}")
+                            
+                            if (downloadFile.exists()) {
+                                Log.d(TAG, "🎉 File found! Calling onDownloadCompleted")
+                                withContext(Dispatchers.Main) {
+                                    listener?.onDownloadCompleted(downloadFile)
+                                }
+                            } else {
+                                Log.e(TAG, "❌ Downloaded file not found!")
+                                withContext(Dispatchers.Main) {
+                                    listener?.onError("Fichier téléchargé non trouvé")
+                                }
+                            }
+                            break
+                        }
+                        DownloadManager.STATUS_FAILED -> {
+                            Log.e(TAG, "❌ Download failed!")
+                            cursor.close()
+                            withContext(Dispatchers.Main) {
+                                listener?.onError("Échec du téléchargement")
+                            }
+                            break
+                        }
+                        DownloadManager.STATUS_RUNNING -> {
+                            if (bytesTotal > 0) {
+                                val progress = ((bytesDownloaded * 100) / bytesTotal).toInt()
+                                withContext(Dispatchers.Main) {
+                                    listener?.onDownloadProgress(progress)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Log.w(TAG, "⚠️ Download not found in cursor")
+                    cursor.close()
+                    withContext(Dispatchers.Main) {
+                        listener?.onError("Téléchargement introuvable")
+                    }
+                    break
+                }
+                cursor.close()
+            }
         }
     }
     
