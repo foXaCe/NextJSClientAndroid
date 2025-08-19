@@ -292,15 +292,21 @@ class ScamarkFragment : Fragment() {
         } else if (isLoading) {
             // Chargement en cours
             binding.emptyView.visibility = View.VISIBLE
-            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.text = "Produits en chargement..."
-            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.text = "Veuillez patienter..."
+            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.apply {
+                text = "Produits en chargement..."
+                visibility = View.VISIBLE
+            }
+            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.apply {
+                text = "Veuillez patienter..."
+                visibility = View.VISIBLE
+            }
             binding.emptyView.findViewById<android.widget.ProgressBar>(R.id.emptyProgressBar)?.visibility = View.VISIBLE
             binding.emptyView.findViewById<android.widget.ImageView>(R.id.emptyIcon)?.visibility = View.GONE
         } else {
-            // Pas de chargement et liste vide = aucun produit trouvé
+            // Pas de chargement et liste vide = afficher seulement l'image Anecoop
             binding.emptyView.visibility = View.VISIBLE
-            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.text = "Aucun produit trouvé"
-            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.text = "Ajoutez des produits pour commencer"
+            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.visibility = View.GONE
+            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.visibility = View.GONE
             binding.emptyView.findViewById<android.widget.ProgressBar>(R.id.emptyProgressBar)?.visibility = View.GONE
             binding.emptyView.findViewById<android.widget.ImageView>(R.id.emptyIcon)?.visibility = View.VISIBLE
         }
