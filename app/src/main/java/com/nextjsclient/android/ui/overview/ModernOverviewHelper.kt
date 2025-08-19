@@ -29,6 +29,25 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         android.util.Log.d("ModernOverviewHelper", "🎨 Updating ${supplier} card with stats: $stats")
         android.util.Log.d("ModernOverviewHelper", "🎨 Parameters: supplier=$supplier, isAnecoop=$isAnecoop, cardId=${fragment.resources.getResourceEntryName(cardId)}")
         
+        // Vérifier si ce fournisseur doit être visible selon les préférences
+        val supplierPreferences = fragment.supplierPreferences
+        val shouldShowCard = when (supplier.lowercase()) {
+            "anecoop" -> supplierPreferences.isAnecoopEnabled
+            "solagora" -> supplierPreferences.isSolagoraEnabled
+            else -> true
+        }
+        
+        android.util.Log.d("ModernOverviewHelper", "👁️ Card visibility for $supplier: $shouldShowCard")
+        
+        if (!shouldShowCard) {
+            card.visibility = View.GONE
+            android.util.Log.d("ModernOverviewHelper", "🫥 Card $supplier cachée selon préférences")
+            return
+        }
+        
+        // Afficher la card si elle était cachée
+        card.visibility = View.VISIBLE
+        
         // Configurer les couleurs et thème de la card
         configureSupplierCardTheme(card, isAnecoop)
         

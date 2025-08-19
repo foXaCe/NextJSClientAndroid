@@ -27,7 +27,7 @@ class OverviewFragment : Fragment() {
     val binding get() = _binding!!
     
     private val viewModel: ScamarkViewModel by activityViewModels()
-    private lateinit var supplierPreferences: SupplierPreferences
+    lateinit var supplierPreferences: SupplierPreferences
     
     // Helper pour l'interface moderne
     private lateinit var modernHelper: ModernOverviewHelper
