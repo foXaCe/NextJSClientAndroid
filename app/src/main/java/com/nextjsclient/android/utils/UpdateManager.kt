@@ -243,13 +243,29 @@ class UpdateManager(private val context: Context) {
     
     private fun isNewerVersion(current: String, latest: String): Boolean {
         return try {
-            Log.d(TAG, "Comparing versions: current='$current' vs latest='$latest'")
+            Log.d(TAG, "🔍 Comparing versions: current='$current' vs latest='$latest'")
+            
+            // Handle special tags like "nightly", "beta", "alpha", etc.
+            val specialTags = listOf("nightly", "beta", "alpha", "dev", "test", "pre-release")
+            if (specialTags.any { latest.lowercase().contains(it) }) {
+                Log.d(TAG, "🌙 Latest version contains special tag - treating as newer than any numbered version")
+                return true
+            }
+            
+            // If current version contains special tags, treat numbered releases as newer
+            if (specialTags.any { current.lowercase().contains(it) }) {
+                // Check if latest is a numbered version
+                if (latest.matches(Regex("^[0-9]+(\\.[0-9]+)*$"))) {
+                    Log.d(TAG, "📊 Current has special tag, latest is numbered - latest is newer")
+                    return true
+                }
+            }
             
             val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
             val latestParts = latest.split(".").map { it.toIntOrNull() ?: 0 }
             
-            Log.d(TAG, "Current parts: $currentParts")
-            Log.d(TAG, "Latest parts: $latestParts")
+            Log.d(TAG, "📊 Current parts: $currentParts")
+            Log.d(TAG, "📊 Latest parts: $latestParts")
             
             val maxLength = maxOf(currentParts.size, latestParts.size)
             
@@ -257,24 +273,24 @@ class UpdateManager(private val context: Context) {
                 val currentPart = currentParts.getOrElse(i) { 0 }
                 val latestPart = latestParts.getOrElse(i) { 0 }
                 
-                Log.d(TAG, "Comparing part $i: $currentPart vs $latestPart")
+                Log.d(TAG, "🔢 Comparing part $i: $currentPart vs $latestPart")
                 
                 when {
                     latestPart > currentPart -> {
-                        Log.d(TAG, "Latest version is newer")
+                        Log.d(TAG, "✅ Latest version is newer")
                         return true
                     }
                     latestPart < currentPart -> {
-                        Log.d(TAG, "Current version is newer")
+                        Log.d(TAG, "📱 Current version is newer")
                         return false
                     }
                 }
             }
             
-            Log.d(TAG, "Versions are equal")
+            Log.d(TAG, "🟰 Versions are equal")
             false
         } catch (e: Exception) {
-            Log.e(TAG, "Error comparing versions", e)
+            Log.e(TAG, "❌ Error comparing versions", e)
             false
         }
     }
