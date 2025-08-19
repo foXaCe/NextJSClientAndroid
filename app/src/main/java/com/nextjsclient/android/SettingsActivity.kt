@@ -95,20 +95,61 @@ class SettingsActivity : AppCompatActivity() {
             showLogoutDialog()
         }
         
-        // App info
+        // App info with commit/build info
         try {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
-            binding.appVersion.text = "Version ${packageInfo.versionName}"
-            binding.buildInfo.text = "Release"
+            val versionName = packageInfo.versionName ?: "1.0"
+            val versionCode = packageInfo.longVersionCode
+            
+            // Try to get commit hash from BuildConfig or version name
+            val commitHash = getCommitHash(versionName)
+            
+            if (commitHash != null) {
+                binding.appVersion.text = "Build $commitHash"
+                binding.buildInfo.text = "Version $versionName • Code $versionCode"
+            } else {
+                binding.appVersion.text = "Version $versionName"
+                binding.buildInfo.text = "Build #$versionCode"
+            }
         } catch (e: Exception) {
             binding.appVersion.text = "Version 1.0.0"
-            binding.buildInfo.text = "Release"
+            binding.buildInfo.text = "Build #1"
         }
         
         // Tech stack info
         binding.androidVersion.text = "API ${android.os.Build.VERSION.SDK_INT}"
         binding.firebaseVersion.text = "Firebase"
         binding.materialVersion.text = "Material 3"
+    }
+    
+    private fun getCommitHash(versionName: String): String? {
+        return try {
+            // Try to get commit from BuildConfig first
+            val commitFromBuildConfig = com.nextjsclient.android.BuildConfig.COMMIT_HASH
+            
+            if (commitFromBuildConfig.isNotEmpty() && commitFromBuildConfig != "unknown") {
+                return commitFromBuildConfig
+            }
+            
+            // Fallback: extract from version name if it follows our nightly pattern
+            val nightlyPattern = Regex("nightly-\\d+-([a-f0-9]{7,})")
+            val match = nightlyPattern.find(versionName)
+            if (match != null) {
+                return match.groupValues[1]
+            }
+            
+            // Try other patterns for commit hashes
+            val commitPattern = Regex(".*-([a-f0-9]{7,}).*")
+            val commitMatch = commitPattern.find(versionName)
+            commitMatch?.groupValues?.get(1)
+        } catch (e: Exception) {
+            android.util.Log.d("SettingsActivity", "Could not get commit hash: ${e.message}")
+            
+            // Last resort: try to extract any 7+ character hex string
+            val hexPattern = Regex("([a-f0-9]{7,})")
+            val hexMatch = hexPattern.find(versionName)
+            hexMatch?.groupValues?.get(1)
+        }
     }
     
     private fun setupUpdateManager() {
