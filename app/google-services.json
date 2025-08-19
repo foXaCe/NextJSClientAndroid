@@ -7,14 +7,18 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:986147761260:android:4dad852860fd930d13fc49",
+        "mobilesdk_app_id": "1:986147761260:android:ANDROID_APP_ID_TO_CREATE",
         "android_client_info": {
           "package_name": "com.nextjsclient.android"
         }
       },
       "oauth_client": [
         {
-          "client_id": "986147761260-abc123.apps.googleusercontent.com",
+          "client_id": "986147761260-OAUTH_CLIENT_ID.apps.googleusercontent.com",
+          "client_type": 1
+        },
+        {
+          "client_id": "986147761260-OAUTH_CLIENT_ID.apps.googleusercontent.com", 
           "client_type": 3
         }
       ],
