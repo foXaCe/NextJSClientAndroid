@@ -122,4 +122,10 @@
         <item name="marginHorizontal">16dp</item>
         <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
     </style>
+    
+    <!-- Splash Screen Theme -->
+    <style name="Theme.App.SplashScreen" parent="Theme.NextJSClient">
+        <item name="android:windowBackground">@drawable/splash_screen_custom</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>

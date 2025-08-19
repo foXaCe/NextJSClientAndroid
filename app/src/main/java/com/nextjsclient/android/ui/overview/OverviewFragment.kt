@@ -1,5 +1,6 @@
 package com.nextjsclient.android.ui.overview
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +11,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.snackbar.Snackbar
 import com.nextjsclient.android.R
+import com.nextjsclient.android.SettingsActivity
 import com.nextjsclient.android.databinding.FragmentOverviewBinding
 import com.nextjsclient.android.ui.scamark.ScamarkViewModel
 import kotlinx.coroutines.launch
@@ -233,7 +235,11 @@ class OverviewFragment : Fragment() {
     }
     
     private fun setupButtons() {
-        // Buttons supprimés - navigation se fait via les cartes de stats
+        // Settings button
+        binding.settingsButton.setOnClickListener {
+            val intent = Intent(requireContext(), SettingsActivity::class.java)
+            startActivity(intent)
+        }
     }
     
     private fun setupSwipeRefresh() {

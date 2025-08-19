@@ -15,12 +15,23 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.nextjsclient.android.databinding.ActivitySettingsBinding
 import com.nextjsclient.android.utils.ThemeManager
+import com.nextjsclient.android.utils.UpdateManager
+import com.nextjsclient.android.utils.Release
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var themeManager: ThemeManager
     private lateinit var auth: FirebaseAuth
+    private lateinit var updateManager: UpdateManager
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
+    private var pendingUpdate: Release? = null
+    private var downloadedFile: File? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,12 +41,17 @@ class SettingsActivity : AppCompatActivity() {
         
         themeManager = ThemeManager(this)
         auth = FirebaseAuth.getInstance()
+        updateManager = UpdateManager(this)
         
         setupWindowInsets()
         setupToolbar()
         setupViews()
+        setupUpdateManager()
         updateUI()
         animateViews()
+        
+        // Check for updates when entering settings
+        checkForUpdates()
     }
     
     private fun setupWindowInsets() {
@@ -63,38 +79,14 @@ class SettingsActivity : AppCompatActivity() {
         val user = auth.currentUser
         if (user != null) {
             binding.userEmail.text = user.email ?: "Email non disponible"
-            binding.userId.text = "ID: ${user.uid.take(12)}..."
             
             // Set user initial in avatar
             val initial = user.email?.firstOrNull()?.uppercaseChar() ?: 'U'
             binding.userInitial.text = initial.toString()
         }
         
-        // Notifications toggle
-        binding.notificationSwitch.setOnCheckedChangeListener { _, isChecked ->
-            // Save notification preference
-            getSharedPreferences("settings", MODE_PRIVATE).edit()
-                .putBoolean("notifications_enabled", isChecked)
-                .apply()
-            
-            val message = if (isChecked) "Notifications activées" else "Notifications désactivées"
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-        }
-        
-        // Load notification preference
-        val notificationsEnabled = getSharedPreferences("settings", MODE_PRIVATE)
-            .getBoolean("notifications_enabled", true)
-        binding.notificationSwitch.isChecked = notificationsEnabled
-        
-        // Privacy option
-        binding.privacyOption.setOnClickListener {
-            animateClick(it)
-            // TODO: Open privacy settings
-            Toast.makeText(this, "Paramètres de confidentialité", Toast.LENGTH_SHORT).show()
-        }
-        
-        // Logout button with confirmation
-        binding.logoutButton.setOnClickListener {
+        // Logout icon with confirmation
+        binding.logoutIcon.setOnClickListener {
             animateClick(it)
             showLogoutDialog()
         }
@@ -113,6 +105,91 @@ class SettingsActivity : AppCompatActivity() {
         binding.androidVersion.text = "API ${android.os.Build.VERSION.SDK_INT}"
         binding.firebaseVersion.text = "Firebase"
         binding.materialVersion.text = "Material 3"
+    }
+    
+    private fun setupUpdateManager() {
+        updateManager.setUpdateListener(object : UpdateManager.UpdateListener {
+            override fun onUpdateChecking() {
+                binding.updateStatus.text = "Vérification..."
+                binding.updateButton.visibility = View.GONE
+            }
+            
+            override fun onUpdateAvailable(release: Release) {
+                binding.updateStatus.text = "Nouvelle version disponible: ${release.tagName}"
+                binding.updateButton.text = "Mettre à jour"
+                binding.updateButton.visibility = View.VISIBLE
+                pendingUpdate = release
+            }
+            
+            override fun onUpToDate() {
+                binding.updateStatus.text = "Vous êtes à jour"
+                binding.updateButton.visibility = View.GONE
+            }
+            
+            override fun onDownloadStarted() {
+                binding.updateStatus.text = "Téléchargement en cours..."
+                binding.updateButton.text = "Téléchargement..."
+                binding.updateButton.isEnabled = false
+            }
+            
+            override fun onDownloadProgress(progress: Int) {
+                binding.updateStatus.text = "Téléchargement: $progress%"
+            }
+            
+            override fun onDownloadCompleted(file: File) {
+                binding.updateStatus.text = "Téléchargement terminé"
+                binding.updateButton.text = "Installer"
+                binding.updateButton.isEnabled = true
+                downloadedFile = file
+                
+                // Show release notes
+                pendingUpdate?.let { showReleaseNotes(it) }
+            }
+            
+            override fun onError(message: String) {
+                binding.updateStatus.text = message
+                binding.updateButton.visibility = View.GONE
+            }
+        })
+        
+        // Setup update button click
+        binding.updateButton.setOnClickListener {
+            when {
+                downloadedFile != null -> {
+                    updateManager.installUpdate(downloadedFile!!)
+                }
+                pendingUpdate != null -> {
+                    updateManager.downloadUpdate(pendingUpdate!!)
+                }
+            }
+        }
+        
+        // Setup update section click to check for updates
+        binding.updateSection.setOnClickListener {
+            checkForUpdates()
+        }
+    }
+    
+    private fun checkForUpdates() {
+        try {
+            coroutineScope.launch {
+                updateManager.checkForUpdates()
+            }
+        } catch (e: Exception) {
+            binding.updateStatus.text = "Vous êtes à jour"
+            binding.updateButton.visibility = View.GONE
+        }
+    }
+    
+    private fun showReleaseNotes(release: Release) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Mise à jour ${release.tagName}")
+            .setMessage(release.body)
+            .setPositiveButton("Installer") { _, _ ->
+                downloadedFile?.let { updateManager.installUpdate(it) }
+            }
+            .setNegativeButton("Plus tard", null)
+            .show()
     }
     
     private fun updateUI() {
@@ -169,7 +246,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun animateViews() {
         // Animate profile header
         binding.userEmail.alpha = 0f
-        binding.userId.alpha = 0f
         binding.userInitial.scaleX = 0f
         binding.userInitial.scaleY = 0f
         
@@ -190,20 +266,12 @@ class SettingsActivity : AppCompatActivity() {
             .setStartDelay(200)
             .start()
         
-        binding.userId.animate()
-            .alpha(1f)
-            .setDuration(600)
-            .setStartDelay(300)
-            .start()
         
         avatarAnimator.start()
         
         // Animate cards with stagger effect
         val cards = listOf(
-            binding.themeSelector,
-            binding.notificationsOption,
-            binding.privacyOption,
-            binding.logoutButton
+            binding.themeSelector
         )
         
         cards.forEachIndexed { index, view ->
