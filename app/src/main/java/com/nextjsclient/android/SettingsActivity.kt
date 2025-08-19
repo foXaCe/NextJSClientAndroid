@@ -141,13 +141,12 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onDownloadCompleted(file: File) {
-                binding.updateStatus.text = "Téléchargement terminé"
-                binding.updateButton.text = "Installer"
-                binding.updateButton.isEnabled = true
+                binding.updateStatus.text = "Installation en cours..."
+                binding.updateButton.visibility = View.GONE
                 downloadedFile = file
                 
-                // Show release notes
-                pendingUpdate?.let { showReleaseNotes(it) }
+                // Automatically install after download
+                updateManager.installUpdate(file)
             }
             
             override fun onError(message: String) {
