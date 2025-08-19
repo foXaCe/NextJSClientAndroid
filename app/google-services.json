@@ -7,14 +7,14 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:986147761260:android:c7596fb535fe5ee313fc49",
+        "mobilesdk_app_id": "FIREBASE_APP_ID_PLACEHOLDER",
         "android_client_info": {
           "package_name": "com.nextjsclient.android"
         }
       },
       "oauth_client": [
         {
-          "client_id": "986147761260-i8gkruhnqkbn6k41f0edeojme83v9047.apps.googleusercontent.com",
+          "client_id": "GOOGLE_CLIENT_ID_PLACEHOLDER",
           "client_type": 3
         }
       ],
@@ -27,7 +27,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "986147761260-i8gkruhnqkbn6k41f0edeojme83v9047.apps.googleusercontent.com",
+              "client_id": "GOOGLE_CLIENT_ID_PLACEHOLDER",
               "client_type": 3
             }
           ]
