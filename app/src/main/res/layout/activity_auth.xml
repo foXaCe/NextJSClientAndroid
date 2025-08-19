@@ -31,7 +31,7 @@
                 android:layout_width="80dp"
                 android:layout_height="80dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_launcher_foreground"
+                android:src="@drawable/logo_anecoop"
                 android:contentDescription="Logo Anecoop" />
 
         </com.google.android.material.card.MaterialCardView>
@@ -50,18 +50,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Subtitle -->
-        <TextView
-            android:id="@+id/subtitleText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Accédez à vos applications"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            app:layout_constraintTop_toBottomOf="@id/titleText"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- Login Form -->
         <LinearLayout
@@ -70,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="48dp"
             android:orientation="vertical"
-            app:layout_constraintTop_toBottomOf="@id/subtitleText"
+            app:layout_constraintTop_toBottomOf="@id/titleText"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintWidth_max="400dp">
