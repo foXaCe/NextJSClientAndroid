@@ -74,17 +74,6 @@ class FirebaseRepository {
     // Authentication
     suspend fun signIn(email: String, password: String): Result<String> {
         return try {
-            // Mode développement avec Firebase placeholder
-            if (auth.app.options.projectId == "nextjs-client-placeholder") {
-                android.util.Log.w("FirebaseRepo", "🚨 Mode développement: Authentification simulée")
-                // Authentification simulée pour le développement
-                return if (email.isNotEmpty() && password.isNotEmpty()) {
-                    Result.success("dev-user-id")
-                } else {
-                    Result.failure(Exception("Email et mot de passe requis"))
-                }
-            }
-            
             val result = auth.signInWithEmailAndPassword(email, password).await()
             Result.success(result.user?.uid ?: "")
         } catch (e: Exception) {
