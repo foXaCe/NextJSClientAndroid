@@ -294,6 +294,12 @@ class UpdateManager(private val context: Context) {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
             
+            // Note: Si l'installation échoue avec une erreur de signature,
+            // l'utilisateur devra désinstaller manuellement l'ancienne version
+            // car les APK GitHub et locaux ont des signatures différentes
+            Log.i(TAG, "📦 Lancement de l'installation...")
+            Log.i(TAG, "⚠️ Si l'installation échoue, désinstallez d'abord l'app actuelle")
+            
             context.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Error installing update", e)
@@ -304,9 +310,26 @@ class UpdateManager(private val context: Context) {
     private fun getCurrentVersion(): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val version = packageInfo.versionName ?: "1.0"
-            Log.d(TAG, "Current app version: $version")
-            version
+            val versionName = packageInfo.versionName ?: "1.0"
+            
+            // Try to get commit hash from BuildConfig if available
+            val commitHash = try {
+                com.nextjsclient.android.BuildConfig.COMMIT_HASH
+            } catch (e: Exception) {
+                ""
+            }
+            
+            Log.d(TAG, "Current app version: $versionName")
+            Log.d(TAG, "Current commit hash: $commitHash")
+            
+            // If we have a valid commit hash, return version with commit format
+            if (commitHash.isNotEmpty() && commitHash != "unknown") {
+                val formattedVersion = "nightly-$commitHash"
+                Log.d(TAG, "Using commit-based version: $formattedVersion")
+                formattedVersion
+            } else {
+                versionName
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get current version", e)
             "1.0"
