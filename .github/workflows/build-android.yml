@@ -62,43 +62,6 @@ jobs:
     - name: Build Release APK (unsigned)
       run: ./gradlew assembleRelease
 
-    - name: Sign APKs (if keystore available)
-      if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      run: |
-        # Décoder le keystore depuis les secrets
-        echo "$KEYSTORE_BASE64" | base64 -d > release-keystore.keystore
-        
-        # Signer l'APK Debug (pour éviter les conflits de signature)
-        echo "🔐 Signature de l'APK Debug..."
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore release-keystore.keystore \
-          -storepass "$KEYSTORE_PASSWORD" \
-          -keypass "$KEY_PASSWORD" \
-          app/build/outputs/apk/debug/app-debug.apk \
-          "$KEY_ALIAS"
-        
-        # Signer l'APK Release
-        echo "🔐 Signature de l'APK Release..."
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore release-keystore.keystore \
-          -storepass "$KEYSTORE_PASSWORD" \
-          -keypass "$KEY_PASSWORD" \
-          app/build/outputs/apk/release/app-release-unsigned.apk \
-          "$KEY_ALIAS"
-        
-        # Renommer l'APK release signé
-        mv app/build/outputs/apk/release/app-release-unsigned.apk \
-           app/build/outputs/apk/release/app-release-signed.apk
-        
-        # Nettoyer le keystore
-        rm release-keystore.keystore
-        
-        echo "✅ APKs signés créés"
 
     - name: Generate version info
       id: version
@@ -121,15 +84,6 @@ jobs:
         path: app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 90
 
-    - name: Upload Release APK (signed)
-      if: ${{ env.KEYSTORE_BASE64 != '' }}
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release-signed-${{ steps.version.outputs.COMMIT_HASH }}
-        path: app/build/outputs/apk/release/app-release-signed.apk
-        retention-days: 90
 
     - name: Get APK info
       id: apk_info
