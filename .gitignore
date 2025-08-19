@@ -98,4 +98,5 @@ lint/reports/
 
 # Markdown files (keep only README.md)
 *.md
-!README.md
+!README.mdrelease-key.keystore
+keystore_base64.txt
