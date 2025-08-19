@@ -55,13 +55,22 @@
                 android:gravity="center"
                 android:visibility="gone">
 
+                <ProgressBar
+                    android:id="@+id/emptyProgressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone" />
+
                 <ImageView
+                    android:id="@+id/emptyIcon"
                     android:layout_width="120dp"
                     android:layout_height="120dp"
                     android:src="@drawable/ic_empty_products"
                     app:tint="@color/gray" />
 
                 <TextView
+                    android:id="@+id/emptyText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
@@ -70,6 +79,7 @@
                     android:textColor="@color/gray" />
 
                 <TextView
+                    android:id="@+id/emptySubtext"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"

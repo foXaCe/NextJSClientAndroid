@@ -251,7 +251,7 @@ class ScamarkFragment : Fragment() {
     private fun observeViewModel() {
         viewModel.products.observe(viewLifecycleOwner) { products ->
             productsAdapter.submitList(products)
-            binding.emptyView.visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
+            updateEmptyViewState(products.isEmpty(), viewModel.isLoading.value ?: false)
         }
         
         // Observer le filtre pour mettre à jour l'adaptateur et l'interface
@@ -271,6 +271,8 @@ class ScamarkFragment : Fragment() {
             binding.swipeRefresh.isRefreshing = isLoading
             // Le ProgressBar reste masqué pendant le chargement normal
             binding.progressBar.visibility = View.GONE
+            // Mettre à jour l'état de la vue vide
+            updateEmptyViewState(viewModel.products.value?.isEmpty() ?: true, isLoading)
         }
         
         viewModel.error.observe(viewLifecycleOwner) { error ->
@@ -281,6 +283,27 @@ class ScamarkFragment : Fragment() {
         }
         
         // Week display is now handled in setupModernWeekSelector()
+    }
+    
+    private fun updateEmptyViewState(isEmpty: Boolean, isLoading: Boolean) {
+        if (!isEmpty) {
+            // Il y a des produits, masquer la vue vide
+            binding.emptyView.visibility = View.GONE
+        } else if (isLoading) {
+            // Chargement en cours
+            binding.emptyView.visibility = View.VISIBLE
+            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.text = "Produits en chargement..."
+            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.text = "Veuillez patienter..."
+            binding.emptyView.findViewById<android.widget.ProgressBar>(R.id.emptyProgressBar)?.visibility = View.VISIBLE
+            binding.emptyView.findViewById<android.widget.ImageView>(R.id.emptyIcon)?.visibility = View.GONE
+        } else {
+            // Pas de chargement et liste vide = aucun produit trouvé
+            binding.emptyView.visibility = View.VISIBLE
+            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.text = "Aucun produit trouvé"
+            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.text = "Ajoutez des produits pour commencer"
+            binding.emptyView.findViewById<android.widget.ProgressBar>(R.id.emptyProgressBar)?.visibility = View.GONE
+            binding.emptyView.findViewById<android.widget.ImageView>(R.id.emptyIcon)?.visibility = View.VISIBLE
+        }
     }
     
     private fun setupSwipeRefresh() {
