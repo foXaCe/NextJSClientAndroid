@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Anecoop Colors (Green theme) -->
+    <color name="anecoop_primary">#43A047</color>
+    <color name="anecoop_primary_variant">#2E7D32</color>
+    <color name="anecoop_secondary">#66BB6A</color>
+    <color name="anecoop_background">#F1F8E9</color>
+    <color name="anecoop_surface">#FFFFFF</color>
+    <color name="anecoop_surface_variant">#C8E6C9</color>
+    <color name="anecoop_on_primary">#FFFFFF</color>
+    <color name="anecoop_on_background">#1A1C1E</color>
+    <color name="anecoop_on_surface">#1A1C1E</color>
+    
+    <!-- Solagora Colors (Orange theme) -->
+    <color name="solagora_primary">#FF6F00</color>
+    <color name="solagora_primary_variant">#E65100</color>
+    <color name="solagora_secondary">#FFB74D</color>
+    <color name="solagora_background">#FFF3E0</color>
+    <color name="solagora_surface">#FFFFFF</color>
+    <color name="solagora_surface_variant">#FFE0B2</color>
+    <color name="solagora_on_primary">#FFFFFF</color>
+    <color name="solagora_on_background">#1A1C1E</color>
+    <color name="solagora_on_surface">#1A1C1E</color>
+</resources>

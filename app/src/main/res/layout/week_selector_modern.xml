@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/weekSelector"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="8dp"
+    app:strokeWidth="2dp"
+    app:strokeColor="?attr/colorPrimary"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerHigh">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+
+        <!-- Week Navigation -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <!-- Previous Week Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/previousWeekButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:icon="@drawable/ic_arrow_left"
+                app:iconSize="24dp"
+                app:iconTint="?attr/colorOnSurfaceVariant"
+                android:backgroundTint="?attr/colorSurfaceVariant" />
+
+            <!-- Current Week Display -->
+            <TextView
+                android:id="@+id/currentWeekDisplay"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="12dp"
+                android:layout_marginRight="12dp"
+                android:text="S45 - 06/11 au 12/11"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:gravity="center"
+                android:singleLine="true"
+                android:ellipsize="end" />
+
+            <!-- Next Week Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nextWeekButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:icon="@drawable/ic_arrow_right"
+                app:iconSize="24dp"
+                app:iconTint="?attr/colorOnSurfaceVariant"
+                android:backgroundTint="?attr/colorSurfaceVariant" />
+
+        </LinearLayout>
+
+        <!-- Quick Week Selection -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/currentWeekButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Actuelle"
+                android:textSize="12sp"
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="20dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/weekListButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Liste"
+                android:textSize="12sp"
+                app:cornerRadius="20dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

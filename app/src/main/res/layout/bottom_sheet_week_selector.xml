@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Sélectionner une semaine"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface" />
+
+        <!-- Handle indicator -->
+        <View
+            android:layout_width="32dp"
+            android:layout_height="4dp"
+            android:background="@drawable/bottom_sheet_handle"
+            android:layout_gravity="center" />
+
+    </LinearLayout>
+
+    <!-- Weeks RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/weeksRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+
+    <!-- Load More Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/loadMoreWeeksButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Charger 10 de plus"
+        android:textAllCaps="false"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        app:icon="@drawable/ic_expand_more_24"
+        app:iconGravity="textEnd" />
+
+</LinearLayout>

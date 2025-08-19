@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  
+  <!-- Simple Anecoop-inspired icon -->
+  <group android:scaleX="0.7"
+      android:scaleY="0.7"
+      android:translateX="16.2"
+      android:translateY="16.2">
+    
+    <!-- Green oval background -->
+    <path
+        android:fillColor="#228B22"
+        android:pathData="M54,20C75,20 88,32 88,44C88,56 75,68 54,68C33,68 20,56 20,44C20,32 33,20 54,20Z"/>
+    
+    <!-- Light green reflection -->
+    <path
+        android:fillColor="#90EE90"
+        android:pathData="M54,22C70,22 78,28 78,34C78,38 74,42 68,44C65,38 58,34 54,34C50,34 46,36 44,38C42,36 41,34 41,32C41,26 46,22 54,22Z"/>
+    
+    <!-- White grape cluster using paths instead of circles -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,32.5A3.5,3.5 0 1,1 54,39.5A3.5,3.5 0 1,1 54,32.5Z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,38.5A3.5,3.5 0 1,1 48,45.5A3.5,3.5 0 1,1 48,38.5Z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,38.5A3.5,3.5 0 1,1 60,45.5A3.5,3.5 0 1,1 60,38.5Z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,44.5A3.5,3.5 0 1,1 42,51.5A3.5,3.5 0 1,1 42,44.5Z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,44.5A3.5,3.5 0 1,1 54,51.5A3.5,3.5 0 1,1 54,44.5Z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,44.5A3.5,3.5 0 1,1 66,51.5A3.5,3.5 0 1,1 66,44.5Z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,56.5A3.5,3.5 0 1,1 54,63.5A3.5,3.5 0 1,1 54,56.5Z"/>
+  </group>
+</vector>

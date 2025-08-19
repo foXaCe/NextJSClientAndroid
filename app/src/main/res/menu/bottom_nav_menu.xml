@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_overview"
+        android:icon="@drawable/ic_analytics_24"
+        android:title="Aperçu" />
+
+    <item
+        android:id="@+id/navigation_anecoop"
+        android:icon="@drawable/ic_anecoop"
+        android:title="Anecoop" />
+
+    <item
+        android:id="@+id/navigation_solagora"
+        android:icon="@drawable/ic_solagora"
+        android:title="Solagora" />
+
+</menu>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material Design 3 Light Theme Colors (Anecoop Green Palette) -->
+    
+    <!-- Primary Colors -->
+    <color name="md_theme_light_primary">#2D6016</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#A8F085</color>
+    <color name="md_theme_light_onPrimaryContainer">#052100</color>
+    
+    <!-- Secondary Colors -->
+    <color name="md_theme_light_secondary">#54634D</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#D7E8CC</color>
+    <color name="md_theme_light_onSecondaryContainer">#121F0E</color>
+    
+    <!-- Tertiary Colors -->
+    <color name="md_theme_light_tertiary">#386568</color>
+    <color name="md_theme_light_onTertiary">#FFFFFF</color>
+    <color name="md_theme_light_tertiaryContainer">#BCEBEF</color>
+    <color name="md_theme_light_onTertiaryContainer">#002022</color>
+    
+    <!-- Error Colors -->
+    <color name="md_theme_light_error">#BA1A1A</color>
+    <color name="md_theme_light_errorContainer">#FFDAD6</color>
+    <color name="md_theme_light_onError">#FFFFFF</color>
+    <color name="md_theme_light_onErrorContainer">#410002</color>
+    
+    <!-- Background Colors -->
+    <color name="md_theme_light_background">#FCFDF6</color>
+    <color name="md_theme_light_onBackground">#1A1C18</color>
+    <color name="md_theme_light_surface">#FCFDF6</color>
+    <color name="md_theme_light_onSurface">#1A1C18</color>
+    <color name="md_theme_light_surfaceVariant">#DFE4D6</color>
+    <color name="md_theme_light_onSurfaceVariant">#43483E</color>
+    
+    <!-- Outline Colors -->
+    <color name="md_theme_light_outline">#73796D</color>
+    <color name="md_theme_light_outlineVariant">#C3C8BA</color>
+    
+    <!-- Surface Container Colors -->
+    <color name="md_theme_light_surfaceContainer">#F0F1EA</color>
+    <color name="md_theme_light_surfaceContainerHigh">#E4E6DE</color>
+    <color name="md_theme_light_surfaceContainerHighest">#DEDFDA</color>
+    <color name="md_theme_light_surfaceContainerLow">#F6F7F0</color>
+    <color name="md_theme_light_surfaceContainerLowest">#FFFFFF</color>
+    
+    <!-- Material Design 3 Dark Theme Colors -->
+    
+    <!-- Primary Colors -->
+    <color name="md_theme_dark_primary">#8DD46A</color>
+    <color name="md_theme_dark_onPrimary">#0A3900</color>
+    <color name="md_theme_dark_primaryContainer">#1C4C08</color>
+    <color name="md_theme_dark_onPrimaryContainer">#A8F085</color>
+    
+    <!-- Secondary Colors -->
+    <color name="md_theme_dark_secondary">#BBCCB1</color>
+    <color name="md_theme_dark_onSecondary">#263422</color>
+    <color name="md_theme_dark_secondaryContainer">#3C4B37</color>
+    <color name="md_theme_dark_onSecondaryContainer">#D7E8CC</color>
+    
+    <!-- Tertiary Colors -->
+    <color name="md_theme_dark_tertiary">#A0CFD3</color>
+    <color name="md_theme_dark_onTertiary">#00373A</color>
+    <color name="md_theme_dark_tertiaryContainer">#1E4E51</color>
+    <color name="md_theme_dark_onTertiaryContainer">#BCEBEF</color>
+    
+    <!-- Error Colors -->
+    <color name="md_theme_dark_error">#FFB4AB</color>
+    <color name="md_theme_dark_errorContainer">#93000A</color>
+    <color name="md_theme_dark_onError">#690005</color>
+    <color name="md_theme_dark_onErrorContainer">#FFDAD6</color>
+    
+    <!-- Background Colors -->
+    <color name="md_theme_dark_background">#121410</color>
+    <color name="md_theme_dark_onBackground">#E2E3DD</color>
+    <color name="md_theme_dark_surface">#121410</color>
+    <color name="md_theme_dark_onSurface">#E2E3DD</color>
+    <color name="md_theme_dark_surfaceVariant">#43483E</color>
+    <color name="md_theme_dark_onSurfaceVariant">#C3C8BA</color>
+    
+    <!-- Outline Colors -->
+    <color name="md_theme_dark_outline">#8D9387</color>
+    <color name="md_theme_dark_outlineVariant">#43483E</color>
+    
+    <!-- Surface Container Colors -->
+    <color name="md_theme_dark_surfaceContainer">#1E201C</color>
+    <color name="md_theme_dark_surfaceContainerHigh">#282B26</color>
+    <color name="md_theme_dark_surfaceContainerHighest">#333631</color>
+    <color name="md_theme_dark_surfaceContainerLow">#1A1C18</color>
+    <color name="md_theme_dark_surfaceContainerLowest">#0D0F0B</color>
+
+    <!-- Legacy colors for compatibility -->
+    <color name="colorPrimary">#2D6016</color>
+    <color name="colorPrimaryDark">#1C4C08</color>
+    <color name="colorAccent">#8DD46A</color>
+    <color name="colorError">#BA1A1A</color>
+    
+    <!-- Common colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray">#808080</color>
+    <color name="light_gray">#E0E0E0</color>
+    <color name="transparent">#00000000</color>
+    
+    <!-- Status colors -->
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FF9800</color>
+    <color name="info">#2196F3</color>
+    
+    <!-- Promo colors -->
+    <color name="promo_background">#FF5722</color>
+    <color name="promo_text">#FFFFFF</color>
+    
+    <!-- Legacy theme colors -->
+    <color name="background">#FCFDF6</color>
+    <color name="surface">#FCFDF6</color>
+    <color name="surface_variant">#DFE4D6</color>
+    <color name="on_background">#1A1C18</color>
+    <color name="on_surface">#1A1C18</color>
+    <color name="text_primary">#1A1C18</color>
+    <color name="text_secondary">#43483E</color>
+    
+    <!-- Dashboard Stats Colors -->
+    <color name="stat_total_color">#2196F3</color>        <!-- Blue for total -->
+    <color name="stat_in_color">#4CAF50</color>           <!-- Green for incoming -->
+    <color name="stat_out_color">#F44336</color>          <!-- Red for outgoing -->
+    <color name="stat_promo_color">#FF5722</color>        <!-- Orange for promos -->
+    
+    <!-- Modern Stats Surface Colors - Dark theme -->
+    <color name="stat_in_surface">#1B3A1C</color>         <!-- Dark green surface -->
+    <color name="stat_out_surface">#3A1B1B</color>        <!-- Dark red surface -->
+    <color name="stat_promo_surface">#3A2F1B</color>      <!-- Dark orange surface -->
+    <color name="stat_total_surface">#1B2B3A</color>      <!-- Dark blue surface -->
+    
+    <!-- Hero Section Colors -->
+    <color name="hero_overlay">#30000000</color>          <!-- Dark overlay for hero -->
+    <color name="card_shadow">#1A000000</color>           <!-- Subtle shadow -->
+    
+    <!-- Modern Card Colors -->
+    <color name="card_stroke_light">#E0E0E0</color>       <!-- Light stroke -->
+    <color name="ripple_color">#20000000</color>          <!-- Subtle ripple -->
+</resources>
