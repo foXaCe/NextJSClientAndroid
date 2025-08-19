@@ -19,6 +19,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import com.nextjsclient.android.utils.CountUpAnimator
 import com.nextjsclient.android.data.models.ScamarkStats
+import com.nextjsclient.android.utils.SupplierPreferences
 
 class OverviewFragment : Fragment() {
     
@@ -26,6 +27,7 @@ class OverviewFragment : Fragment() {
     val binding get() = _binding!!
     
     private val viewModel: ScamarkViewModel by activityViewModels()
+    private lateinit var supplierPreferences: SupplierPreferences
     
     // Helper pour l'interface moderne
     private lateinit var modernHelper: ModernOverviewHelper
@@ -53,6 +55,9 @@ class OverviewFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         android.util.Log.d("OverviewFragment", "🚀 OverviewFragment.onViewCreated() DÉBUT")
+        
+        // Initialiser les préférences fournisseurs
+        supplierPreferences = SupplierPreferences(requireContext())
         
         // Initialiser le helper moderne
         modernHelper = ModernOverviewHelper(this)
@@ -327,15 +332,38 @@ class OverviewFragment : Fragment() {
         android.util.Log.d("OverviewFragment", "🔄 DÉBUT calculateAndDisplayStats pour ${products.size} produits - Time: $startTime")
         android.util.Log.d("OverviewFragment", "🔄 Appelé depuis:\n$stackTrace")
         
-        // Séparer par fournisseur
-        val anecoopProducts = products.filter { it.supplier.lowercase() == "anecoop" }
-        val solagoraProducts = products.filter { it.supplier.lowercase() == "solagora" }
+        // Appliquer le filtre fournisseur selon les préférences
+        val filteredProducts = products.filter { product ->
+            val supplier = product.supplier.lowercase()
+            when (supplier) {
+                "anecoop" -> supplierPreferences.isAnecoopEnabled
+                "solagora" -> supplierPreferences.isSolagoraEnabled
+                else -> true // Garder les autres fournisseurs inconnus
+            }
+        }
+        
+        android.util.Log.d("OverviewFragment", "🎯 FILTRE FOURNISSEUR: ${products.size} -> ${filteredProducts.size} produits")
+        android.util.Log.d("OverviewFragment", "🎯 Anecoop=${supplierPreferences.isAnecoopEnabled}, Solagora=${supplierPreferences.isSolagoraEnabled}")
+        
+        // Séparer par fournisseur (après filtrage)
+        val anecoopProducts = filteredProducts.filter { it.supplier.lowercase() == "anecoop" }
+        val solagoraProducts = filteredProducts.filter { it.supplier.lowercase() == "solagora" }
         
         android.util.Log.d("OverviewFragment", "📊 Répartition: Anecoop=${anecoopProducts.size}, Solagora=${solagoraProducts.size}")
         
+        // Appliquer le même filtre à la semaine précédente
+        val filteredPreviousProducts = previousWeekProducts.filter { product ->
+            val supplier = product.supplier.lowercase()
+            when (supplier) {
+                "anecoop" -> supplierPreferences.isAnecoopEnabled
+                "solagora" -> supplierPreferences.isSolagoraEnabled
+                else -> true
+            }
+        }
+        
         // Séparer semaine précédente par fournisseur  
-        val previousAnecoopProducts = previousWeekProducts.filter { it.supplier.lowercase() == "anecoop" }
-        val previousSolagoraProducts = previousWeekProducts.filter { it.supplier.lowercase() == "solagora" }
+        val previousAnecoopProducts = filteredPreviousProducts.filter { it.supplier.lowercase() == "anecoop" }
+        val previousSolagoraProducts = filteredPreviousProducts.filter { it.supplier.lowercase() == "solagora" }
         
         android.util.Log.d("OverviewFragment", "📊 Semaine précédente: Anecoop=${previousAnecoopProducts.size}, Solagora=${previousSolagoraProducts.size}")
         

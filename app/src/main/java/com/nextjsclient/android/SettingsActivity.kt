@@ -17,6 +17,7 @@ import com.nextjsclient.android.databinding.ActivitySettingsBinding
 import com.nextjsclient.android.utils.ThemeManager
 import com.nextjsclient.android.utils.UpdateManager
 import com.nextjsclient.android.utils.Release
+import com.nextjsclient.android.utils.SupplierPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,6 +30,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var themeManager: ThemeManager
     private lateinit var auth: FirebaseAuth
     private lateinit var updateManager: UpdateManager
+    private lateinit var supplierPreferences: SupplierPreferences
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var pendingUpdate: Release? = null
     private var downloadedFile: File? = null
@@ -42,11 +44,13 @@ class SettingsActivity : AppCompatActivity() {
         themeManager = ThemeManager(this)
         auth = FirebaseAuth.getInstance()
         updateManager = UpdateManager(this)
+        supplierPreferences = SupplierPreferences(this)
         
         setupWindowInsets()
         setupToolbar()
         setupViews()
         setupUpdateManager()
+        setupSupplierPreferences()
         updateUI()
         animateViews()
         
@@ -167,6 +171,47 @@ class SettingsActivity : AppCompatActivity() {
         // Setup update section click to check for updates
         binding.updateSection.setOnClickListener {
             checkForUpdates()
+        }
+    }
+    
+    private fun setupSupplierPreferences() {
+        // Initialize checkbox states from preferences
+        binding.anecoopCheckbox.isChecked = supplierPreferences.isAnecoopEnabled
+        binding.solagoraCheckbox.isChecked = supplierPreferences.isSolagoraEnabled
+        
+        // Setup checkbox listeners
+        binding.anecoopCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            // Ensure at least one supplier remains enabled
+            if (!isChecked && !binding.solagoraCheckbox.isChecked) {
+                // Prevent unchecking if it would leave no suppliers enabled
+                binding.anecoopCheckbox.isChecked = true
+                Toast.makeText(this, "Au moins un fournisseur doit être sélectionné", Toast.LENGTH_SHORT).show()
+                return@setOnCheckedChangeListener
+            }
+            
+            supplierPreferences.isAnecoopEnabled = isChecked
+            supplierPreferences.validateSettings()
+            
+            // Show confirmation message
+            val message = if (isChecked) "Anecoop activé" else "Anecoop désactivé"
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+        
+        binding.solagoraCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            // Ensure at least one supplier remains enabled
+            if (!isChecked && !binding.anecoopCheckbox.isChecked) {
+                // Prevent unchecking if it would leave no suppliers enabled
+                binding.solagoraCheckbox.isChecked = true
+                Toast.makeText(this, "Au moins un fournisseur doit être sélectionné", Toast.LENGTH_SHORT).show()
+                return@setOnCheckedChangeListener
+            }
+            
+            supplierPreferences.isSolagoraEnabled = isChecked
+            supplierPreferences.validateSettings()
+            
+            // Show confirmation message
+            val message = if (isChecked) "Solagora activé" else "Solagora désactivé"
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
     }
     

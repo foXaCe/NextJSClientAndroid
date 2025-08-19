@@ -12,6 +12,7 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import org.json.JSONArray
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -28,7 +29,7 @@ class UpdateManager(private val context: Context) {
     
     companion object {
         private const val TAG = "UpdateManager"
-        private const val GITHUB_API_URL = "https://api.github.com/repos/foXaCe/NextJSClientAndroid/releases/latest"
+        private const val GITHUB_API_URL = "https://api.github.com/repos/foXaCe/NextJSClientAndroid/releases"
     }
     
     interface UpdateListener {
@@ -51,36 +52,65 @@ class UpdateManager(private val context: Context) {
     suspend fun checkForUpdates() {
         withContext(Dispatchers.IO) {
             try {
-                listener?.onUpdateChecking()
+                Log.d(TAG, "Starting update check...")
+                withContext(Dispatchers.Main) {
+                    listener?.onUpdateChecking()
+                }
                 
+                Log.d(TAG, "Requesting: $GITHUB_API_URL")
                 val url = URL(GITHUB_API_URL)
                 val connection = url.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                // Ajouter token GitHub pour repository privé si nécessaire
+                // connection.setRequestProperty("Authorization", "token YOUR_GITHUB_TOKEN")
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+                
+                Log.d(TAG, "Response code: ${connection.responseCode}")
                 
                 if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                     val response = connection.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(response)
+                    Log.d(TAG, "Response received: ${response.take(200)}...")
+                    val releasesArray = JSONArray(response)
                     
-                    val tagName = json.getString("tag_name")
-                    val name = json.getString("name")
-                    val body = json.getString("body")
-                    val publishedAt = json.getString("published_at")
+                    if (releasesArray.length() == 0) {
+                        withContext(Dispatchers.Main) {
+                            listener?.onUpToDate()
+                        }
+                        return@withContext
+                    }
+                    
+                    // Prendre la première release (la plus récente)
+                    val latestRelease = releasesArray.getJSONObject(0)
+                    
+                    val tagName = latestRelease.getString("tag_name")
+                    val name = latestRelease.getString("name")
+                    val body = latestRelease.getString("body")
+                    val publishedAt = latestRelease.getString("published_at")
+                    
+                    Log.d(TAG, "Found latest release: $tagName - $name")
+                    Log.d(TAG, "Published: $publishedAt")
                     
                     // Find APK download URL in assets
-                    val assets = json.getJSONArray("assets")
+                    val assets = latestRelease.getJSONArray("assets")
+                    Log.d(TAG, "Found ${assets.length()} assets")
                     var downloadUrl = ""
                     
                     for (i in 0 until assets.length()) {
                         val asset = assets.getJSONObject(i)
                         val assetName = asset.getString("name")
-                        if (assetName.endsWith(".apk")) {
+                        Log.d(TAG, "Asset $i: $assetName")
+                        // Prioriser app-debug.apk pour les tests
+                        if (assetName == "app-debug.apk" || assetName.endsWith(".apk")) {
                             downloadUrl = asset.getString("browser_download_url")
-                            break
+                            Log.d(TAG, "Found APK: $downloadUrl")
+                            if (assetName == "app-debug.apk") break // Prioriser app-debug.apk
                         }
                     }
                     
                     if (downloadUrl.isEmpty()) {
+                        Log.w(TAG, "No APK found in assets")
                         withContext(Dispatchers.Main) {
                             listener?.onError("Aucun APK trouvé dans la release")
                         }
@@ -90,19 +120,29 @@ class UpdateManager(private val context: Context) {
                     val currentVersion = getCurrentVersion()
                     val latestVersion = tagName.removePrefix("v")
                     
+                    Log.d(TAG, "Current version: $currentVersion")
+                    Log.d(TAG, "Latest version: $latestVersion")
+                    
+                    val isNewer = isNewerVersion(currentVersion, latestVersion)
+                    Log.d(TAG, "Is newer version available: $isNewer")
+                    
                     withContext(Dispatchers.Main) {
-                        if (isNewerVersion(currentVersion, latestVersion)) {
+                        if (isNewer) {
                             val release = Release(tagName, name, body, downloadUrl, publishedAt)
+                            Log.d(TAG, "Update available: ${release.tagName}")
                             listener?.onUpdateAvailable(release)
                         } else {
+                            Log.d(TAG, "App is up to date")
                             listener?.onUpToDate()
                         }
                     }
                 } else if (connection.responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                    Log.w(TAG, "Repository or releases not found (404)")
                     withContext(Dispatchers.Main) {
-                        listener?.onUpToDate() // Pas de releases disponibles
+                        listener?.onError("Repository non trouvé (404)")
                     }
                 } else {
+                    Log.e(TAG, "HTTP Error: ${connection.responseCode} - ${connection.responseMessage}")
                     withContext(Dispatchers.Main) {
                         listener?.onError("Erreur de connexion: ${connection.responseCode}")
                     }
@@ -111,7 +151,8 @@ class UpdateManager(private val context: Context) {
                 connection.disconnect()
                 
             } catch (e: Exception) {
-                Log.e(TAG, "Error checking for updates", e)
+                Log.e(TAG, "Error checking for updates: ${e.message}", e)
+                Log.e(TAG, "Exception type: ${e.javaClass.simpleName}")
                 withContext(Dispatchers.Main) {
                     listener?.onUpToDate() // Fallback silencieux en cas d'erreur
                 }
@@ -151,7 +192,12 @@ class UpdateManager(private val context: Context) {
                 }
             }
             
-            context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+            // Pour Android 14+ (API 34+), spécifier RECEIVER_NOT_EXPORTED
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+            }
             
         } catch (e: Exception) {
             Log.e(TAG, "Error downloading update", e)
@@ -182,16 +228,24 @@ class UpdateManager(private val context: Context) {
     private fun getCurrentVersion(): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.versionName ?: "1.0"
+            val version = packageInfo.versionName ?: "1.0"
+            Log.d(TAG, "Current app version: $version")
+            version
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to get current version", e)
             "1.0"
         }
     }
     
     private fun isNewerVersion(current: String, latest: String): Boolean {
         return try {
+            Log.d(TAG, "Comparing versions: current='$current' vs latest='$latest'")
+            
             val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
             val latestParts = latest.split(".").map { it.toIntOrNull() ?: 0 }
+            
+            Log.d(TAG, "Current parts: $currentParts")
+            Log.d(TAG, "Latest parts: $latestParts")
             
             val maxLength = maxOf(currentParts.size, latestParts.size)
             
@@ -199,14 +253,24 @@ class UpdateManager(private val context: Context) {
                 val currentPart = currentParts.getOrElse(i) { 0 }
                 val latestPart = latestParts.getOrElse(i) { 0 }
                 
+                Log.d(TAG, "Comparing part $i: $currentPart vs $latestPart")
+                
                 when {
-                    latestPart > currentPart -> return true
-                    latestPart < currentPart -> return false
+                    latestPart > currentPart -> {
+                        Log.d(TAG, "Latest version is newer")
+                        return true
+                    }
+                    latestPart < currentPart -> {
+                        Log.d(TAG, "Current version is newer")
+                        return false
+                    }
                 }
             }
             
+            Log.d(TAG, "Versions are equal")
             false
         } catch (e: Exception) {
+            Log.e(TAG, "Error comparing versions", e)
             false
         }
     }
