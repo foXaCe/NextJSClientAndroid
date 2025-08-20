@@ -202,23 +202,43 @@ class UpdateManager(private val context: Context) {
     
     fun downloadUpdate(release: Release) {
         try {
+            Log.d(TAG, "🚀 === DÉBUT TÉLÉCHARGEMENT ===")
+            Log.d(TAG, "📋 Release info:")
+            Log.d(TAG, "   • Tag: ${release.tagName}")
+            Log.d(TAG, "   • Name: ${release.name}")
+            Log.d(TAG, "   • URL: ${release.downloadUrl}")
+            
             // Nettoyer les anciennes mises à jour avant de télécharger
             cleanOldUpdates()
             
             val fileName = "NextJSClient-${release.tagName}.apk"
+            Log.d(TAG, "📁 Target filename: $fileName")
             
             // Utiliser le répertoire externe privé de l'app pour les mises à jour
             val appUpdateDir = File(context.getExternalFilesDir(null), "updates")
+            Log.d(TAG, "📂 Updates directory: ${appUpdateDir.absolutePath}")
+            Log.d(TAG, "📊 Directory exists before: ${appUpdateDir.exists()}")
+            Log.d(TAG, "📊 Directory writable: ${appUpdateDir.canWrite()}")
+            
             if (!appUpdateDir.exists()) {
-                appUpdateDir.mkdirs()
+                val created = appUpdateDir.mkdirs()
+                Log.d(TAG, "📁 Directory creation result: $created")
                 Log.d(TAG, "📁 Created updates directory: ${appUpdateDir.absolutePath}")
             }
             
-            Log.d(TAG, "📂 Update storage location: ${appUpdateDir.absolutePath}")
+            Log.d(TAG, "📊 Directory exists after: ${appUpdateDir.exists()}")
+            Log.d(TAG, "📊 Directory permissions: ${appUpdateDir.canRead()}/${appUpdateDir.canWrite()}")
+            
+            // Lister le contenu du répertoire avant téléchargement
+            Log.d(TAG, "📋 Directory contents BEFORE download:")
+            appUpdateDir.listFiles()?.forEach { file ->
+                Log.d(TAG, "   • ${file.name} (${file.length()} bytes)")
+            } ?: Log.d(TAG, "   • Directory is empty or null")
+            
             Log.d(TAG, "🗺 Storage info: This is in app's private external storage (Android/data/${context.packageName}/files/updates)")
             
             val destinationFile = File(appUpdateDir, fileName)
-            Log.d(TAG, "📂 Destination file: ${destinationFile.absolutePath}")
+            Log.d(TAG, "📂 Expected destination file: ${destinationFile.absolutePath}")
             
             val request = DownloadManager.Request(Uri.parse(release.downloadUrl))
                 .setTitle("NextJS Client Update")
@@ -228,32 +248,53 @@ class UpdateManager(private val context: Context) {
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
             
+            Log.d(TAG, "⚙️ DownloadManager request configured")
+            Log.d(TAG, "   • Title: NextJS Client Update")
+            Log.d(TAG, "   • Description: Téléchargement de la mise à jour ${release.tagName}")
+            Log.d(TAG, "   • Destination: ExternalFilesDir/updates/$fileName")
+            
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadId = downloadManager.enqueue(request)
-            Log.d(TAG, "📥 Download started with ID: $downloadId")
+            Log.d(TAG, "📥 Download enqueued with ID: $downloadId")
             Log.d(TAG, "📂 File will be saved as: $fileName in app directory")
             
             listener?.onDownloadStarted()
             
             // Start monitoring download progress avec le bon chemin
+            Log.d(TAG, "🔍 Starting download monitoring for path: ${destinationFile.absolutePath}")
             startDownloadMonitoring(destinationFile.absolutePath)
             
+            Log.d(TAG, "✅ === FIN CONFIGURATION TÉLÉCHARGEMENT ===")
+            
         } catch (e: Exception) {
-            Log.e(TAG, "Error downloading update", e)
+            Log.e(TAG, "❌ Error downloading update", e)
+            Log.e(TAG, "❌ Exception type: ${e.javaClass.simpleName}")
+            Log.e(TAG, "❌ Exception message: ${e.message}")
+            Log.e(TAG, "❌ Stack trace: ${e.stackTraceToString()}")
             listener?.onError("Erreur de téléchargement: ${e.message}")
         }
     }
     
     private fun startDownloadMonitoring(filePath: String) {
+        Log.d(TAG, "🔍 === DÉBUT MONITORING TÉLÉCHARGEMENT ===")
+        Log.d(TAG, "📂 Monitoring file path: $filePath")
+        Log.d(TAG, "🆔 Download ID: $downloadId")
+        
         // Use a coroutine to monitor download progress periodically
         CoroutineScope(Dispatchers.IO).launch {
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            var iterationCount = 0
             
             while (true) {
                 delay(1000) // Check every second
+                iterationCount++
+                
+                Log.d(TAG, "🔄 Monitoring iteration #$iterationCount")
                 
                 val query = DownloadManager.Query().setFilterById(downloadId)
                 val cursor = downloadManager.query(query)
+                
+                Log.d(TAG, "📋 Query result: cursor count = ${cursor.count}")
                 
                 if (cursor.moveToFirst()) {
                     val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
@@ -261,45 +302,91 @@ class UpdateManager(private val context: Context) {
                     
                     val bytesDownloadedIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
                     val bytesTotalIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                    val localUriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
+                    val reasonIndex = cursor.getColumnIndex(DownloadManager.COLUMN_REASON)
                     
                     val bytesDownloaded = cursor.getLong(bytesDownloadedIndex)
                     val bytesTotal = cursor.getLong(bytesTotalIndex)
+                    val localUri = cursor.getString(localUriIndex) ?: "null"
+                    val reason = cursor.getInt(reasonIndex)
                     
                     Log.d(TAG, "📊 Download status: $status, Progress: $bytesDownloaded/$bytesTotal bytes")
+                    Log.d(TAG, "📍 Local URI: $localUri")
+                    Log.d(TAG, "🔍 Reason code: $reason")
                     
                     when (status) {
                         DownloadManager.STATUS_SUCCESSFUL -> {
-                            Log.d(TAG, "✅ Download completed successfully!")
+                            Log.d(TAG, "✅ === TÉLÉCHARGEMENT TERMINÉ AVEC SUCCÈS ===")
+                            Log.d(TAG, "📍 Local URI from DownloadManager: $localUri")
+                            Log.d(TAG, "📊 Final download stats: $bytesDownloaded/$bytesTotal bytes")
                             
                             cursor.close()
                             
+                            // Analyse détaillée du fichier via l'URI du DownloadManager
+                            if (localUri != "null" && localUri.isNotEmpty()) {
+                                Log.d(TAG, "🔍 Analysing DownloadManager URI: $localUri")
+                                try {
+                                    val uri = Uri.parse(localUri)
+                                    val fileFromUri = File(uri.path ?: "")
+                                    Log.d(TAG, "📂 File from URI: ${fileFromUri.absolutePath}")
+                                    Log.d(TAG, "📊 File from URI exists: ${fileFromUri.exists()}")
+                                    if (fileFromUri.exists()) {
+                                        Log.d(TAG, "📏 File from URI size: ${fileFromUri.length()} bytes")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "⚠️ Could not parse DownloadManager URI: ${e.message}")
+                                }
+                            }
+                            
                             // Chercher le fichier téléchargé dans le répertoire updates
                             val appUpdateDir = File(context.getExternalFilesDir(null), "updates")
-                            Log.d(TAG, "🔍 Searching for downloaded file in: ${appUpdateDir.absolutePath}")
+                            Log.d(TAG, "🔍 === ANALYSE DU RÉPERTOIRE UPDATES ===")
+                            Log.d(TAG, "📂 Directory path: ${appUpdateDir.absolutePath}")
+                            Log.d(TAG, "📊 Directory exists: ${appUpdateDir.exists()}")
+                            Log.d(TAG, "📊 Directory readable: ${appUpdateDir.canRead()}")
+                            Log.d(TAG, "📊 Directory writable: ${appUpdateDir.canWrite()}")
                             
+                            // Lister TOUT le contenu du répertoire
+                            Log.d(TAG, "📋 ALL directory contents:")
+                            appUpdateDir.listFiles()?.forEach { file ->
+                                Log.d(TAG, "   • ALL: ${file.name} (${file.length()} bytes, isFile: ${file.isFile}, readable: ${file.canRead()})")
+                            } ?: Log.w(TAG, "   • Directory listFiles() returned null!")
+                            
+                            // Chercher spécifiquement les APK
                             val downloadedFiles = appUpdateDir.listFiles { _, name ->
                                 name.endsWith(".apk")
                             }
                             
+                            Log.d(TAG, "📦 APK files search result: ${downloadedFiles?.size ?: 0} files")
+                            
                             val downloadFile = when {
                                 downloadedFiles?.isNotEmpty() == true -> {
                                     Log.d(TAG, "📦 Found ${downloadedFiles.size} APK file(s):")
-                                    downloadedFiles.forEach { file ->
-                                        Log.d(TAG, "   • ${file.name} (${file.length()} bytes)")
+                                    downloadedFiles.forEachIndexed { index, file ->
+                                        Log.d(TAG, "   • APK[$index]: ${file.name} (${file.length()} bytes)")
+                                        Log.d(TAG, "     Path: ${file.absolutePath}")
+                                        Log.d(TAG, "     Exists: ${file.exists()}, Readable: ${file.canRead()}")
                                     }
+                                    Log.d(TAG, "🎯 Using first APK file: ${downloadedFiles.first().name}")
                                     downloadedFiles.first() // Prendre le premier fichier APK trouvé
                                 }
                                 else -> {
-                                    Log.w(TAG, "⚠️ No APK files found, trying original path...")
+                                    Log.w(TAG, "⚠️ No APK files found in directory, trying original path...")
+                                    Log.d(TAG, "📂 Fallback to original path: $filePath")
                                     File(filePath)
                                 }
                             }
                             
+                            Log.d(TAG, "📂 === VÉRIFICATION FICHIER FINAL ===")
                             Log.d(TAG, "📂 Final file to check: ${downloadFile.absolutePath}")
                             Log.d(TAG, "📊 File exists: ${downloadFile.exists()}")
+                            Log.d(TAG, "📊 File readable: ${downloadFile.canRead()}")
+                            Log.d(TAG, "📏 File size: ${downloadFile.length()} bytes")
+                            Log.d(TAG, "📅 File last modified: ${downloadFile.lastModified()}")
                             
-                            if (downloadFile.exists()) {
-                                Log.d(TAG, "🎉 File found! Size: ${downloadFile.length()} bytes")
+                            if (downloadFile.exists() && downloadFile.length() > 0) {
+                                Log.d(TAG, "🎉 === FICHIER TROUVÉ ET VALIDE ===")
+                                Log.d(TAG, "✅ File found! Size: ${downloadFile.length()} bytes")
                                 
                                 // Nettoyer la notification après avoir confirmé le fichier
                                 try {
@@ -310,13 +397,24 @@ class UpdateManager(private val context: Context) {
                                 }
                                 
                                 withContext(Dispatchers.Main) {
+                                    Log.d(TAG, "🚀 Notifying download completion to UI")
                                     listener?.onDownloadCompleted(downloadFile)
                                 }
                             } else {
-                                Log.e(TAG, "❌ Downloaded file not found!")
-                                Log.d(TAG, "🗂️ Directory contents:")
-                                appUpdateDir.listFiles()?.forEach { file ->
-                                    Log.d(TAG, "   • ${file.name} (${file.length()} bytes)")
+                                Log.e(TAG, "❌ === FICHIER NON TROUVÉ OU INVALIDE ===")
+                                Log.e(TAG, "❌ Downloaded file not found or empty!")
+                                Log.d(TAG, "🗂️ Complete directory contents for debugging:")
+                                
+                                // Analyse complète du répertoire parent aussi
+                                val parentDir = context.getExternalFilesDir(null)
+                                Log.d(TAG, "📁 Parent directory: ${parentDir?.absolutePath}")
+                                parentDir?.listFiles()?.forEach { file ->
+                                    Log.d(TAG, "   • PARENT: ${file.name} (${if (file.isDirectory()) "DIR" else file.length().toString() + " bytes"})")
+                                    if (file.isDirectory() && file.name == "updates") {
+                                        file.listFiles()?.forEach { subFile ->
+                                            Log.d(TAG, "     └── ${subFile.name} (${subFile.length()} bytes)")
+                                        }
+                                    }
                                 }
                                 
                                 withContext(Dispatchers.Main) {
@@ -326,24 +424,57 @@ class UpdateManager(private val context: Context) {
                             break
                         }
                         DownloadManager.STATUS_FAILED -> {
-                            Log.e(TAG, "❌ Download failed!")
+                            Log.e(TAG, "❌ === TÉLÉCHARGEMENT ÉCHOUÉ ===")
+                            Log.e(TAG, "❌ Download failed! Reason: $reason")
+                            Log.e(TAG, "📊 Download stats at failure: $bytesDownloaded/$bytesTotal bytes")
+                            Log.e(TAG, "📍 Local URI: $localUri")
+                            
+                            // Décoder les raisons d'échec
+                            val reasonText = when (reason) {
+                                DownloadManager.ERROR_CANNOT_RESUME -> "Cannot resume download"
+                                DownloadManager.ERROR_DEVICE_NOT_FOUND -> "Device not found"
+                                DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "File already exists"
+                                DownloadManager.ERROR_FILE_ERROR -> "File error"
+                                DownloadManager.ERROR_HTTP_DATA_ERROR -> "HTTP data error"
+                                DownloadManager.ERROR_INSUFFICIENT_SPACE -> "Insufficient space"
+                                DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "Too many redirects"
+                                DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "Unhandled HTTP code"
+                                DownloadManager.ERROR_UNKNOWN -> "Unknown error"
+                                else -> "Other error ($reason)"
+                            }
+                            Log.e(TAG, "❌ Failure reason: $reasonText")
+                            
                             cursor.close()
                             withContext(Dispatchers.Main) {
-                                listener?.onError("Échec du téléchargement")
+                                listener?.onError("Échec du téléchargement: $reasonText")
                             }
                             break
                         }
                         DownloadManager.STATUS_RUNNING -> {
                             if (bytesTotal > 0) {
                                 val progress = ((bytesDownloaded * 100) / bytesTotal).toInt()
+                                Log.d(TAG, "🏃 Download in progress: $progress% ($bytesDownloaded/$bytesTotal bytes)")
                                 withContext(Dispatchers.Main) {
                                     listener?.onDownloadProgress(progress)
                                 }
+                            } else {
+                                Log.d(TAG, "🏃 Download running, size unknown: $bytesDownloaded bytes")
                             }
+                        }
+                        DownloadManager.STATUS_PENDING -> {
+                            Log.d(TAG, "⏳ Download pending...")
+                        }
+                        DownloadManager.STATUS_PAUSED -> {
+                            Log.w(TAG, "⏸️ Download paused. Reason: $reason")
+                        }
+                        else -> {
+                            Log.w(TAG, "❓ Unknown download status: $status")
                         }
                     }
                 } else {
-                    Log.w(TAG, "⚠️ Download not found in cursor")
+                    Log.w(TAG, "⚠️ === TÉLÉCHARGEMENT INTROUVABLE DANS CURSOR ===")
+                    Log.w(TAG, "⚠️ Download not found in cursor for ID: $downloadId")
+                    Log.w(TAG, "📊 Cursor count: ${cursor.count}")
                     cursor.close()
                     withContext(Dispatchers.Main) {
                         listener?.onError("Téléchargement introuvable")
@@ -352,6 +483,8 @@ class UpdateManager(private val context: Context) {
                 }
                 cursor.close()
             }
+            
+            Log.d(TAG, "🔚 === FIN MONITORING TÉLÉCHARGEMENT ===")
         }
     }
     
