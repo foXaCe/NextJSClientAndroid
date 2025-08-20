@@ -206,3 +206,5 @@ Pour toute question ou problème :
 ---
 
 **NextJS Client Android** - Application de gestion commerciale moderne 🚀
+
+<!-- Test workflow trigger -->
