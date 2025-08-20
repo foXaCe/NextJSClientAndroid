@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">Portfolio Anecoop</string>
+    
+    <!-- Navigation -->
+    <string name="title_scamark">Scamark</string>
+    <string name="title_scafel">Scafel</string>
+    <string name="title_appro_ia">Appro IA</string>
+    <string name="title_casino">Casino</string>
+    
+    <!-- Actions -->
+    <string name="action_settings">Configuración</string>
+    <string name="action_refresh">Actualizar</string>
+    
+    <!-- Errors -->
+    <string name="error_loading_page">No se puede cargar la página</string>
+    <string name="error_check_connection">Por favor, verifica tu conexión a internet</string>
+    <string name="retry">Reintentar</string>
+    
+    <!-- Authentication -->
+    <string name="login">Iniciar sesión</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="login_error">Error de inicio de sesión. Inténtalo de nuevo.</string>
+    
+    <!-- Settings -->
+    <string name="settings_server_url">URL del servidor</string>
+    <string name="settings_server_url_summary">Configurar la URL del servidor para la aplicación</string>
+    <string name="settings_cache">Limpiar caché</string>
+    <string name="settings_cache_summary">Limpiar caché y cookies de WebView</string>
+    
+    <!-- Update -->
+    <string name="update_available">Nueva versión disponible</string>
+    <string name="update_sheet_title">Actualización disponible</string>
+    <string name="update_version_format">Versión %s</string>
+    <string name="update_changelog_title">Novedades</string>
+    <string name="update_button_later">Más tarde</string>
+    <string name="update_button_install">Instalar</string>
+    <string name="update_fallback_changelog">• Mejoras y corrección de errores</string>
+    <string name="update_fallback_detailed">• Nueva versión disponible\n• Mejoras de rendimiento</string>
+</resources>

@@ -167,7 +167,7 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onUpdateAvailable(release: Release) {
-                binding.updateStatus.text = "Nouvelle version disponible"
+                binding.updateStatus.text = getString(R.string.update_available)
                 binding.updateButton.visibility = View.GONE
                 pendingUpdate = release
                 // Rendre la carte cliquable pour ouvrir la bottom sheet
@@ -397,7 +397,7 @@ class SettingsActivity : AppCompatActivity() {
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
         
         // Mettre à jour le contenu
-        updateVersion.text = "Version ${release.tagName}"
+        updateVersion.text = getString(R.string.update_version_format, release.tagName)
         
         // Formater le changelog (commits)
         val formattedChangelog = formatChangelog(release.body)
@@ -418,7 +418,7 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun formatChangelog(body: String): String {
-        if (body.isBlank()) return "• Améliorations et corrections de bugs"
+        if (body.isBlank()) return getString(R.string.update_fallback_changelog)
         
         val lines = body.split("\n")
         val formattedLines = mutableListOf<String>()
@@ -439,7 +439,7 @@ class SettingsActivity : AppCompatActivity() {
         return if (formattedLines.isNotEmpty()) {
             formattedLines.joinToString("\n")
         } else {
-            "• Nouvelle version disponible\n• Améliorations des performances"
+            getString(R.string.update_fallback_detailed)
         }
     }
     

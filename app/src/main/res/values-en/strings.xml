@@ -30,12 +30,12 @@
     <string name="settings_cache_summary">Clear WebView cache and cookies</string>
     
     <!-- Update -->
-    <string name="update_available">Nouvelle version disponible</string>
-    <string name="update_sheet_title">Mise à jour disponible</string>
+    <string name="update_available">New version available</string>
+    <string name="update_sheet_title">Update available</string>
     <string name="update_version_format">Version %s</string>
-    <string name="update_changelog_title">Nouveautés</string>
-    <string name="update_button_later">Plus tard</string>
-    <string name="update_button_install">Installer</string>
-    <string name="update_fallback_changelog">• Améliorations et corrections de bugs</string>
-    <string name="update_fallback_detailed">• Nouvelle version disponible\n• Améliorations des performances</string>
+    <string name="update_changelog_title">What\'s new</string>
+    <string name="update_button_later">Later</string>
+    <string name="update_button_install">Install</string>
+    <string name="update_fallback_changelog">• Improvements and bug fixes</string>
+    <string name="update_fallback_detailed">• New version available\n• Performance improvements</string>
 </resources>
