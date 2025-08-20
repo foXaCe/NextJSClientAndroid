@@ -96,6 +96,30 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: ./gradlew assembleRelease
+    
+    - name: Verify APK signature
+      run: |
+        echo "🔍 Vérification de la signature de l'APK..."
+        
+        # Installer apksigner si nécessaire
+        if ! command -v apksigner &> /dev/null; then
+          echo "Installation d'apksigner..."
+          sudo apt-get update
+          sudo apt-get install -y apksigner
+        fi
+        
+        # Vérifier la signature
+        apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ APK correctement signé!"
+          echo ""
+          echo "📝 Informations du certificat:"
+          apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep -E "DN:|SHA-256"
+        else
+          echo "❌ L'APK n'est pas signé correctement!"
+          exit 1
+        fi
 
 
     - name: Generate version info
@@ -118,6 +142,12 @@ jobs:
       run: |
         SIGNED_SIZE=$(du -h app/build/outputs/apk/release/app-release.apk | cut -f1)
         echo "SIGNED_SIZE=$SIGNED_SIZE" >> $GITHUB_OUTPUT
+        
+        # Extraire les infos de signature
+        CERT_INFO=$(apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "DN:" | head -1 | sed 's/.*CN=//' | cut -d',' -f1)
+        SHA256=$(apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "SHA-256" | head -1 | awk '{print substr($3, 1, 16)}...')
+        echo "CERT_INFO=$CERT_INFO" >> $GITHUB_OUTPUT
+        echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
 
     - name: Comment PR with APK info
       if: github.event_name == 'pull_request'
