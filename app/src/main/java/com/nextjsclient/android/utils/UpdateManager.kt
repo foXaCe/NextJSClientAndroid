@@ -561,7 +561,38 @@ class UpdateManager(private val context: Context) {
                         // Extract commit hashes and compare
                         val currentCommit = current.substringAfterLast("-", "")
                         val latestCommit = latest.substringAfterLast("-", "")
-                        val isNewer = currentCommit != latestCommit && latestCommit.isNotEmpty()
+                        
+                        // Pour les versions nightly, on vérifie si les commits sont différents
+                        // mais on n'offre pas automatiquement la mise à jour car on ne peut pas 
+                        // déterminer l'ordre chronologique des commits
+                        val isNewer = when {
+                            currentCommit.isEmpty() || latestCommit.isEmpty() -> {
+                                Log.d(TAG, "🔍 Empty commit hash - assuming newer")
+                                true
+                            }
+                            currentCommit == latestCommit -> {
+                                Log.d(TAG, "🔍 Same commit hash - no update needed")
+                                false
+                            }
+                            else -> {
+                                Log.d(TAG, "🔍 Different commit hashes - checking if we should update")
+                                // Pour les builds nightly, on peut être plus conservateur
+                                // et seulement proposer la mise à jour si on est sûr qu'elle est plus récente
+                                
+                                // Vérifier si l'APK installé est debug et la release est release
+                                val isCurrentDebug = try {
+                                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                                    (packageInfo.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+                                } catch (e: Exception) {
+                                    false
+                                }
+                                
+                                Log.d(TAG, "🔍 Current app is debug: $isCurrentDebug")
+                                
+                                // Si l'app actuelle est debug et qu'il y a une release disponible, proposer la mise à jour
+                                isCurrentDebug
+                            }
+                        }
                         Log.d(TAG, "🔍 Commit comparison: current=$currentCommit vs latest=$latestCommit, newer=$isNewer")
                         isNewer
                     }
