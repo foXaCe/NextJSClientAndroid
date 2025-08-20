@@ -223,7 +223,7 @@ class UpdateManager(private val context: Context) {
             val request = DownloadManager.Request(Uri.parse(release.downloadUrl))
                 .setTitle("NextJS Client Update")
                 .setDescription("Téléchargement de la mise à jour ${release.tagName}")
-                .setDestinationUri(Uri.fromFile(destinationFile))
+                .setDestinationInExternalFilesDir(context, "updates", fileName)
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
@@ -235,7 +235,7 @@ class UpdateManager(private val context: Context) {
             
             listener?.onDownloadStarted()
             
-            // Start monitoring download progress
+            // Start monitoring download progress avec le bon chemin
             startDownloadMonitoring(destinationFile.absolutePath)
             
         } catch (e: Exception) {
@@ -271,29 +271,54 @@ class UpdateManager(private val context: Context) {
                         DownloadManager.STATUS_SUCCESSFUL -> {
                             Log.d(TAG, "✅ Download completed successfully!")
                             
-                            // Nettoyer la notification après téléchargement
-                            try {
-                                downloadManager.remove(downloadId)
-                                Log.d(TAG, "🧹 Notification cleared")
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Could not clear notification: ${e.message}")
-                            }
-                            
                             cursor.close()
                             
-                            // Check if file exists and notify completion
-                            val downloadFile = File(filePath)
-                            Log.d(TAG, "   • Looking for file: ${downloadFile.absolutePath}")
-                            Log.d(TAG, "   • File exists: ${downloadFile.exists()}")
+                            // Chercher le fichier téléchargé dans le répertoire updates
+                            val appUpdateDir = File(context.getExternalFilesDir(null), "updates")
+                            Log.d(TAG, "🔍 Searching for downloaded file in: ${appUpdateDir.absolutePath}")
+                            
+                            val downloadedFiles = appUpdateDir.listFiles { _, name ->
+                                name.endsWith(".apk")
+                            }
+                            
+                            val downloadFile = when {
+                                downloadedFiles?.isNotEmpty() == true -> {
+                                    Log.d(TAG, "📦 Found ${downloadedFiles.size} APK file(s):")
+                                    downloadedFiles.forEach { file ->
+                                        Log.d(TAG, "   • ${file.name} (${file.length()} bytes)")
+                                    }
+                                    downloadedFiles.first() // Prendre le premier fichier APK trouvé
+                                }
+                                else -> {
+                                    Log.w(TAG, "⚠️ No APK files found, trying original path...")
+                                    File(filePath)
+                                }
+                            }
+                            
+                            Log.d(TAG, "📂 Final file to check: ${downloadFile.absolutePath}")
+                            Log.d(TAG, "📊 File exists: ${downloadFile.exists()}")
                             
                             if (downloadFile.exists()) {
-                                Log.d(TAG, "🎉 File found! Notifying completion...")
+                                Log.d(TAG, "🎉 File found! Size: ${downloadFile.length()} bytes")
+                                
+                                // Nettoyer la notification après avoir confirmé le fichier
+                                try {
+                                    downloadManager.remove(downloadId)
+                                    Log.d(TAG, "🧹 Notification cleared")
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Could not clear notification: ${e.message}")
+                                }
+                                
                                 withContext(Dispatchers.Main) {
-                                    // Notifier que le fichier est prêt pour installation
                                     listener?.onDownloadCompleted(downloadFile)
                                 }
                             } else {
                                 Log.e(TAG, "❌ Downloaded file not found!")
+                                Log.d(TAG, "🗂️ Directory contents:")
+                                appUpdateDir.listFiles()?.forEach { file ->
+                                    Log.d(TAG, "   • ${file.name} (${file.length()} bytes)")
+                                }
+                                
                                 withContext(Dispatchers.Main) {
                                     listener?.onError("Fichier téléchargé non trouvé")
                                 }
