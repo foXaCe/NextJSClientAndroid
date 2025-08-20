@@ -18,6 +18,7 @@ import com.nextjsclient.android.utils.ThemeManager
 import com.nextjsclient.android.utils.UpdateManager
 import com.nextjsclient.android.utils.Release
 import com.nextjsclient.android.utils.SupplierPreferences
+import com.nextjsclient.android.utils.BiometricManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,6 +32,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var updateManager: UpdateManager
     private lateinit var supplierPreferences: SupplierPreferences
+    private lateinit var biometricManager: BiometricManager
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var pendingUpdate: Release? = null
     private var downloadedFile: File? = null
@@ -45,12 +47,14 @@ class SettingsActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         updateManager = UpdateManager(this)
         supplierPreferences = SupplierPreferences(this)
+        biometricManager = BiometricManager(this)
         
         setupWindowInsets()
         setupToolbar()
         setupViews()
         setupUpdateManager()
         setupSupplierPreferences()
+        setupBiometric()
         updateUI()
         animateViews()
         
@@ -255,6 +259,110 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
     
+    private fun setupBiometric() {
+        // Vérifier si la biométrie est disponible
+        val isAvailable = biometricManager.isBiometricAvailable()
+        val isConfigured = biometricManager.isBiometricConfigured()
+        
+        if (!isAvailable) {
+            // Masquer la section si la biométrie n'est pas disponible
+            binding.biometricSection.visibility = View.GONE
+            return
+        }
+        
+        // Mettre à jour l'interface en fonction du statut
+        updateBiometricUI()
+        
+        // Configurer le switch
+        binding.biometricSwitch.isChecked = biometricManager.isBiometricEnabledInApp()
+        binding.biometricSwitch.isEnabled = isConfigured
+        
+        // Listener pour le switch
+        binding.biometricSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked && isConfigured) {
+                // Tester l'authentification avant d'activer
+                biometricManager.authenticate(
+                    activity = this,
+                    title = "Activer l'authentification biométrique",
+                    subtitle = "Confirmez votre identité pour activer cette fonctionnalité",
+                    onSuccess = {
+                        biometricManager.setBiometricEnabled(true)
+                        updateBiometricUI()
+                        Toast.makeText(this, "Authentification biométrique activée", Toast.LENGTH_SHORT).show()
+                    },
+                    onError = { error ->
+                        binding.biometricSwitch.isChecked = false
+                        Toast.makeText(this, "Erreur: $error", Toast.LENGTH_SHORT).show()
+                    },
+                    onCancel = {
+                        binding.biometricSwitch.isChecked = false
+                    }
+                )
+            } else {
+                // Désactiver directement
+                biometricManager.setBiometricEnabled(false)
+                updateBiometricUI()
+                Toast.makeText(this, "Authentification biométrique désactivée", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        // Click sur la section pour ouvrir les paramètres si non configuré
+        binding.biometricSection.setOnClickListener {
+            if (!isConfigured) {
+                animateClick(it)
+                showBiometricSettingsDialog()
+            }
+        }
+    }
+    
+    private fun updateBiometricUI() {
+        val biometricType = biometricManager.getBiometricType()
+        val statusMessage = biometricManager.getBiometricStatusMessage()
+        val isConfigured = biometricManager.isBiometricConfigured()
+        
+        // Mettre à jour le titre en fonction du type
+        binding.biometricTitle.text = when {
+            biometricType.contains("Empreinte") -> "Empreinte digitale"
+            biometricType.contains("Reconnaissance faciale") -> "Reconnaissance faciale"
+            biometricType.contains("iris") -> "Reconnaissance de l'iris"
+            else -> "Authentification biométrique"
+        }
+        
+        // Mettre à jour le statut
+        binding.biometricStatus.text = if (isConfigured && biometricManager.isBiometricEnabledInApp()) {
+            "Activée"
+        } else {
+            statusMessage
+        }
+        
+        // Mettre à jour l'icône en fonction du type
+        val iconRes = when {
+            biometricType.contains("Empreinte") -> R.drawable.ic_fingerprint
+            biometricType.contains("Reconnaissance faciale") -> R.drawable.ic_face
+            else -> R.drawable.ic_fingerprint
+        }
+        binding.biometricIcon.setImageResource(iconRes)
+        
+        // Activer/désactiver le switch
+        binding.biometricSwitch.isEnabled = isConfigured
+    }
+    
+    private fun showBiometricSettingsDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Authentification biométrique")
+            .setMessage("L'authentification biométrique n'est pas configurée sur votre appareil.\n\nVoulez-vous ouvrir les paramètres de sécurité pour la configurer ?")
+            .setPositiveButton("Paramètres") { _, _ ->
+                try {
+                    val intent = Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Impossible d'ouvrir les paramètres", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
+    }
+    
     private fun checkForUpdates() {
         try {
             coroutineScope.launch {
@@ -387,6 +495,16 @@ class SettingsActivity : AppCompatActivity() {
         scaleSet.play(scaleDown).with(scaleDownY)
         scaleSet.play(scaleUp).with(scaleUpY).after(scaleDown)
         scaleSet.start()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Rafraîchir l'état de la biométrie au retour des paramètres
+        if (::biometricManager.isInitialized && biometricManager.isBiometricAvailable()) {
+            updateBiometricUI()
+            binding.biometricSwitch.isChecked = biometricManager.isBiometricEnabledInApp()
+            binding.biometricSwitch.isEnabled = biometricManager.isBiometricConfigured()
+        }
     }
     
     override fun onSupportNavigateUp(): Boolean {
