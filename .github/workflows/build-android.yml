@@ -234,31 +234,35 @@ jobs:
           echo "✅ APK renommé avec run number"
         fi
         
-        # Créer la release nightly
+        # Créer la release nightly avec HEREDOC
+        cat << EOF > release_notes.md
+        ## 🚀 Version de Développement Automatique
+        
+        **📱 Version:** $APK_VERSION  
+        **📅 Build Time:** ${{ steps.version.outputs.BUILD_TIME }}  
+        **🔍 Commit:** ${{ steps.version.outputs.COMMIT_HASH }}  
+        **🔢 Run Number:** ${{ steps.version.outputs.RUN_NUMBER }}  
+        **🌟 Branch:** main
+        
+        ### 📋 Dernières Modifications
+        $CHANGELOG
+        
+        ### 📱 Installation
+        1. Téléchargez l'APK signé ci-dessous
+        2. Activez "Sources inconnues" dans les paramètres Android
+        3. Installez l'APK téléchargé
+        4. Profitez des dernières fonctionnalités !
+        
+        ### 📦 APK Disponible
+        - **NextJSClient-run${{ steps.version.outputs.RUN_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk**: Version release signée avec certificat de production
+        
+        ---
+        🤖 **Build automatique** généré par GitHub Actions
+        EOF
+        
         gh release create nightly \
           --title "🌙 Nightly Build - Version $APK_VERSION - run${{ steps.version.outputs.RUN_NUMBER }} - ${{ steps.version.outputs.VERSION_NAME }}" \
-          --notes "## 🚀 Version de Développement Automatique
-
-**📱 Version:** $APK_VERSION  
-**📅 Build Time:** ${{ steps.version.outputs.BUILD_TIME }}  
-**🔍 Commit:** ${{ steps.version.outputs.COMMIT_HASH }}  
-**🔢 Run Number:** ${{ steps.version.outputs.RUN_NUMBER }}  
-**🌟 Branch:** main
-
-### 📋 Dernières Modifications
-$CHANGELOG
-
-### 📱 Installation
-1. Téléchargez l'APK signé ci-dessous
-2. Activez \"Sources inconnues\" dans les paramètres Android
-3. Installez l'APK téléchargé
-4. Profitez des dernières fonctionnalités !
-
-### 📦 APK Disponible
-- **NextJSClient-run${{ steps.version.outputs.RUN_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk**: Version release signée avec certificat de production
-
----
-🤖 **Build automatique** généré par GitHub Actions" \
+          --notes-file release_notes.md \
           --prerelease \
           --latest=false \
           ./apks/*
