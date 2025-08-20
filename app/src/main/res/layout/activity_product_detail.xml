@@ -13,7 +13,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorSurface"
-            app:title="Détails du produit" />
+            app:title="@string/product_details" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -104,7 +104,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Palmarès"
+                        android:text="@string/palmares_title"
                         android:textAppearance="?attr/textAppearanceBodyLarge"
                         android:textStyle="bold"
                         android:textColor="?attr/colorPrimary"
@@ -132,7 +132,7 @@
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="Consécutif 5 semaines" />
+                            android:text="@string/consecutive_weeks" />
 
                     </LinearLayout>
 
@@ -171,7 +171,7 @@
                                 android:textAppearance="?attr/textAppearanceBodySmall"
                                 android:textStyle="bold"
                                 android:layout_marginTop="4dp"
-                                android:text="75% des semaines" />
+                                android:text="@string/percentage_weeks" />
 
                         </LinearLayout>
 
@@ -200,7 +200,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Prix"
+                        android:text="@string/price_title"
                         android:textAppearance="?attr/textAppearanceBodyLarge"
                         android:textStyle="bold"
                         android:textColor="?attr/colorPrimary"
@@ -280,7 +280,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Informations produit"
+                        android:text="@string/product_info"
                         android:textAppearance="?attr/textAppearanceBodyLarge"
                         android:textStyle="bold"
                         android:textColor="?attr/colorPrimary"
@@ -298,7 +298,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Code produit :"
+                            android:text="@string/product_code"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -338,7 +338,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="EAN :"
+                            android:text="@string/ean_label"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -377,7 +377,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Catégorie :"
+                            android:text="@string/category_label"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -403,7 +403,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Marque :"
+                            android:text="@string/brand_label"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -428,7 +428,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Origine :"
+                            android:text="@string/origin_label"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 

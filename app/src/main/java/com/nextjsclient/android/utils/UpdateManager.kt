@@ -130,11 +130,11 @@ class UpdateManager(private val context: Context) {
                     
                     withContext(Dispatchers.Main) {
                         if (isNewer) {
-                            Log.d(TAG, "✅ Update available: ${release.tagName}")
+                            Log.d(TAG, "✅ GitHub release available: ${release.tagName}")
                             Log.d(TAG, "📦 Download URL: ${release.downloadUrl}")
                             listener?.onUpdateAvailable(release)
                         } else {
-                            Log.d(TAG, "✅ App is up to date - no update needed")
+                            Log.d(TAG, "❌ No GitHub release available")
                             listener?.onUpToDate()
                         }
                     }
@@ -513,42 +513,11 @@ class UpdateManager(private val context: Context) {
     
     private fun isNewerVersion(current: String, latest: String, release: Release): Boolean {
         return try {
-            Log.d(TAG, "🔍 Comparing versions: current='$current' vs latest='$latest'")
+            Log.d(TAG, "🔍 Simple GitHub-only update check")
+            Log.d(TAG, "📊 Current version: $current")
+            Log.d(TAG, "📊 Latest release tag: $latest")
             
-            // Extraire le build number actuel depuis BuildConfig
-            val currentBuildNumber = try {
-                com.nextjsclient.android.BuildConfig.BUILD_NUMBER
-            } catch (e: Exception) {
-                Log.w(TAG, "Cannot get current build number", e)
-                0
-            }
-            
-            val currentCommit = try {
-                com.nextjsclient.android.BuildConfig.COMMIT_HASH
-            } catch (e: Exception) {
-                Log.w(TAG, "Cannot get current commit hash", e)
-                ""
-            }
-            
-            Log.d(TAG, "📊 Current build number: $currentBuildNumber")
-            Log.d(TAG, "📊 Current commit: $currentCommit")
-            
-            // Extraire le build number depuis la date de publication GitHub
-            // Format de la date: "2025-08-20T19:17:00Z"
-            val latestBuildNumber = try {
-                val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault())
-                inputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
-                
-                // Utiliser la publishedAt de la release pour générer un build number
-                val releaseDate = inputFormat.parse(release.publishedAt)
-                val releaseBuildNumber = releaseDate?.time?.div(1000)?.toInt() ?: 0
-                releaseBuildNumber
-            } catch (e: Exception) {
-                Log.w(TAG, "Cannot extract build number from release date", e)
-                0
-            }
-            
-            // Extraire le commit depuis le nom de la release
+            // Extraire le commit depuis le nom de la release GitHub
             val latestCommit = try {
                 // Format: "🌙 Nightly Build - Version ... - nightly-20250820-547d00c"
                 val releaseName = release.name
@@ -560,46 +529,24 @@ class UpdateManager(private val context: Context) {
                 ""
             }
             
-            Log.d(TAG, "📊 Latest build number: $latestBuildNumber")
-            Log.d(TAG, "📊 Latest commit: $latestCommit")
+            Log.d(TAG, "📊 Latest commit from GitHub: $latestCommit")
             
-            // Logique de comparaison améliorée:
-            // 1. Si les commits sont différents, c'est une mise à jour
-            // 2. Sinon, comparer les build numbers (timestamp de publication)
-            val isNewer = when {
-                latestCommit.isNotEmpty() && currentCommit.isNotEmpty() && latestCommit != currentCommit -> {
-                    Log.d(TAG, "📊 Different commits detected: $currentCommit -> $latestCommit")
-                    true
-                }
-                latestBuildNumber > 0 -> {
-                    // Toujours considérer une release GitHub comme plus récente que le build local
-                    // car elle a été publiée après compilation locale
-                    val timeDiff = System.currentTimeMillis() / 1000 - latestBuildNumber
-                    Log.d(TAG, "📊 Release timestamp: $latestBuildNumber, time diff: ${timeDiff}s ago")
-                    
-                    // Si la release GitHub a moins de 24h et même commit = nouvelle release
-                    if (timeDiff < 86400 && latestCommit == currentCommit) {
-                        Log.d(TAG, "📊 Recent release with same commit - update available")
-                        true
-                    } else if (latestBuildNumber > currentBuildNumber) {
-                        Log.d(TAG, "📊 Newer build timestamp: $currentBuildNumber -> $latestBuildNumber")
-                        true
-                    } else {
-                        Log.d(TAG, "📊 Older or same timestamp")
-                        false
-                    }
-                }
-                else -> {
-                    Log.d(TAG, "📊 Cannot determine version - assuming up to date")
-                    false
-                }
+            // LOGIQUE SIMPLIFIÉE : Toujours proposer si une release GitHub existe
+            // L'utilisateur peut décider s'il veut installer ou pas
+            val hasGitHubRelease = latestCommit.isNotEmpty() && release.downloadUrl.isNotEmpty()
+            
+            Log.d(TAG, "📊 GitHub release available: $hasGitHubRelease")
+            
+            if (hasGitHubRelease) {
+                Log.d(TAG, "✅ GitHub release found - update available")
+                return true
+            } else {
+                Log.d(TAG, "❌ No valid GitHub release found")
+                return false
             }
             
-            Log.d(TAG, "📊 Is newer: $isNewer")
-            return isNewer
-            
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error comparing versions", e)
+            Log.e(TAG, "❌ Error checking GitHub release", e)
             false
         }
     }

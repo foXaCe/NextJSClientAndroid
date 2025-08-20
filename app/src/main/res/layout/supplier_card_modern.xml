@@ -148,7 +148,7 @@
                         android:id="@+id/trendIndicatorText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-3 vs semaine passée"
+                        android:text="@string/vs_last_week"
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="@color/stat_out_color"
                         android:layout_marginStart="4dp" />

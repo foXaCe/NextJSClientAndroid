@@ -114,6 +114,7 @@
     <string name="outgoing_products">Sortants</string>
     <string name="promo_products">Promos</string>
     <string name="view_details">Voir détails</string>
+    <string name="product_details">Détails du produit</string>
     <string name="current_week">Semaine en cours</string>
     <string name="loading">Chargement...</string>
     <string name="week_overview">Aperçu de la semaine</string>
@@ -146,6 +147,8 @@
     <string name="promo_label">PROMO</string>
     <string name="total_products">Produits total</string>
     <string name="vs_last_week">vs sem. passée</string>
+    <string name="trend_format">%1$s %2$s</string>
+    <string name="percentage_weeks">%d%% des semaines</string>
     <string name="overview_title">Vue d\'ensemble</string>
     
     <!-- Date formatting -->
@@ -165,6 +168,7 @@
     <!-- Product card labels -->
     <string name="sca_prefix">SCA :</string>
     <string name="price_offered_prefix">Prix offert :</string>
+    <string name="price_offered_format">Prix offert: %s</string>
     <string name="price_retained_prefix">Prix retenu :</string>
     <string name="sca_count_format">SCA : %1$d BLL + %2$d EUROPOOL = %3$d</string>
     
