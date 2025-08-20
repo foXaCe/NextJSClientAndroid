@@ -239,11 +239,11 @@ jobs:
           --title "🌙 Nightly Build - Version $APK_VERSION - run${{ steps.version.outputs.RUN_NUMBER }} - ${{ steps.version.outputs.VERSION_NAME }}" \
           --notes "## 🚀 Version de Développement Automatique
 
-**📱 Version:** \`$APK_VERSION\`  
+**📱 Version:** $APK_VERSION  
 **📅 Build Time:** ${{ steps.version.outputs.BUILD_TIME }}  
-**🔍 Commit:** \`${{ steps.version.outputs.COMMIT_HASH }}\`  
-**🔢 Run Number:** \`${{ steps.version.outputs.RUN_NUMBER }}\`  
-**🌟 Branch:** \`main\`
+**🔍 Commit:** ${{ steps.version.outputs.COMMIT_HASH }}  
+**🔢 Run Number:** ${{ steps.version.outputs.RUN_NUMBER }}  
+**🌟 Branch:** main
 
 ### ⚠️ Avertissement
 Cette version est générée automatiquement depuis la branche de développement. Elle peut contenir des bugs et des fonctionnalités instables. Utilisez-la à vos risques et périls.
