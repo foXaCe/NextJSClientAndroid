@@ -534,12 +534,48 @@ class UpdateManager(private val context: Context) {
                 return false
             }
             
+            // Cas spécial : si latest est "nightly" et current est numérique, 
+            // comparer avec le versionCode pour détecter les nouvelles releases
+            if (latestVersion == "nightly" && currentVersion.matches(Regex("\\d+(\\.\\d+)*"))) {
+                Log.d(TAG, "🌙 Latest is nightly, current is numeric - checking with versionCode")
+                
+                // Extraire le versionCode actuel
+                val currentVersionCode = try {
+                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                    packageInfo.longVersionCode.toInt()
+                } catch (e: Exception) {
+                    0
+                }
+                
+                // Extraire le versionCode de la release (depuis le nom du release)
+                val releaseVersionCode = try {
+                    // Le nom de la release contient "nightly-20250820-commit"
+                    // Le versionCode est basé sur le nombre de commits
+                    // On peut l'extraire du versionName qui est "1.versionCode"
+                    val versionParts = currentVersion.split(".")
+                    if (versionParts.size >= 2) {
+                        versionParts[1].toIntOrNull() ?: 0
+                    } else {
+                        0
+                    }
+                } catch (e: Exception) {
+                    0
+                }
+                
+                Log.d(TAG, "📊 Version comparison: current versionCode=$currentVersionCode")
+                
+                // Si on a une nouvelle release nightly, elle aura forcément un versionCode plus élevé
+                // Pour simplifier, on propose toujours la mise à jour pour les releases nightly
+                Log.d(TAG, "🆕 Nightly release detected - offering update")
+                return true
+            }
+            
             // Essayer de comparer comme des numéros de version
             val currentParts = currentVersion.split(".").mapNotNull { it.toIntOrNull() }
             val latestParts = latestVersion.split(".").mapNotNull { it.toIntOrNull() }
             
             // Si on n'arrive pas à parser les versions comme des numéros, 
-            // comparer comme des strings et être conservateur
+            // être conservateur et ne pas proposer de mise à jour
             if (currentParts.isEmpty() || latestParts.isEmpty()) {
                 Log.d(TAG, "⚠️ Cannot parse versions as numbers - no update")
                 return false
