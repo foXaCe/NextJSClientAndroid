@@ -147,4 +147,9 @@
     <string name="total_products">Produits total</string>
     <string name="vs_last_week">vs sem. passée</string>
     <string name="overview_title">Vue d\'ensemble</string>
+    
+    <!-- Date formatting -->
+    <string name="date_range_separator">au</string>
+    <string name="week_label">Semaine</string>
+    <string name="week_short">S</string>
 </resources>

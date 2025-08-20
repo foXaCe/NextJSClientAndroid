@@ -43,7 +43,8 @@ class WeekSelectorAdapter(
 
         fun bind(weekInfo: WeekInfo, isSelected: Boolean) {
             val weekStr = weekInfo.week.toString().padStart(2, '0')
-            weekNumberText.text = "Semaine $weekStr"
+            val weekLabel = itemView.context.getString(R.string.week_label)
+            weekNumberText.text = "$weekLabel $weekStr"
             
             // Format des dates de la semaine
             weekDatesText.text = formatWeekDates(weekInfo.year, weekInfo.week)
@@ -68,7 +69,8 @@ class WeekSelectorAdapter(
             val endDate = calendar.time
             
             val dateFormat = java.text.SimpleDateFormat("dd/MM", java.util.Locale.getDefault())
-            return "${dateFormat.format(startDate)} au ${dateFormat.format(endDate)}/$year"
+            val separator = itemView.context.getString(R.string.date_range_separator)
+            return "${dateFormat.format(startDate)} $separator ${dateFormat.format(endDate)}/$year"
         }
     }
 }

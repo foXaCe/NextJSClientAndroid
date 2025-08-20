@@ -147,4 +147,9 @@
     <string name="total_products">Total products</string>
     <string name="vs_last_week">vs last week</string>
     <string name="overview_title">Overview</string>
+    
+    <!-- Date formatting -->
+    <string name="date_range_separator">to</string>
+    <string name="week_label">Week</string>
+    <string name="week_short">W</string>
 </resources>

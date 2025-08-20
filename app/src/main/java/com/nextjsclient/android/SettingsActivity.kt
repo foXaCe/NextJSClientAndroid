@@ -193,9 +193,7 @@ class SettingsActivity : AppCompatActivity() {
                 binding.updateStatus.text = getString(R.string.installing)
                 binding.updateButton.visibility = View.GONE
                 downloadedFile = file
-                
-                // Automatically install after download
-                updateManager.installUpdate(file)
+                // L'installation automatique est gérée par UpdateManager
             }
             
             override fun onError(message: String) {

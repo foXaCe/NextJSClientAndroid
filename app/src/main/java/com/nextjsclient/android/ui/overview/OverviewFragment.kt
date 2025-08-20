@@ -955,7 +955,8 @@ class OverviewFragment : Fragment() {
     private fun updateWeekDisplay(year: Int, week: Int) {
         val weekStr = week.toString().padStart(2, '0')
         val dates = formatWeekDatesOnly(year, week)
-        val weekText = "S$weekStr - $dates"
+        val weekShort = getString(R.string.week_short)
+        val weekText = "$weekShort$weekStr - $dates"
         
         // Utiliser ModernOverviewHelper pour la nouvelle UI
         modernHelper.updateWeekDisplay(weekText)
@@ -974,9 +975,10 @@ class OverviewFragment : Fragment() {
         calendar.add(java.util.Calendar.DAY_OF_YEAR, 6)
         val weekEnd = calendar.time
         
-        val dateFormat = java.text.SimpleDateFormat("dd/MM", java.util.Locale.FRENCH)
+        val dateFormat = java.text.SimpleDateFormat("dd/MM", java.util.Locale.getDefault())
+        val separator = getString(R.string.date_range_separator)
         
-        return "${dateFormat.format(weekStart)} au ${dateFormat.format(weekEnd)}"
+        return "${dateFormat.format(weekStart)} $separator ${dateFormat.format(weekEnd)}"
     }
     
     

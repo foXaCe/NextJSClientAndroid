@@ -495,7 +495,7 @@ class ScamarkViewModel : ViewModel() {
     /**
      * Formate l'affichage d'une semaine
      */
-    fun formatWeekDisplay(year: Int, week: Int): String {
+    fun formatWeekDisplay(year: Int, week: Int, context: android.content.Context? = null): String {
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, year)
         calendar.set(Calendar.WEEK_OF_YEAR, week)
@@ -505,16 +505,19 @@ class ScamarkViewModel : ViewModel() {
         calendar.add(Calendar.DAY_OF_YEAR, 6)
         val weekEnd = calendar.time
         
-        val dateFormat = java.text.SimpleDateFormat("dd/MM", Locale.FRENCH)
+        val dateFormat = java.text.SimpleDateFormat("dd/MM", Locale.getDefault())
         val weekStr = week.toString().padStart(2, '0')
         
-        return "S$weekStr - ${dateFormat.format(weekStart)} au ${dateFormat.format(weekEnd)}"
+        val weekShort = context?.getString(com.nextjsclient.android.R.string.week_short) ?: "S"
+        val separator = context?.getString(com.nextjsclient.android.R.string.date_range_separator) ?: "to"
+        
+        return "$weekShort$weekStr - ${dateFormat.format(weekStart)} $separator ${dateFormat.format(weekEnd)}"
     }
     
     /**
      * Formate seulement les dates d'une semaine (pour le nouveau sélecteur)
      */
-    fun formatWeekDatesOnly(year: Int, week: Int): String {
+    fun formatWeekDatesOnly(year: Int, week: Int, context: android.content.Context? = null): String {
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, year)
         calendar.set(Calendar.WEEK_OF_YEAR, week)
@@ -524,9 +527,10 @@ class ScamarkViewModel : ViewModel() {
         calendar.add(Calendar.DAY_OF_YEAR, 6)
         val weekEnd = calendar.time
         
-        val dateFormat = java.text.SimpleDateFormat("dd/MM", Locale.FRENCH)
+        val dateFormat = java.text.SimpleDateFormat("dd/MM", Locale.getDefault())
+        val separator = context?.getString(com.nextjsclient.android.R.string.date_range_separator) ?: "to"
         
-        return "${dateFormat.format(weekStart)} au ${dateFormat.format(weekEnd)}"
+        return "${dateFormat.format(weekStart)} $separator ${dateFormat.format(weekEnd)}"
     }
     
     /**

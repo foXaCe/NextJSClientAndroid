@@ -211,7 +211,11 @@ class UpdateManager(private val context: Context) {
             val appUpdateDir = File(context.getExternalFilesDir(null), "updates")
             if (!appUpdateDir.exists()) {
                 appUpdateDir.mkdirs()
+                Log.d(TAG, "📁 Created updates directory: ${appUpdateDir.absolutePath}")
             }
+            
+            Log.d(TAG, "📂 Update storage location: ${appUpdateDir.absolutePath}")
+            Log.d(TAG, "🗺 Storage info: This is in app's private external storage (Android/data/${context.packageName}/files/updates)")
             
             val destinationFile = File(appUpdateDir, fileName)
             Log.d(TAG, "📂 Destination file: ${destinationFile.absolutePath}")
@@ -220,7 +224,7 @@ class UpdateManager(private val context: Context) {
                 .setTitle("NextJS Client Update")
                 .setDescription("Téléchargement de la mise à jour ${release.tagName}")
                 .setDestinationUri(Uri.fromFile(destinationFile))
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
             
@@ -266,6 +270,15 @@ class UpdateManager(private val context: Context) {
                     when (status) {
                         DownloadManager.STATUS_SUCCESSFUL -> {
                             Log.d(TAG, "✅ Download completed successfully!")
+                            
+                            // Nettoyer la notification après téléchargement
+                            try {
+                                downloadManager.remove(downloadId)
+                                Log.d(TAG, "🧹 Notification cleared")
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Could not clear notification: ${e.message}")
+                            }
+                            
                             cursor.close()
                             
                             // Check if file exists and notify completion
@@ -274,9 +287,10 @@ class UpdateManager(private val context: Context) {
                             Log.d(TAG, "   • File exists: ${downloadFile.exists()}")
                             
                             if (downloadFile.exists()) {
-                                Log.d(TAG, "🎉 File found! Calling onDownloadCompleted")
+                                Log.d(TAG, "🎉 File found! Auto-installing...")
                                 withContext(Dispatchers.Main) {
-                                    listener?.onDownloadCompleted(downloadFile)
+                                    // Lancer automatiquement l'installation
+                                    installUpdate(downloadFile)
                                 }
                             } else {
                                 Log.e(TAG, "❌ Downloaded file not found!")
