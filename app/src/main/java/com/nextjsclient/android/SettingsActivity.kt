@@ -333,9 +333,9 @@ class SettingsActivity : AppCompatActivity() {
         
         // Mettre à jour le titre en fonction du type
         binding.biometricTitle.text = when {
-            biometricType.contains("Empreinte") -> getString(R.string.fingerprint_auth)
-            biometricType.contains("Reconnaissance faciale") -> getString(R.string.face_auth)
-            biometricType.contains("iris") -> getString(R.string.iris_auth)
+            biometricType.contains("Fingerprint") || biometricType.contains("Empreinte") -> getString(R.string.fingerprint_auth)
+            biometricType.contains("Face") || biometricType.contains("Reconnaissance faciale") -> getString(R.string.face_auth)
+            biometricType.contains("iris") || biometricType.contains("Iris") -> getString(R.string.iris_auth)
             else -> getString(R.string.biometric_auth)
         }
         
@@ -348,8 +348,8 @@ class SettingsActivity : AppCompatActivity() {
         
         // Mettre à jour l'icône en fonction du type
         val iconRes = when {
-            biometricType.contains("Empreinte") -> R.drawable.ic_fingerprint
-            biometricType.contains("Reconnaissance faciale") -> R.drawable.ic_face
+            biometricType.contains("Fingerprint") || biometricType.contains("Empreinte") -> R.drawable.ic_fingerprint
+            biometricType.contains("Face") || biometricType.contains("Reconnaissance faciale") -> R.drawable.ic_face
             else -> R.drawable.ic_fingerprint
         }
         binding.biometricIcon.setImageResource(iconRes)

@@ -75,7 +75,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Aucun produit trouvé"
+                    android:text="@string/no_products_found"
                     android:textSize="18sp"
                     android:textColor="@color/gray" />
 
@@ -84,7 +84,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Ajoutez des produits pour commencer"
+                    android:text="@string/add_products_start"
                     android:textSize="14sp"
                     android:textColor="@color/gray" />
 

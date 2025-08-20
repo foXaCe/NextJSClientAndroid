@@ -2,6 +2,7 @@
     <string name="app_name">Portfolio Anecoop</string>
     
     <!-- Navigation -->
+    <string name="title_overview">Overview</string>
     <string name="title_scamark">Scamark</string>
     <string name="title_scafel">Scafel</string>
     <string name="title_appro_ia">Appro IA</string>
@@ -81,4 +82,69 @@
     <string name="logout_title">Logout</string>
     <string name="logout_message">Are you sure you want to log out?</string>
     <string name="logout_button">Log out</string>
+    
+    <!-- Layout texts -->
+    <string name="update_section_title">UPDATE</string>
+    <string name="update_title">Update</string>
+    <string name="update_status">Checking...</string>
+    <string name="update_button">Update</string>
+    <string name="suppliers_section_title">SUPPLIERS</string>
+    <string name="suppliers_description">Choose suppliers to display</string>
+    <string name="anecoop_name">Anecoop</string>
+    <string name="solagora_name">Solagora</string>
+    <string name="appearance_section_title">APPEARANCE</string>
+    <string name="theme_title">Application theme</string>
+    <string name="theme_current">Dark</string>
+    <string name="security_section_title">SECURITY</string>
+    <string name="biometric_title">Biometric authentication</string>
+    <string name="biometric_status">Checking...</string>
+    <string name="about_section_title">ABOUT</string>
+    <string name="version_title">Version 1.0.0</string>
+    <string name="developer_title">Developer</string>
+    <string name="developer_name">Stéphane Chabrol</string>
+    <string name="build_title">Build</string>
+    <string name="build_type">Release</string>
+    <string name="technologies_title">TECHNOLOGIES</string>
+    <string name="android_version">Android 14</string>
+    <string name="firebase_version">Firebase</string>
+    <string name="material_version">Material 3</string>
+    <string name="cooperative_description">Agricultural cooperative</string>
+    <string name="active_products">Active products</string>
+    <string name="incoming_products">Incoming</string>
+    <string name="outgoing_products">Outgoing</string>
+    <string name="promo_products">Promos</string>
+    <string name="view_details">View details</string>
+    <string name="current_week">Current week</string>
+    <string name="loading">Loading...</string>
+    <string name="week_overview">Week overview</string>
+    <string name="products_label">Products</string>
+    <string name="sca_label">SCA</string>
+    <string name="price_retained">Retained:</string>
+    <string name="price_offered">Offered:</string>
+    <string name="product_info">Product information</string>
+    <string name="product_code">Product code:</string>
+    <string name="ean_label">EAN:</string>
+    <string name="category_label">Category:</string>
+    <string name="vegetables_category">Vegetables</string>
+    <string name="brand_label">Brand:</string>
+    <string name="origin_label">Origin:</string>
+    <string name="palmares_title">Rankings</string>
+    <string name="consecutive_weeks">Consecutive 5 weeks</string>
+    <string name="since_date">Since October 1st 15 times</string>
+    <string name="price_title">Price</string>
+    <string name="no_products_found">No products found</string>
+    <string name="add_products_start">Add products to start</string>
+    <string name="app_locked">Application locked</string>
+    <string name="auth_required">Authentication required</string>
+    <string name="unlock_button">Unlock</string>
+    <string name="connect_button">Connect</string>
+    <string name="filter_active">Active filter • Pull down to refresh</string>
+    <string name="select_week">Select a week</string>
+    <string name="load_more">Load 10 more</string>
+    <string name="current_label">Current</string>
+    <string name="list_label">List</string>
+    <string name="promo_label">PROMO</string>
+    <string name="total_products">Total products</string>
+    <string name="vs_last_week">vs last week</string>
+    <string name="overview_title">Overview</string>
 </resources>

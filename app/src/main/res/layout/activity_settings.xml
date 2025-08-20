@@ -105,7 +105,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="MISE À JOUR"
+                    android:text="@string/update_section_title"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="@color/accent"
@@ -156,7 +156,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Mise à jour"
+                                android:text="@string/update_title"
                                 android:textSize="16sp"
                                 android:textColor="?attr/colorOnSurface"
                                 android:textStyle="bold" />
@@ -176,7 +176,7 @@
                             android:id="@+id/updateButton"
                             android:layout_width="wrap_content"
                             android:layout_height="36dp"
-                            android:text="Mettre à jour"
+                            android:text="@string/update_button"
                             android:textSize="12sp"
                             android:textAllCaps="false"
                             android:visibility="gone"
@@ -199,7 +199,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="FOURNISSEURS"
+                    android:text="@string/suppliers_section_title"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="@color/accent"
@@ -224,7 +224,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Choisissez les fournisseurs à afficher"
+                            android:text="@string/suppliers_description"
                             android:textSize="16sp"
                             android:textColor="?attr/colorOnSurface"
                             android:textStyle="bold"
@@ -262,7 +262,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Anecoop"
+                                    android:text="@string/anecoop_name"
                                     android:textSize="16sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:layout_gravity="center_vertical" />
@@ -302,7 +302,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Solagora"
+                                    android:text="@string/solagora_name"
                                     android:textSize="16sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:layout_gravity="center_vertical" />
@@ -327,7 +327,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="APPARENCE"
+                    android:text="@string/appearance_section_title"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="@color/accent"
@@ -378,7 +378,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Thème de l'application"
+                                android:text="@string/theme_title"
                                 android:textSize="16sp"
                                 android:textColor="?attr/colorOnSurface"
                                 android:textStyle="bold" />
@@ -387,7 +387,7 @@
                                 android:id="@+id/currentTheme"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Sombre"
+                                android:text="@string/theme_current"
                                 android:textSize="14sp"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 android:layout_marginTop="2dp" />
@@ -417,7 +417,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="SÉCURITÉ"
+                    android:text="@string/security_section_title"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="@color/accent"
@@ -476,7 +476,7 @@
                                     android:id="@+id/biometricTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Authentification biométrique"
+                                    android:text="@string/biometric_title"
                                     android:textSize="16sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold" />
@@ -517,7 +517,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="À PROPOS"
+                    android:text="@string/about_section_title"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="@color/accent"
@@ -572,7 +572,7 @@
                                     android:id="@+id/appVersion"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Version 1.0.0"
+                                    android:text="@string/version_title"
                                     android:textSize="14sp"
                                     android:textColor="?attr/colorOnSurfaceVariant"
                                     android:layout_marginTop="2dp" />
@@ -608,7 +608,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Développeur"
+                                    android:text="@string/developer_title"
                                     android:textSize="11sp"
                                     android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textAllCaps="true"
@@ -617,7 +617,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Stéphane Chabrol"
+                                    android:text="@string/developer_name"
                                     android:textSize="13sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold"
@@ -645,7 +645,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Build"
+                                    android:text="@string/build_title"
                                     android:textSize="11sp"
                                     android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textAllCaps="true"
@@ -655,7 +655,7 @@
                                     android:id="@+id/buildInfo"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Release"
+                                    android:text="@string/build_type"
                                     android:textSize="13sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold"
@@ -677,7 +677,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="TECHNOLOGIES"
+                                android:text="@string/technologies_title"
                                 android:textSize="11sp"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textAllCaps="true"
@@ -693,7 +693,7 @@
                                     android:id="@+id/androidVersion"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Android 14"
+                                    android:text="@string/android_version"
                                     android:textSize="12sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:background="@drawable/chip_background"
@@ -705,7 +705,7 @@
                                     android:id="@+id/firebaseVersion"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Firebase"
+                                    android:text="@string/firebase_version"
                                     android:textSize="12sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:background="@drawable/chip_background"
@@ -717,7 +717,7 @@
                                     android:id="@+id/materialVersion"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Material 3"
+                                    android:text="@string/material_version"
                                     android:textSize="12sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:background="@drawable/chip_background"

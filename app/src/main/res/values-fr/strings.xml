@@ -2,6 +2,7 @@
     <string name="app_name">Portfolio Anecoop</string>
     
     <!-- Navigation -->
+    <string name="title_overview">Aperçu</string>
     <string name="title_scamark">Scamark</string>
     <string name="title_scafel">Scafel</string>
     <string name="title_appro_ia">Appro IA</string>
@@ -81,4 +82,69 @@
     <string name="logout_title">Déconnexion</string>
     <string name="logout_message">Êtes-vous sûr de vouloir vous déconnecter ?</string>
     <string name="logout_button">Se déconnecter</string>
+    
+    <!-- Layout texts -->
+    <string name="update_section_title">MISE À JOUR</string>
+    <string name="update_title">Mise à jour</string>
+    <string name="update_status">Vérification...</string>
+    <string name="update_button">Mettre à jour</string>
+    <string name="suppliers_section_title">FOURNISSEURS</string>
+    <string name="suppliers_description">Choisissez les fournisseurs à afficher</string>
+    <string name="anecoop_name">Anecoop</string>
+    <string name="solagora_name">Solagora</string>
+    <string name="appearance_section_title">APPARENCE</string>
+    <string name="theme_title">Thème de l\'application</string>
+    <string name="theme_current">Sombre</string>
+    <string name="security_section_title">SÉCURITÉ</string>
+    <string name="biometric_title">Authentification biométrique</string>
+    <string name="biometric_status">Vérification...</string>
+    <string name="about_section_title">À PROPOS</string>
+    <string name="version_title">Version 1.0.0</string>
+    <string name="developer_title">Développeur</string>
+    <string name="developer_name">Stéphane Chabrol</string>
+    <string name="build_title">Build</string>
+    <string name="build_type">Release</string>
+    <string name="technologies_title">TECHNOLOGIES</string>
+    <string name="android_version">Android 14</string>
+    <string name="firebase_version">Firebase</string>
+    <string name="material_version">Material 3</string>
+    <string name="cooperative_description">Coopérative agricole</string>
+    <string name="active_products">Produits actifs</string>
+    <string name="incoming_products">Entrants</string>
+    <string name="outgoing_products">Sortants</string>
+    <string name="promo_products">Promos</string>
+    <string name="view_details">Voir détails</string>
+    <string name="current_week">Semaine en cours</string>
+    <string name="loading">Chargement...</string>
+    <string name="week_overview">Aperçu de la semaine</string>
+    <string name="products_label">Produits</string>
+    <string name="sca_label">SCA</string>
+    <string name="price_retained">Retenu :</string>
+    <string name="price_offered">Offert :</string>
+    <string name="product_info">Informations produit</string>
+    <string name="product_code">Code produit :</string>
+    <string name="ean_label">EAN :</string>
+    <string name="category_label">Catégorie :</string>
+    <string name="vegetables_category">Légumes</string>
+    <string name="brand_label">Marque :</string>
+    <string name="origin_label">Origine :</string>
+    <string name="palmares_title">Palmarès</string>
+    <string name="consecutive_weeks">Consécutif 5 semaines</string>
+    <string name="since_date">Depuis le 01 Octobre 15 fois</string>
+    <string name="price_title">Prix</string>
+    <string name="no_products_found">Aucun produit trouvé</string>
+    <string name="add_products_start">Ajoutez des produits pour commencer</string>
+    <string name="app_locked">Application verrouillée</string>
+    <string name="auth_required">Authentification requise</string>
+    <string name="unlock_button">Déverrouiller</string>
+    <string name="connect_button">Se connecter</string>
+    <string name="filter_active">Filtre actif • Tirez vers le bas pour rafraîchir</string>
+    <string name="select_week">Sélectionner une semaine</string>
+    <string name="load_more">Charger 10 de plus</string>
+    <string name="current_label">Actuelle</string>
+    <string name="list_label">Liste</string>
+    <string name="promo_label">PROMO</string>
+    <string name="total_products">Produits total</string>
+    <string name="vs_last_week">vs sem. passée</string>
+    <string name="overview_title">Vue d\'ensemble</string>
 </resources>
