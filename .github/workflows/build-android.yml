@@ -192,6 +192,7 @@ jobs:
         echo "VERSION_NAME=nightly-$(date +'%Y%m%d')-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
         echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
         echo "COMMIT_HASH=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+        echo "RUN_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
 
     - name: Download APK artifacts
       uses: actions/download-artifact@v4
@@ -227,33 +228,40 @@ jobs:
         # Générer le changelog depuis les derniers commits
         CHANGELOG=$(git log --oneline -10 --pretty=format:"- %s (%h)" | head -10)
         
+        # Renommer l'APK avec le numéro de run (style Lawnchair)
+        if [ -f ./apks/app-release.apk ]; then
+          mv ./apks/app-release.apk "./apks/NextJSClient-run${{ steps.version.outputs.RUN_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk"
+          echo "✅ APK renommé avec run number"
+        fi
+        
         # Créer la release nightly
         gh release create nightly \
-          --title "🌙 Nightly Build - Version $APK_VERSION - ${{ steps.version.outputs.VERSION_NAME }}" \
+          --title "🌙 Nightly Build - Version $APK_VERSION - run${{ steps.version.outputs.RUN_NUMBER }} - ${{ steps.version.outputs.VERSION_NAME }}" \
           --notes "## 🚀 Version de Développement Automatique
 
-        **📱 Version:** \`$APK_VERSION\`  
-        **📅 Build Time:** ${{ steps.version.outputs.BUILD_TIME }}  
-        **🔍 Commit:** \`${{ steps.version.outputs.COMMIT_HASH }}\`  
-        **🌟 Branch:** \`main\`
+**📱 Version:** \`$APK_VERSION\`  
+**📅 Build Time:** ${{ steps.version.outputs.BUILD_TIME }}  
+**🔍 Commit:** \`${{ steps.version.outputs.COMMIT_HASH }}\`  
+**🔢 Run Number:** \`${{ steps.version.outputs.RUN_NUMBER }}\`  
+**🌟 Branch:** \`main\`
 
-        ### ⚠️ Avertissement
-        Cette version est générée automatiquement depuis la branche de développement. Elle peut contenir des bugs et des fonctionnalités instables. Utilisez-la à vos risques et périls.
+### ⚠️ Avertissement
+Cette version est générée automatiquement depuis la branche de développement. Elle peut contenir des bugs et des fonctionnalités instables. Utilisez-la à vos risques et périls.
 
-        ### 📋 Dernières Modifications
-        $CHANGELOG
+### 📋 Dernières Modifications
+$CHANGELOG
 
-        ### 📱 Installation
-        1. Téléchargez l'APK signé ci-dessous
-        2. Activez \"Sources inconnues\" dans les paramètres Android
-        3. Installez l'APK téléchargé
-        4. Profitez des dernières fonctionnalités !
+### 📱 Installation
+1. Téléchargez l'APK signé ci-dessous
+2. Activez \"Sources inconnues\" dans les paramètres Android
+3. Installez l'APK téléchargé
+4. Profitez des dernières fonctionnalités !
 
-        ### 📦 APK Disponible
-        - **app-release.apk**: Version release signée avec certificat de production
+### 📦 APK Disponible
+- **NextJSClient-run${{ steps.version.outputs.RUN_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk**: Version release signée avec certificat de production
 
-        ---
-        🤖 **Build automatique** généré par GitHub Actions" \
+---
+🤖 **Build automatique** généré par GitHub Actions" \
           --prerelease \
           --latest=false \
           ./apks/*

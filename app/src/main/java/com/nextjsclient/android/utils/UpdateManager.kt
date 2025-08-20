@@ -549,10 +549,10 @@ class UpdateManager(private val context: Context) {
                 Log.d(TAG, "📊 Available assets: $assetNames")
                 
                 // D'abord essayer d'extraire depuis le nom de la release (plus fiable)
-                // Format: "🌙 Nightly Build - Version ... - nightly-20250820-1ab2f92"
+                // Format: "🌙 Nightly Build - Version ... - run123 - nightly-20250820-1ab2f92"
                 val releaseNameBuildNum = try {
-                    // Chercher un pattern comme "run-123" ou "#123" dans le nom de la release
-                    val runPattern = Regex("run[_-](\\d+)|#(\\d+)")
+                    // Chercher un pattern comme "run123" ou "#123" dans le nom de la release
+                    val runPattern = Regex("run(\\d+)|#(\\d+)")
                     val match = runPattern.find(release.name)
                     if (match != null) {
                         val num1 = match.groupValues[1].toIntOrNull()
@@ -569,12 +569,14 @@ class UpdateManager(private val context: Context) {
                 var assetBuildNum = 0
                 if (releaseNameBuildNum == 0) {
                     assetNames.forEach { assetName ->
-                        // Patterns possibles pour extraire build numbers
+                        // Patterns possibles pour extraire build numbers depuis les noms d'assets
+                        // Format style Lawnchair : "NextJSClient-run123-abc1234.apk"
                         val patterns = listOf(
-                            Regex("_(\\d+)-"),    // app_123-release.apk
-                            Regex("-(\\d+)\\."),  // app-123.apk  
-                            Regex("_(\\d+)\\."),  // app_123.apk
-                            Regex("run(\\d+)"),   // apprun123.apk
+                            Regex("run(\\d+)"),      // NextJSClient-run123-abc.apk (style Lawnchair)
+                            Regex("_(\\d+)-"),       // app_123-release.apk
+                            Regex("-(\\d+)\\."),     // app-123.apk  
+                            Regex("_(\\d+)\\."),     // app_123.apk
+                            Regex("CI_(\\d+)"),      // CI_123 (style Lawnchair alternatif)
                         )
                         
                         patterns.forEach { pattern ->
