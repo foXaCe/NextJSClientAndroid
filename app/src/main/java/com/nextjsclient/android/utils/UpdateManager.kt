@@ -123,9 +123,15 @@ class UpdateManager(private val context: Context) {
                     Log.d(TAG, "Current version: $currentVersion")
                     Log.d(TAG, "Latest version: $latestVersion")
                     
-                    // SIMPLIFIÉ : Compare seulement les versions directement
+                    // Récupérer tous les noms d'assets
+                    val assetNames = mutableListOf<String>()
+                    for (i in 0 until assets.length()) {
+                        val asset = assets.getJSONObject(i)
+                        assetNames.add(asset.getString("name"))
+                    }
+                    
                     val release = Release(tagName, name, body, downloadUrl, publishedAt)
-                    val isNewer = isNewerVersion(currentVersion, latestVersion, release)
+                    val isNewer = isNewerVersion(currentVersion, latestVersion, release, assetNames)
                     Log.d(TAG, "Is newer version available: $isNewer")
                     
                     withContext(Dispatchers.Main) {
@@ -511,43 +517,100 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private fun isNewerVersion(current: String, latest: String, release: Release): Boolean {
+    private fun isNewerVersion(current: String, latest: String, release: Release, assetNames: List<String>): Boolean {
         return try {
-            Log.d(TAG, "🔍 Simple GitHub-only update check")
+            Log.d(TAG, "🔍 Lawnchair-style update check")
             Log.d(TAG, "📊 Current version: $current")
-            Log.d(TAG, "📊 Latest release tag: $latest")
             
-            // Extraire le commit depuis le nom de la release GitHub
-            val latestCommit = try {
-                // Format: "🌙 Nightly Build - Version ... - nightly-20250820-547d00c"
-                val releaseName = release.name
-                val commitRegex = Regex("([a-f0-9]{7})")
-                val match = commitRegex.findAll(releaseName).lastOrNull()
-                match?.value ?: ""
+            // Extraire le build number actuel depuis VERSION_DISPLAY_NAME (style Lawnchair)
+            // Format attendu : "1.Dev.(#123)" ou "1.Dev.(547d00c)"
+            val currentBuildNumber = try {
+                val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
+                Log.d(TAG, "📊 VERSION_DISPLAY_NAME: $versionDisplayName")
+                
+                // Si contient "#" suivi d'un nombre, extraire ce nombre
+                if (versionDisplayName.contains("#")) {
+                    versionDisplayName
+                        .substringAfterLast("#")
+                        .removeSuffix(")")
+                        .toIntOrNull() ?: 0
+                } else {
+                    // Sinon utiliser BUILD_NUMBER
+                    com.nextjsclient.android.BuildConfig.BUILD_NUMBER
+                }
             } catch (e: Exception) {
-                Log.w(TAG, "Cannot extract commit from release name", e)
-                ""
+                Log.w(TAG, "Cannot get current build number", e)
+                0
             }
             
-            Log.d(TAG, "📊 Latest commit from GitHub: $latestCommit")
-            
-            // LOGIQUE SIMPLIFIÉE : Toujours proposer si une release GitHub existe
-            // L'utilisateur peut décider s'il veut installer ou pas
-            val hasGitHubRelease = latestCommit.isNotEmpty() && release.downloadUrl.isNotEmpty()
-            
-            Log.d(TAG, "📊 GitHub release available: $hasGitHubRelease")
-            
-            if (hasGitHubRelease) {
-                Log.d(TAG, "✅ GitHub release found - update available")
-                return true
-            } else {
-                Log.d(TAG, "❌ No valid GitHub release found")
-                return false
+            // Extraire le build number depuis le nom de l'asset GitHub (style Lawnchair)
+            // Format asset name attendu : "app-release.apk" mais on peut aussi chercher des patterns
+            val latestBuildNumber = try {
+                Log.d(TAG, "📊 Available assets: $assetNames")
+                
+                // D'abord essayer d'extraire depuis le nom de la release (plus fiable)
+                // Format: "🌙 Nightly Build - Version ... - nightly-20250820-1ab2f92"
+                val releaseNameBuildNum = try {
+                    // Chercher un pattern comme "run-123" ou "#123" dans le nom de la release
+                    val runPattern = Regex("run[_-](\\d+)|#(\\d+)")
+                    val match = runPattern.find(release.name)
+                    if (match != null) {
+                        val num1 = match.groupValues[1].toIntOrNull()
+                        val num2 = match.groupValues[2].toIntOrNull()
+                        num1 ?: num2 ?: 0
+                    } else {
+                        0
+                    }
+                } catch (e: Exception) {
+                    0
+                }
+                
+                // Si pas trouvé dans le nom, chercher dans les assets
+                var assetBuildNum = 0
+                if (releaseNameBuildNum == 0) {
+                    assetNames.forEach { assetName ->
+                        // Patterns possibles pour extraire build numbers
+                        val patterns = listOf(
+                            Regex("_(\\d+)-"),    // app_123-release.apk
+                            Regex("-(\\d+)\\."),  // app-123.apk  
+                            Regex("_(\\d+)\\."),  // app_123.apk
+                            Regex("run(\\d+)"),   // apprun123.apk
+                        )
+                        
+                        patterns.forEach { pattern ->
+                            val match = pattern.find(assetName)
+                            if (match != null) {
+                                val num = match.groupValues[1].toIntOrNull() ?: 0
+                                if (num > assetBuildNum) assetBuildNum = num
+                            }
+                        }
+                    }
+                }
+                
+                val finalBuildNum = if (releaseNameBuildNum > 0) releaseNameBuildNum else assetBuildNum
+                Log.d(TAG, "📊 Extracted build number: $finalBuildNum (from release: $releaseNameBuildNum, from assets: $assetBuildNum)")
+                finalBuildNum
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot extract latest build number", e)
+                0
             }
+            
+            Log.d(TAG, "📊 Current build number: $currentBuildNumber")
+            Log.d(TAG, "📊 Latest build number: $latestBuildNumber")
+            
+            // Logique Lawnchair : si asset existe et buildNumber > current
+            val hasValidAsset = release.downloadUrl.isNotEmpty()
+            val isNewer = hasValidAsset && latestBuildNumber > currentBuildNumber
+            
+            Log.d(TAG, "📊 Has valid asset: $hasValidAsset")
+            Log.d(TAG, "📊 Is newer: $isNewer")
+            
+            return isNewer
             
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error checking GitHub release", e)
+            Log.e(TAG, "❌ Error in Lawnchair-style version check", e)
             false
         }
     }
+    
 }

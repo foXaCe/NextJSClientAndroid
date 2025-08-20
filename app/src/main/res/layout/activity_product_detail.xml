@@ -387,7 +387,7 @@
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="Légumes" />
+                            android:text="@string/vegetables_category" />
 
                     </LinearLayout>
 

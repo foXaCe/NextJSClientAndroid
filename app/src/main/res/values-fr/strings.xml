@@ -127,11 +127,15 @@
     <string name="ean_label">EAN :</string>
     <string name="category_label">Catégorie :</string>
     <string name="vegetables_category">Légumes</string>
+    <string name="fruits_category">Fruits</string>
+    <string name="citrus_category">Agrumes</string>
     <string name="brand_label">Marque :</string>
     <string name="origin_label">Origine :</string>
     <string name="palmares_title">Palmarès</string>
     <string name="consecutive_weeks">Consécutif 5 semaines</string>
+    <string name="consecutive_weeks_format">Consécutif %d semaines</string>
     <string name="since_date">Depuis le 01 Octobre 15 fois</string>
+    <string name="since_date_format">Depuis le 01 Octobre %d fois</string>
     <string name="price_title">Prix</string>
     <string name="no_products_found">Aucun produit trouvé</string>
     <string name="add_products_start">Ajoutez des produits pour commencer</string>

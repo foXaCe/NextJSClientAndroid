@@ -120,7 +120,7 @@ class ProductDetailActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Détails du produit"
+        supportActionBar?.title = getString(R.string.product_details)
     }
     
     private fun setupViews() {
@@ -154,7 +154,7 @@ class ProductDetailActivity : AppCompatActivity() {
         val totalReferences = intent.getIntExtra(EXTRA_TOTAL_REFERENCES, 0)
         
         // Set palmarès data avec SpannableString pour colorer les chiffres
-        val consecutiveText = "Consécutif $consecutiveWeeks semaines"
+        val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
         val consecutiveEnd = consecutiveStart + "$consecutiveWeeks semaines".length
@@ -180,7 +180,7 @@ class ProductDetailActivity : AppCompatActivity() {
         
         // Version initiale avec pourcentage par défaut
         val defaultPercentage = if (totalReferences > 0) 30 else 0 // Pourcentage par défaut
-        val totalText = "Depuis le 01 Octobre $totalReferences fois"
+        val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)
         val totalStart = totalText.indexOf("$totalReferences fois")
         val totalEnd = totalStart + "$totalReferences fois".length
@@ -422,7 +422,7 @@ class ProductDetailActivity : AppCompatActivity() {
         android.util.Log.d("ProductDetail", "🎨 UI_UPDATE_START: Début mise à jour affichage - consécutif=$consecutiveWeeks, total=$totalReferences, pourcentage=$percentage%")
         
         // Mettre à jour les semaines consécutives
-        val consecutiveText = "Consécutif $consecutiveWeeks semaines"
+        val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
         val consecutiveEnd = consecutiveStart + "$consecutiveWeeks semaines".length
@@ -451,7 +451,7 @@ class ProductDetailActivity : AppCompatActivity() {
         android.util.Log.d("ProductDetail", "🎨 UI_UPDATE_CONSECUTIVE_SET: TextView mis à jour avec '$consecutiveText'")
         
         // Mettre à jour le total des références (sans pourcentage)
-        val totalText = "Depuis le 01 Octobre $totalReferences fois"
+        val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)
         val totalStart = totalText.indexOf("$totalReferences fois")
         val totalEnd = totalStart + "$totalReferences fois".length
@@ -537,7 +537,7 @@ class ProductDetailActivity : AppCompatActivity() {
      * Met à jour seulement l'affichage des semaines consécutives
      */
     private fun updateConsecutiveDisplay(consecutiveWeeks: Int, isLoading: Boolean = false) {
-        val consecutiveText = "Consécutif $consecutiveWeeks semaines"
+        val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
         val consecutiveEnd = consecutiveStart + "$consecutiveWeeks semaines".length
@@ -567,7 +567,7 @@ class ProductDetailActivity : AppCompatActivity() {
      * Met à jour seulement l'affichage du total
      */
     private fun updateTotalDisplay(totalReferences: Int, isLoading: Boolean = false) {
-        val totalText = "Depuis le 01 Octobre $totalReferences fois"
+        val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)
         val totalStart = totalText.indexOf("$totalReferences fois")
         val totalEnd = totalStart + "$totalReferences fois".length

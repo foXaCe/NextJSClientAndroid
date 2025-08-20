@@ -133,7 +133,7 @@
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:text="Légumes" />
+                    android:text="@string/vegetables_category" />
 
                 <TextView
                     android:id="@+id/brandsTextView"

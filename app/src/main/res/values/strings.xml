@@ -127,11 +127,15 @@
     <string name="ean_label">EAN:</string>
     <string name="category_label">Category:</string>
     <string name="vegetables_category">Vegetables</string>
+    <string name="fruits_category">Fruits</string>
+    <string name="citrus_category">Citrus</string>
     <string name="brand_label">Brand:</string>
     <string name="origin_label">Origin:</string>
     <string name="palmares_title">Rankings</string>
     <string name="consecutive_weeks">Consecutive 5 weeks</string>
+    <string name="consecutive_weeks_format">Consecutive %d weeks</string>
     <string name="since_date">Since October 1st 15 times</string>
+    <string name="since_date_format">Since October 1st %d times</string>
     <string name="price_title">Price</string>
     <string name="no_products_found">No products found</string>
     <string name="add_products_start">Add products to start</string>
