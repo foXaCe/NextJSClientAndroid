@@ -183,13 +183,16 @@ Pour toute question ou problème :
 ## 🏗 Roadmap
 
 ### Version 1.1 (Prochaine)
+- [x] Système de mise à jour automatique optimisé
+- [x] Logique de comparaison de versions simplifiée
+- [x] Logs détaillés pour le diagnostic des téléchargements
 - [ ] Mode hors ligne complet
 - [ ] Export PDF des rapports
 - [ ] Notifications push
 - [ ] Widget homescreen
 
 ### Version 1.2
-- [ ] Multi-langue (FR/EN/ES)
+- [x] Multi-langue (FR/EN/ES)
 - [ ] Graphiques avancés
 - [ ] Intégration API REST
 - [ ] Tests unitaires
