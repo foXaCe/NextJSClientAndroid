@@ -99,8 +99,9 @@ lint/reports/
 # Temporary shell scripts
 *.sh
 
-# Markdown files (keep only README.md and SIGNING-SETUP.md)
+# Markdown files (keep only specific docs)
 *.md
 !README.md
 !SIGNING-SETUP.md
+!CLAUDE.md
 keystore_base64.txt
