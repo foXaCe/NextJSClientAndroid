@@ -519,73 +519,39 @@ class UpdateManager(private val context: Context) {
     
     private fun isNewerVersion(current: String, latest: String, release: Release, assetNames: List<String>): Boolean {
         return try {
-            Log.d(TAG, "🔍 SIMPLIFIED version check")
+            // UNIQUEMENT LES BUILDS GITHUB - pas de version locale
             
-            // LOGIQUE ULTRA SIMPLE : Extraire UNIQUEMENT le run number
-            
-            // 1. Current : extraire le nombre après # dans VERSION_DISPLAY_NAME
+            // Extraire le run number actuel (depuis #XX dans VERSION_DISPLAY_NAME)
             val currentRunNumber = try {
                 val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
-                Log.d(TAG, "Current VERSION_DISPLAY_NAME: $versionDisplayName")
-                
                 if (versionDisplayName.contains("#")) {
-                    // Format CI : "1.Dev.(#66)"
                     versionDisplayName
                         .substringAfter("#")
                         .substringBefore(")")
                         .toIntOrNull() ?: 0
                 } else {
-                    // Build local, pas de run number
-                    0
+                    0 // Pas un build GitHub
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Cannot get current run number", e)
                 0
             }
             
-            // 2. Latest : extraire run number depuis le nom de la release GitHub
+            // Extraire le run number de la release GitHub
             val latestRunNumber = try {
-                // Pattern simple : chercher "run" suivi de chiffres
                 val pattern = Regex("run(\\d+)")
                 val match = pattern.find(release.name)
                 match?.groupValues?.get(1)?.toIntOrNull() ?: 0
             } catch (e: Exception) {
-                Log.w(TAG, "Cannot extract run number from release", e)
                 0
             }
             
-            Log.d(TAG, "📊 Current run number: $currentRunNumber")
-            Log.d(TAG, "📊 Latest run number: $latestRunNumber")
+            Log.d(TAG, "Version check - Current: $currentRunNumber, Latest: $latestRunNumber")
             
-            // 3. Comparaison SIMPLE
-            val isNewer = when {
-                currentRunNumber == 0 -> {
-                    // Build local, toujours proposer la release GitHub
-                    Log.d(TAG, "Local build detected, GitHub release available")
-                    true
-                }
-                latestRunNumber == 0 -> {
-                    // Pas de run number dans la release, ne pas proposer
-                    Log.d(TAG, "No run number in release, skip")
-                    false
-                }
-                latestRunNumber > currentRunNumber -> {
-                    // Nouvelle version disponible
-                    Log.d(TAG, "New version available: $latestRunNumber > $currentRunNumber")
-                    true
-                }
-                else -> {
-                    // À jour
-                    Log.d(TAG, "Up to date: $latestRunNumber <= $currentRunNumber")
-                    false
-                }
-            }
-            
-            Log.d(TAG, "📊 Result: ${if (isNewer) "UPDATE AVAILABLE" else "UP TO DATE"}")
-            return isNewer
+            // Comparaison simple : plus récent = mise à jour disponible
+            return latestRunNumber > currentRunNumber
             
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error in version check", e)
+            Log.e(TAG, "Error in version check", e)
             false
         }
     }

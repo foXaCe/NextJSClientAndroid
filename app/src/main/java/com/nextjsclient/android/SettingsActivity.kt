@@ -106,31 +106,24 @@ class SettingsActivity : AppCompatActivity() {
             showLogoutDialog()
         }
         
-        // Affichage SIMPLE de la version
+        // Affichage version GITHUB uniquement
         try {
             val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
             val commitHash = com.nextjsclient.android.BuildConfig.COMMIT_HASH
             
-            // Extraire le run number si présent
+            // Extraire le run number 
             val runNumber = if (versionDisplayName.contains("#")) {
                 versionDisplayName.substringAfter("#").substringBefore(")")
             } else {
-                null
+                "0"
             }
             
-            // Affichage principal simple
-            if (runNumber != null) {
-                // Version CI avec run number
-                binding.appVersion.text = "Version $runNumber"
-                binding.buildInfo.text = "GitHub build • $commitHash"
-            } else {
-                // Version locale
-                binding.appVersion.text = "Version locale"
-                binding.buildInfo.text = "Dev build • $commitHash"
-            }
+            // Affichage simple
+            binding.appVersion.text = "Build #$runNumber"
+            binding.buildInfo.text = commitHash
             
         } catch (e: Exception) {
-            binding.appVersion.text = "Version inconnue"
+            binding.appVersion.text = "Build #0"
             binding.buildInfo.text = ""
         }
         
