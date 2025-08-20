@@ -245,9 +245,6 @@ jobs:
 **🔢 Run Number:** ${{ steps.version.outputs.RUN_NUMBER }}  
 **🌟 Branch:** main
 
-### ⚠️ Avertissement
-Cette version est générée automatiquement depuis la branche de développement. Elle peut contenir des bugs et des fonctionnalités instables. Utilisez-la à vos risques et périls.
-
 ### 📋 Dernières Modifications
 $CHANGELOG
 
