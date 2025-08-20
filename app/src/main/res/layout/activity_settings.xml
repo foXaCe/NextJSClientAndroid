@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_dark">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -15,8 +15,8 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:titleTextColor="@color/white"
-            app:navigationIconTint="@color/white">
+            app:titleTextColor="?attr/colorOnSurface"
+            app:navigationIconTint="?attr/colorOnSurface">
             
             <ImageView
                 android:id="@+id/logoutIcon"
@@ -29,7 +29,7 @@
                 android:padding="4dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:tint="@color/white" />
+                app:tint="?attr/colorOnSurface" />
                 
         </com.google.android.material.appbar.MaterialToolbar>
 
@@ -62,7 +62,7 @@
                     android:layout_height="96dp"
                     app:cardCornerRadius="48dp"
                     app:cardElevation="8dp"
-                    app:cardBackgroundColor="@color/surface_dark">
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -89,7 +89,7 @@
                     android:layout_height="wrap_content"
                     android:text="user@example.com"
                     android:textSize="18sp"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_marginTop="16dp" />
 
 
@@ -119,7 +119,7 @@
                     android:layout_marginBottom="24dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_dark">
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                     <LinearLayout
                         android:id="@+id/updateSection"
@@ -158,7 +158,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Mise à jour"
                                 android:textSize="16sp"
-                                android:textColor="@color/white"
+                                android:textColor="?attr/colorOnSurface"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -167,7 +167,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Vérification..."
                                 android:textSize="14sp"
-                                android:textColor="@color/text_secondary_dark"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 android:layout_marginTop="2dp" />
 
                         </LinearLayout>
@@ -213,7 +213,7 @@
                     android:layout_marginBottom="24dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_dark">
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -226,7 +226,7 @@
                             android:layout_height="wrap_content"
                             android:text="Choisissez les fournisseurs à afficher"
                             android:textSize="16sp"
-                            android:textColor="@color/white"
+                            android:textColor="?attr/colorOnSurface"
                             android:textStyle="bold"
                             android:layout_marginBottom="16dp" />
 
@@ -264,7 +264,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Anecoop"
                                     android:textSize="16sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:layout_gravity="center_vertical" />
 
                             </LinearLayout>
@@ -304,7 +304,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Solagora"
                                     android:textSize="16sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:layout_gravity="center_vertical" />
 
                             </LinearLayout>
@@ -341,7 +341,7 @@
                     android:layout_marginBottom="24dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_dark">
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                     <LinearLayout
                         android:id="@+id/themeSelector"
@@ -380,7 +380,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Thème de l'application"
                                 android:textSize="16sp"
-                                android:textColor="@color/white"
+                                android:textColor="?attr/colorOnSurface"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -389,7 +389,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Sombre"
                                 android:textSize="14sp"
-                                android:textColor="@color/text_secondary_dark"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 android:layout_marginTop="2dp" />
 
                         </LinearLayout>
@@ -399,7 +399,7 @@
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
                             android:layout_gravity="center_vertical"
-                            app:tint="@color/text_secondary_dark" />
+                            app:tint="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
@@ -431,7 +431,7 @@
                     android:layout_marginBottom="24dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_dark">
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -478,7 +478,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Authentification biométrique"
                                     android:textSize="16sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold" />
 
                                 <TextView
@@ -487,7 +487,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Vérification..."
                                     android:textSize="14sp"
-                                    android:textColor="@color/text_secondary_dark"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:layout_marginTop="2dp" />
 
                             </LinearLayout>
@@ -530,7 +530,7 @@
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/surface_dark">
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -565,7 +565,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="@string/app_name"
                                     android:textSize="18sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold" />
 
                                 <TextView
@@ -574,7 +574,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Version 1.0.0"
                                     android:textSize="14sp"
-                                    android:textColor="@color/text_secondary_dark"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:layout_marginTop="2dp" />
 
                             </LinearLayout>
@@ -610,7 +610,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Développeur"
                                     android:textSize="11sp"
-                                    android:textColor="@color/text_secondary_dark"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textAllCaps="true"
                                     android:letterSpacing="0.05" />
 
@@ -619,7 +619,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Stéphane Chabrol"
                                     android:textSize="13sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold"
                                     android:layout_marginTop="4dp" />
 
@@ -647,7 +647,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Build"
                                     android:textSize="11sp"
-                                    android:textColor="@color/text_secondary_dark"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textAllCaps="true"
                                     android:letterSpacing="0.05" />
 
@@ -657,7 +657,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Release"
                                     android:textSize="13sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold"
                                     android:layout_marginTop="4dp" />
 
@@ -679,7 +679,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="TECHNOLOGIES"
                                 android:textSize="11sp"
-                                android:textColor="@color/text_secondary_dark"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textAllCaps="true"
                                 android:letterSpacing="0.05"
                                 android:layout_marginBottom="12dp" />
@@ -695,7 +695,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Android 14"
                                     android:textSize="12sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:background="@drawable/chip_background"
                                     android:paddingHorizontal="12dp"
                                     android:paddingVertical="6dp"
@@ -707,7 +707,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Firebase"
                                     android:textSize="12sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:background="@drawable/chip_background"
                                     android:paddingHorizontal="12dp"
                                     android:paddingVertical="6dp"
@@ -719,7 +719,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Material 3"
                                     android:textSize="12sp"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:background="@drawable/chip_background"
                                     android:paddingHorizontal="12dp"
                                     android:paddingVertical="6dp" />
