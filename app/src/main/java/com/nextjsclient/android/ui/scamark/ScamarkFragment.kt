@@ -223,7 +223,7 @@ class ScamarkFragment : Fragment() {
         
         viewModel.isLoadingMoreWeeks.observe(viewLifecycleOwner) { isLoading ->
             loadMoreButton.isEnabled = !isLoading
-            loadMoreButton.text = if (isLoading) "Chargement..." else "Charger 10 de plus"
+            loadMoreButton.text = if (isLoading) getString(R.string.loading) else getString(R.string.load_more)
         }
         
         viewModel.availableWeeks.observe(viewLifecycleOwner) { weeks ->
@@ -297,7 +297,7 @@ class ScamarkFragment : Fragment() {
                 visibility = View.VISIBLE
             }
             binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.apply {
-                text = "Veuillez patienter..."
+                text = getString(R.string.please_wait)
                 visibility = View.VISIBLE
             }
             binding.emptyView.findViewById<android.widget.ProgressBar>(R.id.emptyProgressBar)?.visibility = View.VISIBLE
@@ -424,10 +424,10 @@ class ScamarkFragment : Fragment() {
             // Mettre à jour le texte du message selon le filtre
             val messageText = filterMessage?.findViewById<android.widget.TextView>(R.id.filterMessageText)
             when (filter) {
-                "entrants" -> messageText?.text = "🟢 Affichage des produits entrants • Tirez vers le bas pour rafraîchir"
-                "sortants" -> messageText?.text = "🔴 Affichage des produits sortants • Tirez vers le bas pour rafraîchir"
-                "promo" -> messageText?.text = "🔥 Affichage des promotions • Tirez vers le bas pour rafraîchir"
-                else -> messageText?.text = "Filtre actif • Tirez vers le bas pour rafraîchir"
+                "entrants" -> messageText?.text = getString(R.string.filter_incoming_message)
+                "sortants" -> messageText?.text = getString(R.string.filter_outgoing_message)
+                "promo" -> messageText?.text = getString(R.string.filter_promo_message)
+                else -> messageText?.text = getString(R.string.filter_active_message)
             }
         } else {
             // Afficher le sélecteur de semaine et masquer le message

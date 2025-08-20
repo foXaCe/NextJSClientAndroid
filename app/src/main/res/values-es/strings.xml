@@ -152,4 +152,22 @@
     <string name="date_range_separator">a</string>
     <string name="week_label">Semana</string>
     <string name="week_short">S</string>
+    
+    <!-- Filter messages -->
+    <string name="filter_incoming_message">🟢 Mostrando productos entrantes • Desliza hacia abajo para actualizar</string>
+    <string name="filter_outgoing_message">🔴 Mostrando productos salientes • Desliza hacia abajo para actualizar</string>
+    <string name="filter_promo_message">🔥 Mostrando promociones • Desliza hacia abajo para actualizar</string>
+    <string name="filter_active_message">Filtro activo • Desliza hacia abajo para actualizar</string>
+    
+    <!-- Loading states -->
+    <string name="please_wait">Por favor espere...</string>
+    
+    <!-- Product card labels -->
+    <string name="sca_prefix">SCA:</string>
+    <string name="price_offered_prefix">Precio ofrecido:</string>
+    <string name="price_retained_prefix">Precio retenido:</string>
+    <string name="sca_count_format">SCA: %1$d BLL + %2$d EUROPOOL = %3$d</string>
+    
+    <!-- Update notifications -->
+    <string name="click_here">Haga clic aquí</string>
 </resources>

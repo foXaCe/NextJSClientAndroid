@@ -105,10 +105,11 @@ class ScamarkProductAdapter(
             // Prix avec labels et couleurs conditionnelles - afficher même si 0
             if (product.prixRetenu >= 0) {
                 val prixRetenuStr = "${priceFormat.format(product.prixRetenu)}€"
+                val retainedPrefix = itemView.context.getString(R.string.price_retained_prefix)
                 val prixText = if (product.isPromo) {
-                    "Prix retenu: $prixRetenuStr 🔥"
+                    "$retainedPrefix $prixRetenuStr 🔥"
                 } else {
-                    "Prix retenu: $prixRetenuStr"
+                    "$retainedPrefix $prixRetenuStr"
                 }
                 priceRetenuTextView.text = prixText
                 priceRetenuTextView.visibility = View.VISIBLE
@@ -119,10 +120,11 @@ class ScamarkProductAdapter(
             // Afficher prix offert même si 0
             if (product.prixOffert >= 0) {
                 val prixOffertStr = "${priceFormat.format(product.prixOffert)}€"
+                val offeredPrefix = itemView.context.getString(R.string.price_offered_prefix)
                 val prixText = if (product.isPromo) {
-                    "Prix offert: $prixOffertStr ⚡"
+                    "$offeredPrefix $prixOffertStr ⚡"
                 } else {
-                    "Prix offert: $prixOffertStr"
+                    "$offeredPrefix $prixOffertStr"
                 }
                 priceOffertTextView.text = prixText
                 priceOffertTextView.visibility = View.VISIBLE
@@ -196,7 +198,7 @@ class ScamarkProductAdapter(
             val totalCount = product.totalScas
             
             // Créer le texte avec couleurs
-            val text = "SCA: $bllCount BLL + $europoolCount EUROPOOL = $totalCount"
+            val text = itemView.context.getString(R.string.sca_count_format, bllCount, europoolCount, totalCount)
             val spannableString = SpannableString(text)
             
             // Couleur orange pour BLL
