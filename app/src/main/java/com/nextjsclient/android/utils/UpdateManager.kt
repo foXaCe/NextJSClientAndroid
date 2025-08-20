@@ -9,10 +9,10 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
+import java.io.File
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.json.JSONArray
-import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -178,13 +178,48 @@ class UpdateManager(private val context: Context) {
         }
     }
     
+    private fun cleanOldUpdates() {
+        try {
+            val appUpdateDir = File(context.getExternalFilesDir(null), "updates")
+            if (appUpdateDir.exists() && appUpdateDir.isDirectory) {
+                val oldFiles = appUpdateDir.listFiles { file ->
+                    file.name.startsWith("NextJSClient-") && file.name.endsWith(".apk")
+                }
+                
+                oldFiles?.forEach { file ->
+                    Log.d(TAG, "🗑️ Deleting old update: ${file.name}")
+                    file.delete()
+                }
+                
+                if (oldFiles?.isNotEmpty() == true) {
+                    Log.d(TAG, "✅ Cleaned ${oldFiles.size} old update file(s)")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cleaning old updates", e)
+        }
+    }
+    
     fun downloadUpdate(release: Release) {
         try {
+            // Nettoyer les anciennes mises à jour avant de télécharger
+            cleanOldUpdates()
+            
             val fileName = "NextJSClient-${release.tagName}.apk"
+            
+            // Utiliser le répertoire externe privé de l'app pour les mises à jour
+            val appUpdateDir = File(context.getExternalFilesDir(null), "updates")
+            if (!appUpdateDir.exists()) {
+                appUpdateDir.mkdirs()
+            }
+            
+            val destinationFile = File(appUpdateDir, fileName)
+            Log.d(TAG, "📂 Destination file: ${destinationFile.absolutePath}")
+            
             val request = DownloadManager.Request(Uri.parse(release.downloadUrl))
                 .setTitle("NextJS Client Update")
                 .setDescription("Téléchargement de la mise à jour ${release.tagName}")
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                .setDestinationUri(Uri.fromFile(destinationFile))
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
@@ -192,12 +227,12 @@ class UpdateManager(private val context: Context) {
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadId = downloadManager.enqueue(request)
             Log.d(TAG, "📥 Download started with ID: $downloadId")
-            Log.d(TAG, "📂 File will be saved as: $fileName")
+            Log.d(TAG, "📂 File will be saved as: $fileName in app directory")
             
             listener?.onDownloadStarted()
             
             // Start monitoring download progress
-            startDownloadMonitoring(fileName)
+            startDownloadMonitoring(destinationFile.absolutePath)
             
         } catch (e: Exception) {
             Log.e(TAG, "Error downloading update", e)
@@ -205,7 +240,7 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private fun startDownloadMonitoring(fileName: String) {
+    private fun startDownloadMonitoring(filePath: String) {
         // Use a coroutine to monitor download progress periodically
         CoroutineScope(Dispatchers.IO).launch {
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -234,7 +269,7 @@ class UpdateManager(private val context: Context) {
                             cursor.close()
                             
                             // Check if file exists and notify completion
-                            val downloadFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
+                            val downloadFile = File(filePath)
                             Log.d(TAG, "   • Looking for file: ${downloadFile.absolutePath}")
                             Log.d(TAG, "   • File exists: ${downloadFile.exists()}")
                             
