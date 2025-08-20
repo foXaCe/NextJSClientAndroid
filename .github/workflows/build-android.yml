@@ -145,7 +145,7 @@ jobs:
         
         # Extraire les infos de signature
         CERT_INFO=$(apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "DN:" | head -1 | sed 's/.*CN=//' | cut -d',' -f1)
-        SHA256=$(apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "SHA-256" | head -1 | awk '{print substr($3, 1, 16)}...')
+        SHA256=$(apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "SHA-256" | head -1 | awk '{print substr($3, 1, 16) "..."}')
         echo "CERT_INFO=$CERT_INFO" >> $GITHUB_OUTPUT
         echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
 
