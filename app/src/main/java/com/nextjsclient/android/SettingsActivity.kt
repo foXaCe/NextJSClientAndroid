@@ -106,22 +106,32 @@ class SettingsActivity : AppCompatActivity() {
             showLogoutDialog()
         }
         
-        // App version display like Lawnchair
+        // Affichage SIMPLE de la version
         try {
-            // Use VERSION_DISPLAY_NAME from BuildConfig (like Lawnchair)
             val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
             val commitHash = com.nextjsclient.android.BuildConfig.COMMIT_HASH
-            val buildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
             
-            // Main version display
-            binding.appVersion.text = versionDisplayName
+            // Extraire le run number si présent
+            val runNumber = if (versionDisplayName.contains("#")) {
+                versionDisplayName.substringAfter("#").substringBefore(")")
+            } else {
+                null
+            }
             
-            // Build info with commit and build number
-            binding.buildInfo.text = "Build #$buildNumber • $commitHash"
+            // Affichage principal simple
+            if (runNumber != null) {
+                // Version CI avec run number
+                binding.appVersion.text = "Version $runNumber"
+                binding.buildInfo.text = "GitHub build • $commitHash"
+            } else {
+                // Version locale
+                binding.appVersion.text = "Version locale"
+                binding.buildInfo.text = "Dev build • $commitHash"
+            }
             
         } catch (e: Exception) {
-            binding.appVersion.text = "1.Dev.(unknown)"
-            binding.buildInfo.text = "Build #1 • unknown"
+            binding.appVersion.text = "Version inconnue"
+            binding.buildInfo.text = ""
         }
         
         // Tech stack info
