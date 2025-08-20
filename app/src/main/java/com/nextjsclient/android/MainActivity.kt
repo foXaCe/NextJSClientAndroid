@@ -35,6 +35,8 @@ class MainActivity : AppCompatActivity() {
     private var currentScamarkFragment: ScamarkFragment? = null
     private var isBiometricPromptShown = false
     private var isAppInBackground = false
+    private var navigationStartTime = 0L
+    private var lastStopTime = 0L
     private var biometricLockOverlay: View? = null
     private var currentSupplier: String = "anecoop"
     
@@ -101,13 +103,19 @@ class MainActivity : AppCompatActivity() {
         // Mettre à jour la visibilité du menu quand on revient de la page paramètres
         updateNavigationVisibility()
         
-        // Vérifier l'authentification biométrique seulement si on revient d'arrière-plan réel
-        if (isAppInBackground && !isBiometricPromptShown) {
+        // Vérifier l'authentification biométrique seulement si on revient d'un vrai arrière-plan
+        // (pas d'une navigation interne comme Settings)
+        val currentTime = System.currentTimeMillis()
+        val timeSinceStop = currentTime - lastStopTime
+        val wasRealBackground = isAppInBackground && timeSinceStop > 500 // Plus de 500ms = vrai arrière-plan
+        
+        if (wasRealBackground && !isBiometricPromptShown) {
             checkBiometricAuthentication()
         }
         
         // Réinitialiser le flag d'arrière-plan
         isAppInBackground = false
+        lastStopTime = 0L
     }
     
     override fun onPause() {
@@ -121,6 +129,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         // L'app va vraiment en arrière-plan (pas juste navigation interne)
         isAppInBackground = true
+        lastStopTime = System.currentTimeMillis()
     }
     
     private fun setupSupplierNavigation() {

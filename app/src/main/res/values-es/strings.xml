@@ -38,4 +38,47 @@
     <string name="update_button_install">Instalar</string>
     <string name="update_fallback_changelog">• Mejoras y corrección de errores</string>
     <string name="update_fallback_detailed">• Nueva versión disponible\n• Mejoras de rendimiento</string>
+    
+    <!-- Settings Activity -->
+    <string name="settings_title">Configuración</string>
+    <string name="email_not_available">Correo electrónico no disponible</string>
+    <string name="build_format">Build %s</string>
+    <string name="version_code_format">Versión %s • Código %d</string>
+    <string name="build_number_format">Build #%d</string>
+    <string name="version_default">Versión 1.0.0</string>
+    <string name="build_default">Build #1</string>
+    <string name="api_format">API %d</string>
+    <string name="firebase_text">Firebase</string>
+    <string name="material_text">Material 3</string>
+    <string name="checking_updates">Verificando...</string>
+    <string name="up_to_date">Estás actualizado</string>
+    <string name="downloading">Descargando...</string>
+    <string name="download_progress">Descarga: %d%%</string>
+    <string name="installing">Instalando...</string>
+    <string name="supplier_required">Al menos un proveedor debe estar seleccionado</string>
+    <string name="anecoop_enabled">Anecoop activado</string>
+    <string name="anecoop_disabled">Anecoop desactivado</string>
+    <string name="solagora_enabled">Solagora activado</string>
+    <string name="solagora_disabled">Solagora desactivado</string>
+    <string name="biometric_activate_title">Activar autenticación biométrica</string>
+    <string name="biometric_activate_subtitle">Confirma tu identidad para activar esta función</string>
+    <string name="biometric_enabled">Autenticación biométrica activada</string>
+    <string name="biometric_error">Error: %s</string>
+    <string name="biometric_disabled">Autenticación biométrica desactivada</string>
+    <string name="fingerprint_auth">Huella digital</string>
+    <string name="face_auth">Reconocimiento facial</string>
+    <string name="iris_auth">Reconocimiento de iris</string>
+    <string name="biometric_auth">Autenticación biométrica</string>
+    <string name="biometric_enabled_status">Activada</string>
+    <string name="biometric_setup_title">Autenticación biométrica</string>
+    <string name="biometric_setup_message">La autenticación biométrica no está configurada en tu dispositivo.\n\n¿Te gustaría abrir la configuración de seguridad para configurarla?</string>
+    <string name="settings_button">Configuración</string>
+    <string name="cancel_button">Cancelar</string>
+    <string name="unable_open_settings">No se puede abrir la configuración</string>
+    <string name="update_title_format">Actualización %s</string>
+    <string name="install_button">Instalar</string>
+    <string name="choose_theme">Elegir tema</string>
+    <string name="logout_title">Cerrar sesión</string>
+    <string name="logout_message">¿Estás seguro de que quieres cerrar sesión?</string>
+    <string name="logout_button">Cerrar sesión</string>
 </resources>

@@ -30,12 +30,55 @@
     <string name="settings_cache_summary">Clear WebView cache and cookies</string>
     
     <!-- Update -->
-    <string name="update_available">Nouvelle version disponible</string>
-    <string name="update_sheet_title">Mise à jour disponible</string>
+    <string name="update_available">New version available</string>
+    <string name="update_sheet_title">Update available</string>
     <string name="update_version_format">Version %s</string>
-    <string name="update_changelog_title">Nouveautés</string>
-    <string name="update_button_later">Plus tard</string>
-    <string name="update_button_install">Installer</string>
-    <string name="update_fallback_changelog">• Améliorations et corrections de bugs</string>
-    <string name="update_fallback_detailed">• Nouvelle version disponible\n• Améliorations des performances</string>
+    <string name="update_changelog_title">What\'s new</string>
+    <string name="update_button_later">Later</string>
+    <string name="update_button_install">Install</string>
+    <string name="update_fallback_changelog">• Improvements and bug fixes</string>
+    <string name="update_fallback_detailed">• New version available\n• Performance improvements</string>
+    
+    <!-- Settings Activity -->
+    <string name="settings_title">Settings</string>
+    <string name="email_not_available">Email not available</string>
+    <string name="build_format">Build %s</string>
+    <string name="version_code_format">Version %s • Code %d</string>
+    <string name="build_number_format">Build #%d</string>
+    <string name="version_default">Version 1.0.0</string>
+    <string name="build_default">Build #1</string>
+    <string name="api_format">API %d</string>
+    <string name="firebase_text">Firebase</string>
+    <string name="material_text">Material 3</string>
+    <string name="checking_updates">Checking...</string>
+    <string name="up_to_date">You are up to date</string>
+    <string name="downloading">Downloading...</string>
+    <string name="download_progress">Download: %d%%</string>
+    <string name="installing">Installing...</string>
+    <string name="supplier_required">At least one supplier must be selected</string>
+    <string name="anecoop_enabled">Anecoop enabled</string>
+    <string name="anecoop_disabled">Anecoop disabled</string>
+    <string name="solagora_enabled">Solagora enabled</string>
+    <string name="solagora_disabled">Solagora disabled</string>
+    <string name="biometric_activate_title">Enable biometric authentication</string>
+    <string name="biometric_activate_subtitle">Confirm your identity to enable this feature</string>
+    <string name="biometric_enabled">Biometric authentication enabled</string>
+    <string name="biometric_error">Error: %s</string>
+    <string name="biometric_disabled">Biometric authentication disabled</string>
+    <string name="fingerprint_auth">Fingerprint</string>
+    <string name="face_auth">Face recognition</string>
+    <string name="iris_auth">Iris recognition</string>
+    <string name="biometric_auth">Biometric authentication</string>
+    <string name="biometric_enabled_status">Enabled</string>
+    <string name="biometric_setup_title">Biometric authentication</string>
+    <string name="biometric_setup_message">Biometric authentication is not configured on your device.\n\nWould you like to open security settings to configure it?</string>
+    <string name="settings_button">Settings</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="unable_open_settings">Unable to open settings</string>
+    <string name="update_title_format">Update %s</string>
+    <string name="install_button">Install</string>
+    <string name="choose_theme">Choose theme</string>
+    <string name="logout_title">Logout</string>
+    <string name="logout_message">Are you sure you want to log out?</string>
+    <string name="logout_button">Log out</string>
 </resources>

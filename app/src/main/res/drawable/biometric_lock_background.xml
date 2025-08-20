@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Background color -->
+    <item>
+        <color android:color="?attr/colorSurface" />
+    </item>
+    
+    <!-- Anecoop logo centered -->
+    <item android:gravity="center">
+        <bitmap
+            android:src="@drawable/anecoop"
+            android:gravity="center"
+            android:alpha="0.1" />
+    </item>
+    
+    <!-- Semi-transparent overlay for readability -->
+    <item>
+        <color android:color="#80000000" />
+    </item>
+    
+</layer-list>

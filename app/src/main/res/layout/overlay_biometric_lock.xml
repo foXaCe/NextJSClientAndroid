@@ -4,7 +4,7 @@
     android:id="@+id/biometricLockOverlay"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
+    android:background="@drawable/biometric_lock_background"
     android:clickable="true"
     android:focusable="true"
     android:elevation="100dp">

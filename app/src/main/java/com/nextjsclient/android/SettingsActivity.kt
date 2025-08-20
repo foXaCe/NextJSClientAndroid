@@ -76,7 +76,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Paramètres"
+        supportActionBar?.title = getString(R.string.settings_title)
     }
     
     private fun setupViews() {
@@ -89,7 +89,7 @@ class SettingsActivity : AppCompatActivity() {
         // User info and avatar
         val user = auth.currentUser
         if (user != null) {
-            binding.userEmail.text = user.email ?: "Email non disponible"
+            binding.userEmail.text = user.email ?: getString(R.string.email_not_available)
             
             // Set user initial in avatar
             val initial = user.email?.firstOrNull()?.uppercaseChar() ?: 'U'
@@ -112,21 +112,21 @@ class SettingsActivity : AppCompatActivity() {
             val commitHash = getCommitHash(versionName)
             
             if (commitHash != null) {
-                binding.appVersion.text = "Build $commitHash"
-                binding.buildInfo.text = "Version $versionName • Code $versionCode"
+                binding.appVersion.text = getString(R.string.build_format, commitHash)
+                binding.buildInfo.text = getString(R.string.version_code_format, versionName, versionCode)
             } else {
-                binding.appVersion.text = "Version $versionName"
-                binding.buildInfo.text = "Build #$versionCode"
+                binding.appVersion.text = getString(R.string.update_version_format, versionName)
+                binding.buildInfo.text = getString(R.string.build_number_format, versionCode)
             }
         } catch (e: Exception) {
-            binding.appVersion.text = "Version 1.0.0"
-            binding.buildInfo.text = "Build #1"
+            binding.appVersion.text = getString(R.string.version_default)
+            binding.buildInfo.text = getString(R.string.build_default)
         }
         
         // Tech stack info
-        binding.androidVersion.text = "API ${android.os.Build.VERSION.SDK_INT}"
-        binding.firebaseVersion.text = "Firebase"
-        binding.materialVersion.text = "Material 3"
+        binding.androidVersion.text = getString(R.string.api_format, android.os.Build.VERSION.SDK_INT)
+        binding.firebaseVersion.text = getString(R.string.firebase_text)
+        binding.materialVersion.text = getString(R.string.material_text)
     }
     
     private fun getCommitHash(versionName: String): String? {
@@ -162,7 +162,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupUpdateManager() {
         updateManager.setUpdateListener(object : UpdateManager.UpdateListener {
             override fun onUpdateChecking() {
-                binding.updateStatus.text = "Vérification..."
+                binding.updateStatus.text = getString(R.string.checking_updates)
                 binding.updateButton.visibility = View.GONE
             }
             
@@ -175,22 +175,22 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onUpToDate() {
-                binding.updateStatus.text = "Vous êtes à jour"
+                binding.updateStatus.text = getString(R.string.up_to_date)
                 binding.updateButton.visibility = View.GONE
             }
             
             override fun onDownloadStarted() {
-                binding.updateStatus.text = "Téléchargement en cours..."
-                binding.updateButton.text = "Téléchargement..."
+                binding.updateStatus.text = getString(R.string.downloading)
+                binding.updateButton.text = getString(R.string.downloading)
                 binding.updateButton.isEnabled = false
             }
             
             override fun onDownloadProgress(progress: Int) {
-                binding.updateStatus.text = "Téléchargement: $progress%"
+                binding.updateStatus.text = getString(R.string.download_progress, progress)
             }
             
             override fun onDownloadCompleted(file: File) {
-                binding.updateStatus.text = "Installation en cours..."
+                binding.updateStatus.text = getString(R.string.installing)
                 binding.updateButton.visibility = View.GONE
                 downloadedFile = file
                 
@@ -240,7 +240,7 @@ class SettingsActivity : AppCompatActivity() {
             if (!isChecked && !binding.solagoraCheckbox.isChecked) {
                 // Prevent unchecking if it would leave no suppliers enabled
                 binding.anecoopCheckbox.isChecked = true
-                Toast.makeText(this, "Au moins un fournisseur doit être sélectionné", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.supplier_required), Toast.LENGTH_SHORT).show()
                 return@setOnCheckedChangeListener
             }
             
@@ -248,7 +248,7 @@ class SettingsActivity : AppCompatActivity() {
             supplierPreferences.validateSettings()
             
             // Show confirmation message
-            val message = if (isChecked) "Anecoop activé" else "Anecoop désactivé"
+            val message = if (isChecked) getString(R.string.anecoop_enabled) else getString(R.string.anecoop_disabled)
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
         
@@ -257,7 +257,7 @@ class SettingsActivity : AppCompatActivity() {
             if (!isChecked && !binding.anecoopCheckbox.isChecked) {
                 // Prevent unchecking if it would leave no suppliers enabled
                 binding.solagoraCheckbox.isChecked = true
-                Toast.makeText(this, "Au moins un fournisseur doit être sélectionné", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.supplier_required), Toast.LENGTH_SHORT).show()
                 return@setOnCheckedChangeListener
             }
             
@@ -265,7 +265,7 @@ class SettingsActivity : AppCompatActivity() {
             supplierPreferences.validateSettings()
             
             // Show confirmation message
-            val message = if (isChecked) "Solagora activé" else "Solagora désactivé"
+            val message = if (isChecked) getString(R.string.solagora_enabled) else getString(R.string.solagora_disabled)
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
     }
@@ -294,16 +294,16 @@ class SettingsActivity : AppCompatActivity() {
                 // Tester l'authentification avant d'activer
                 biometricManager.authenticate(
                     activity = this,
-                    title = "Activer l'authentification biométrique",
-                    subtitle = "Confirmez votre identité pour activer cette fonctionnalité",
+                    title = getString(R.string.biometric_activate_title),
+                    subtitle = getString(R.string.biometric_activate_subtitle),
                     onSuccess = {
                         biometricManager.setBiometricEnabled(true)
                         updateBiometricUI()
-                        Toast.makeText(this, "Authentification biométrique activée", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.biometric_enabled), Toast.LENGTH_SHORT).show()
                     },
                     onError = { error ->
                         binding.biometricSwitch.isChecked = false
-                        Toast.makeText(this, "Erreur: $error", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.biometric_error, error), Toast.LENGTH_SHORT).show()
                     },
                     onCancel = {
                         binding.biometricSwitch.isChecked = false
@@ -313,7 +313,7 @@ class SettingsActivity : AppCompatActivity() {
                 // Désactiver directement
                 biometricManager.setBiometricEnabled(false)
                 updateBiometricUI()
-                Toast.makeText(this, "Authentification biométrique désactivée", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.biometric_disabled), Toast.LENGTH_SHORT).show()
             }
         }
         
@@ -333,15 +333,15 @@ class SettingsActivity : AppCompatActivity() {
         
         // Mettre à jour le titre en fonction du type
         binding.biometricTitle.text = when {
-            biometricType.contains("Empreinte") -> "Empreinte digitale"
-            biometricType.contains("Reconnaissance faciale") -> "Reconnaissance faciale"
-            biometricType.contains("iris") -> "Reconnaissance de l'iris"
-            else -> "Authentification biométrique"
+            biometricType.contains("Empreinte") -> getString(R.string.fingerprint_auth)
+            biometricType.contains("Reconnaissance faciale") -> getString(R.string.face_auth)
+            biometricType.contains("iris") -> getString(R.string.iris_auth)
+            else -> getString(R.string.biometric_auth)
         }
         
         // Mettre à jour le statut
         binding.biometricStatus.text = if (isConfigured && biometricManager.isBiometricEnabledInApp()) {
-            "Activée"
+            getString(R.string.biometric_enabled_status)
         } else {
             statusMessage
         }
@@ -360,17 +360,17 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun showBiometricSettingsDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Authentification biométrique")
-            .setMessage("L'authentification biométrique n'est pas configurée sur votre appareil.\n\nVoulez-vous ouvrir les paramètres de sécurité pour la configurer ?")
-            .setPositiveButton("Paramètres") { _, _ ->
+            .setTitle(getString(R.string.biometric_setup_title))
+            .setMessage(getString(R.string.biometric_setup_message))
+            .setPositiveButton(getString(R.string.settings_button)) { _, _ ->
                 try {
                     val intent = Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)
                     startActivity(intent)
                 } catch (e: Exception) {
-                    Toast.makeText(this, "Impossible d'ouvrir les paramètres", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.unable_open_settings), Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Annuler", null)
+            .setNegativeButton(getString(R.string.cancel_button), null)
             .show()
     }
     
@@ -380,7 +380,7 @@ class SettingsActivity : AppCompatActivity() {
                 updateManager.checkForUpdates()
             }
         } catch (e: Exception) {
-            binding.updateStatus.text = "Vous êtes à jour"
+            binding.updateStatus.text = getString(R.string.up_to_date)
             binding.updateButton.visibility = View.GONE
         }
     }
@@ -445,12 +445,12 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun showReleaseNotes(release: Release) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Mise à jour ${release.tagName}")
+            .setTitle(getString(R.string.update_title_format, release.tagName))
             .setMessage(release.body)
-            .setPositiveButton("Installer") { _, _ ->
+            .setPositiveButton(getString(R.string.install_button)) { _, _ ->
                 downloadedFile?.let { updateManager.installUpdate(it) }
             }
-            .setNegativeButton("Plus tard", null)
+            .setNegativeButton(getString(R.string.update_button_later), null)
             .show()
     }
     
@@ -466,7 +466,7 @@ class SettingsActivity : AppCompatActivity() {
         val currentIndex = themes.indexOfFirst { it.first == currentTheme }
         
         MaterialAlertDialogBuilder(this)
-            .setTitle("Choisir le thème")
+            .setTitle(getString(R.string.choose_theme))
             .setSingleChoiceItems(themeNames, currentIndex) { dialog, which ->
                 val selectedTheme = themes[which].first
                 themeManager.setTheme(selectedTheme)
@@ -482,18 +482,18 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     .start()
             }
-            .setNegativeButton("Annuler", null)
+            .setNegativeButton(getString(R.string.cancel_button), null)
             .show()
     }
     
     private fun showLogoutDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Déconnexion")
-            .setMessage("Êtes-vous sûr de vouloir vous déconnecter ?")
-            .setPositiveButton("Se déconnecter") { _, _ ->
+            .setTitle(getString(R.string.logout_title))
+            .setMessage(getString(R.string.logout_message))
+            .setPositiveButton(getString(R.string.logout_button)) { _, _ ->
                 logout()
             }
-            .setNegativeButton("Annuler", null)
+            .setNegativeButton(getString(R.string.cancel_button), null)
             .show()
     }
     
