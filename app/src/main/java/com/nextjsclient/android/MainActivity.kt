@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     private var currentScamarkFragment: ScamarkFragment? = null
     private var isBiometricPromptShown = false
     private var isAppInBackground = false
-    private var navigationStartTime = 0L
+    private var isInternalNavigation = false
     private var lastStopTime = 0L
     private var biometricLockOverlay: View? = null
     private var currentSupplier: String = "anecoop"
@@ -105,16 +105,17 @@ class MainActivity : AppCompatActivity() {
         
         // Vérifier l'authentification biométrique seulement si on revient d'un vrai arrière-plan
         // (pas d'une navigation interne comme Settings)
-        val currentTime = System.currentTimeMillis()
-        val timeSinceStop = currentTime - lastStopTime
-        val wasRealBackground = isAppInBackground && timeSinceStop > 500 // Plus de 500ms = vrai arrière-plan
+        val shouldCheckBiometric = isAppInBackground && !isInternalNavigation && !isBiometricPromptShown
         
-        if (wasRealBackground && !isBiometricPromptShown) {
+        android.util.Log.d("MainActivity", "onResume - isAppInBackground: $isAppInBackground, isInternalNavigation: $isInternalNavigation, shouldCheckBiometric: $shouldCheckBiometric")
+        
+        if (shouldCheckBiometric) {
             checkBiometricAuthentication()
         }
         
-        // Réinitialiser le flag d'arrière-plan
+        // Réinitialiser les flags
         isAppInBackground = false
+        isInternalNavigation = false
         lastStopTime = 0L
     }
     
@@ -123,6 +124,12 @@ class MainActivity : AppCompatActivity() {
         // Marquer que l'app va potentiellement en arrière-plan
         // Sera confirmé dans onStop() si c'est un vrai arrière-plan
         isBiometricPromptShown = false
+        
+        // Si on n'est pas en navigation interne, on va potentiellement en arrière-plan
+        if (!isInternalNavigation) {
+            // Reset le flag au cas où il aurait été mis mais que la navigation a échoué
+            isInternalNavigation = false
+        }
     }
     
     override fun onStop() {
@@ -413,6 +420,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_settings -> {
+                isInternalNavigation = true
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
