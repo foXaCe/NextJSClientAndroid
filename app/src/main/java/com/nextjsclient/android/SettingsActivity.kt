@@ -106,25 +106,22 @@ class SettingsActivity : AppCompatActivity() {
             showLogoutDialog()
         }
         
-        // App info with commit/build info
+        // App version display like Lawnchair
         try {
-            val packageInfo = packageManager.getPackageInfo(packageName, 0)
-            val versionName = packageInfo.versionName ?: "1.0"
-            val versionCode = packageInfo.longVersionCode
+            // Use VERSION_DISPLAY_NAME from BuildConfig (like Lawnchair)
+            val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
+            val commitHash = com.nextjsclient.android.BuildConfig.COMMIT_HASH
+            val buildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
             
-            // Try to get commit hash from BuildConfig or version name
-            val commitHash = getCommitHash(versionName)
+            // Main version display
+            binding.appVersion.text = versionDisplayName
             
-            if (commitHash != null) {
-                binding.appVersion.text = getString(R.string.build_format, commitHash)
-                binding.buildInfo.text = getString(R.string.version_code_format, versionName, versionCode)
-            } else {
-                binding.appVersion.text = getString(R.string.update_version_format, versionName)
-                binding.buildInfo.text = getString(R.string.build_number_format, versionCode)
-            }
+            // Build info with commit and build number
+            binding.buildInfo.text = "Build #$buildNumber • $commitHash"
+            
         } catch (e: Exception) {
-            binding.appVersion.text = getString(R.string.version_default)
-            binding.buildInfo.text = getString(R.string.build_default)
+            binding.appVersion.text = "1.Dev.(unknown)"
+            binding.buildInfo.text = "Build #1 • unknown"
         }
         
         // Tech stack info

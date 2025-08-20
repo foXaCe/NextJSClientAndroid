@@ -500,18 +500,14 @@ class UpdateManager(private val context: Context) {
     
     private fun getCurrentVersion(): String {
         return try {
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val versionName = packageInfo.versionName ?: "1.0"
-            
-            Log.d(TAG, "Current app version: $versionName")
-            
-            // SIMPLIFIÉ : Retourner seulement le versionName
-            // Plus de logique compliquée avec les commits
-            versionName
+            // Utiliser BuildConfig.VERSION_DISPLAY_NAME comme Lawnchair
+            val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
+            Log.d(TAG, "Current app version display name: $versionDisplayName")
+            versionDisplayName
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get current version", e)
-            "1.0"
+            "1.Dev.(unknown)"
         }
     }
     
@@ -519,93 +515,35 @@ class UpdateManager(private val context: Context) {
         return try {
             Log.d(TAG, "🔍 Comparing versions: current='$current' vs latest='$latest'")
             
-            // LOGIQUE SIMPLIFIÉE : Compare seulement les numéros de version
-            // Ignore complètement les commits et les tags nightly
-            
-            // Extraire les numéros de version (ignorer tout ce qui suit après le premier espace ou tiret)
-            val currentVersion = current.split(" ", "-").firstOrNull() ?: current
-            val latestVersion = latest.split(" ", "-").firstOrNull() ?: latest
-            
-            Log.d(TAG, "📊 Simplified comparison: '$currentVersion' vs '$latestVersion'")
-            
-            // Si les versions sont identiques, pas de mise à jour
-            if (currentVersion == latestVersion) {
-                Log.d(TAG, "🟰 Same version - no update needed")
-                return false
+            // LOGIQUE LAWNCHAIR : Compare les BUILD NUMBERS
+            // Extraire le build number actuel depuis BuildConfig
+            val currentBuildNumber = try {
+                com.nextjsclient.android.BuildConfig.BUILD_NUMBER
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot get current build number", e)
+                0
             }
             
-            // Cas spécial : si latest est "nightly" et current est numérique, 
-            // comparer avec le versionCode pour détecter les nouvelles releases
-            if (latestVersion == "nightly" && currentVersion.matches(Regex("\\d+(\\.\\d+)*"))) {
-                Log.d(TAG, "🌙 Latest is nightly, current is numeric - checking with versionCode")
-                
-                // Extraire le versionCode actuel
-                val currentVersionCode = try {
-                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                    packageInfo.longVersionCode.toInt()
-                } catch (e: Exception) {
-                    0
-                }
-                
-                // Extraire le versionCode de la release (depuis le nom du release)
-                val releaseVersionCode = try {
-                    // Le nom de la release contient "nightly-20250820-commit"
-                    // Le versionCode est basé sur le nombre de commits
-                    // On peut l'extraire du versionName qui est "1.versionCode"
-                    val versionParts = currentVersion.split(".")
-                    if (versionParts.size >= 2) {
-                        versionParts[1].toIntOrNull() ?: 0
-                    } else {
-                        0
-                    }
-                } catch (e: Exception) {
-                    0
-                }
-                
-                Log.d(TAG, "📊 Version comparison: current versionCode=$currentVersionCode")
-                
-                // Si on a une nouvelle release nightly, elle aura forcément un versionCode plus élevé
-                // Pour simplifier, on propose toujours la mise à jour pour les releases nightly
-                Log.d(TAG, "🆕 Nightly release detected - offering update")
-                return true
+            Log.d(TAG, "📊 Current build number: $currentBuildNumber")
+            
+            // Extraire le build number depuis le nom de l'asset GitHub
+            // Format attendu du nom de fichier: "NextJSClient-{buildNumber}-nightly.apk"
+            // ou similaire - à adapter selon notre workflow GitHub Actions
+            val latestBuildNumber = try {
+                // Pour l'instant, retourner 0 - sera implémenté quand on aura
+                // les vrais assets avec build numbers dans le nom
+                0
+            } catch (e: Exception) {
+                0
             }
             
-            // Essayer de comparer comme des numéros de version
-            val currentParts = currentVersion.split(".").mapNotNull { it.toIntOrNull() }
-            val latestParts = latestVersion.split(".").mapNotNull { it.toIntOrNull() }
+            Log.d(TAG, "📊 Latest build number: $latestBuildNumber")
             
-            // Si on n'arrive pas à parser les versions comme des numéros, 
-            // être conservateur et ne pas proposer de mise à jour
-            if (currentParts.isEmpty() || latestParts.isEmpty()) {
-                Log.d(TAG, "⚠️ Cannot parse versions as numbers - no update")
-                return false
-            }
+            // Comparaison simple : latest > current
+            val isNewer = latestBuildNumber > currentBuildNumber
+            Log.d(TAG, "📊 Is newer: $isNewer ($latestBuildNumber > $currentBuildNumber)")
             
-            Log.d(TAG, "📊 Current parts: $currentParts")
-            Log.d(TAG, "📊 Latest parts: $latestParts")
-            
-            val maxLength = maxOf(currentParts.size, latestParts.size)
-            
-            for (i in 0 until maxLength) {
-                val currentPart = currentParts.getOrElse(i) { 0 }
-                val latestPart = latestParts.getOrElse(i) { 0 }
-                
-                Log.d(TAG, "🔢 Comparing part $i: $currentPart vs $latestPart")
-                
-                when {
-                    latestPart > currentPart -> {
-                        Log.d(TAG, "✅ Latest version is newer")
-                        return true
-                    }
-                    latestPart < currentPart -> {
-                        Log.d(TAG, "📱 Current version is newer or equal")
-                        return false
-                    }
-                }
-            }
-            
-            Log.d(TAG, "🟰 Versions are equal - no update needed")
-            false
+            return isNewer
             
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error comparing versions", e)

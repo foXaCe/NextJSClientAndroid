@@ -8,6 +8,31 @@ if (file('google-services.json').exists()) {
     apply plugin: 'com.google.gms.google-services'
 }
 
+// Version configuration like Lawnchair
+final def buildCommit = providers.exec {
+    commandLine('git', 'rev-parse', '--short=7', 'HEAD')
+}.standardOutput.asText.get().trim()
+
+final def getBuildNumber = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-list', '--count', 'HEAD'
+            standardOutput = stdout
+        }
+        return Integer.parseInt(stdout.toString().trim())
+    } catch (Exception e) {
+        return 1
+    }
+}
+
+final def ciBuild = System.getenv("CI") == "true"
+final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
+final def buildNumber = getBuildNumber()
+final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
+final def version = "1"
+final def versionDisplayName = "${version}.${devReleaseName}"
+
 android {
     namespace 'com.nextjsclient.android'
     compileSdk 34
@@ -16,39 +41,17 @@ android {
         applicationId "com.nextjsclient.android"
         minSdk 24
         targetSdk 34
-        // Auto-increment version based on commits
-        def getVersionCode = { ->
-            try {
-                def stdout = new ByteArrayOutputStream()
-                exec {
-                    commandLine 'git', 'rev-list', '--count', 'HEAD'
-                    standardOutput = stdout
-                }
-                return Integer.parseInt(stdout.toString().trim())
-            } catch (Exception e) {
-                return 1
-            }
-        }
         
-        versionCode getVersionCode()
-        versionName "1.${getVersionCode()}"
+        // Lawnchair-style versioning
+        versionCode buildNumber
+        versionName versionDisplayName
+        
+        // BuildConfig fields like Lawnchair
+        buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${versionDisplayName}\""
+        buildConfigField "String", "COMMIT_HASH", "\"${buildCommit}\""
+        buildConfigField "int", "BUILD_NUMBER", "${buildNumber}"
+        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        
-        // Add commit hash to BuildConfig
-        def getGitHash = { ->
-            try {
-                def stdout = new ByteArrayOutputStream()
-                exec {
-                    commandLine 'git', 'rev-parse', '--short=7', 'HEAD'
-                    standardOutput = stdout
-                }
-                return stdout.toString().trim()
-            } catch (Exception e) {
-                return "unknown"
-            }
-        }
-        
-        buildConfigField "String", "COMMIT_HASH", "\"${getGitHash()}\""
     }
 
     signingConfigs {
