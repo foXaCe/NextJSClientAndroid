@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var biometricManager: BiometricManager
     private var currentScamarkFragment: ScamarkFragment? = null
     private var isBiometricPromptShown = false
+    private var isAppInBackground = false
     private var currentSupplier: String = "anecoop"
     
     // Cache pour les données préchargées
@@ -96,17 +97,26 @@ class MainActivity : AppCompatActivity() {
         // Mettre à jour la visibilité du menu quand on revient de la page paramètres
         updateNavigationVisibility()
         
-        // Vérifier l'authentification biométrique si activée (seulement au retour d'arrière-plan)
-        // Le check initial se fait dans onCreate() si savedInstanceState == null
-        if (isBiometricPromptShown == false) {
+        // Vérifier l'authentification biométrique seulement si on revient d'arrière-plan réel
+        if (isAppInBackground && !isBiometricPromptShown) {
             checkBiometricAuthentication()
         }
+        
+        // Réinitialiser le flag d'arrière-plan
+        isAppInBackground = false
     }
     
     override fun onPause() {
         super.onPause()
-        // Réinitialiser le flag biométrique quand l'app va en arrière-plan
+        // Marquer que l'app va potentiellement en arrière-plan
+        // Sera confirmé dans onStop() si c'est un vrai arrière-plan
         isBiometricPromptShown = false
+    }
+    
+    override fun onStop() {
+        super.onStop()
+        // L'app va vraiment en arrière-plan (pas juste navigation interne)
+        isAppInBackground = true
     }
     
     private fun setupSupplierNavigation() {
