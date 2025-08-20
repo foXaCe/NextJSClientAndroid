@@ -7,11 +7,14 @@ import android.os.Bundle
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
+import android.widget.TextView
+import com.google.android.material.button.MaterialButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.nextjsclient.android.databinding.ActivitySettingsBinding
 import com.nextjsclient.android.utils.ThemeManager
@@ -164,10 +167,11 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onUpdateAvailable(release: Release) {
-                binding.updateStatus.text = "Nouvelle version disponible: ${release.tagName}"
-                binding.updateButton.text = "Mettre à jour"
-                binding.updateButton.visibility = View.VISIBLE
+                binding.updateStatus.text = "Nouvelle version disponible"
+                binding.updateButton.visibility = View.GONE
                 pendingUpdate = release
+                // Rendre la carte cliquable pour ouvrir la bottom sheet
+                binding.updateSection.isClickable = true
             }
             
             override fun onUpToDate() {
@@ -212,9 +216,16 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
         
-        // Setup update section click to check for updates
+        // Setup update section click
         binding.updateSection.setOnClickListener {
-            checkForUpdates()
+            animateClick(it)
+            if (pendingUpdate != null) {
+                // Si une mise à jour est disponible, ouvrir la bottom sheet
+                showUpdateBottomSheet(pendingUpdate!!)
+            } else {
+                // Sinon, vérifier les mises à jour
+                checkForUpdates()
+            }
         }
     }
     
@@ -371,6 +382,64 @@ class SettingsActivity : AppCompatActivity() {
         } catch (e: Exception) {
             binding.updateStatus.text = "Vous êtes à jour"
             binding.updateButton.visibility = View.GONE
+        }
+    }
+    
+    private fun showUpdateBottomSheet(release: Release) {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_update, null)
+        bottomSheetDialog.setContentView(bottomSheetView)
+        
+        // Configurer les vues de la bottom sheet
+        val updateVersion = bottomSheetView.findViewById<TextView>(R.id.updateVersion)
+        val updateChangelog = bottomSheetView.findViewById<TextView>(R.id.updateChangelog)
+        val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
+        val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
+        
+        // Mettre à jour le contenu
+        updateVersion.text = "Version ${release.tagName}"
+        
+        // Formater le changelog (commits)
+        val formattedChangelog = formatChangelog(release.body)
+        updateChangelog.text = formattedChangelog
+        
+        // Configurer les boutons
+        cancelButton.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+        
+        installButton.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            // Démarrer le téléchargement
+            updateManager.downloadUpdate(release)
+        }
+        
+        bottomSheetDialog.show()
+    }
+    
+    private fun formatChangelog(body: String): String {
+        if (body.isBlank()) return "• Améliorations et corrections de bugs"
+        
+        val lines = body.split("\n")
+        val formattedLines = mutableListOf<String>()
+        
+        for (line in lines) {
+            val trimmedLine = line.trim()
+            if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
+                // Ajouter une puce si ce n'est pas déjà fait
+                val formatted = if (trimmedLine.startsWith("•") || trimmedLine.startsWith("-") || trimmedLine.startsWith("*")) {
+                    "• ${trimmedLine.substring(1).trim()}"
+                } else {
+                    "• $trimmedLine"
+                }
+                formattedLines.add(formatted)
+            }
+        }
+        
+        return if (formattedLines.isNotEmpty()) {
+            formattedLines.joinToString("\n")
+        } else {
+            "• Nouvelle version disponible\n• Améliorations des performances"
         }
     }
     
