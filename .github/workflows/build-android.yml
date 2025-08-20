@@ -82,6 +82,33 @@ jobs:
     - name: Build Release APK (unsigned)
       run: ./gradlew assembleRelease
 
+    - name: Decode Keystore
+      if: ${{ github.event_name != 'pull_request' && env.KEYSTORE_BASE64 != '' }}
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      run: |
+        if [ -n "$KEYSTORE_BASE64" ]; then
+          echo "$KEYSTORE_BASE64" | base64 -d > nextjs-client-release.keystore
+          echo "✅ Keystore décodé depuis les secrets"
+        else
+          echo "⚠️ Pas de keystore configuré - APK non signé"
+        fi
+
+    - name: Build Release APK (signed)
+      if: ${{ github.event_name != 'pull_request' && env.KEYSTORE_BASE64 != '' }}
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      run: |
+        if [ -n "$KEYSTORE_BASE64" ]; then
+          ./gradlew assembleRelease
+          echo "✅ APK Release signé généré"
+        else
+          echo "⚠️ Signature non disponible"
+        fi
+
 
     - name: Generate version info
       id: version
@@ -102,6 +129,14 @@ jobs:
       with:
         name: app-release-unsigned-${{ steps.version.outputs.COMMIT_HASH }}
         path: app/build/outputs/apk/release/app-release-unsigned.apk
+        retention-days: 90
+
+    - name: Upload Release APK (signed)
+      if: ${{ github.event_name != 'pull_request' && env.KEYSTORE_BASE64 != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-release-signed-${{ steps.version.outputs.COMMIT_HASH }}
+        path: app/build/outputs/apk/release/app-release.apk
         retention-days: 90
 
 

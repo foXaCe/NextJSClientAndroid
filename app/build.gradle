@@ -44,7 +44,7 @@ android {
         release {
             // Configuration for GitHub Actions
             if (System.getenv("KEYSTORE_BASE64")) {
-                storeFile file("../release-keystore.jks")
+                storeFile file("../nextjs-client-release.keystore")
                 storePassword System.getenv("KEYSTORE_PASSWORD")
                 keyAlias System.getenv("KEY_ALIAS")
                 keyPassword System.getenv("KEY_PASSWORD")
