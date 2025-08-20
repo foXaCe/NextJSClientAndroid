@@ -4,6 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.view.LayoutInflater
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -32,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private var currentScamarkFragment: ScamarkFragment? = null
     private var isBiometricPromptShown = false
     private var isAppInBackground = false
+    private var biometricLockOverlay: View? = null
     private var currentSupplier: String = "anecoop"
     
     // Cache pour les données préchargées
@@ -430,37 +434,89 @@ class MainActivity : AppCompatActivity() {
         
         // Vérifier si la biométrie est activée dans l'app
         if (!biometricManager.isBiometricEnabledInApp()) {
+            removeLockOverlay()
             return
         }
         
+        // Afficher l'overlay de verrouillage pour masquer les données
+        showLockOverlay()
+        
         isBiometricPromptShown = true
         
-        biometricManager.authenticate(
-            activity = this,
-            title = "Authentification requise",
-            subtitle = "Utilisez votre empreinte digitale pour accéder à l'application",
-            negativeButtonText = "Annuler",
-            onSuccess = {
-                // Authentification réussie, l'utilisateur peut utiliser l'app
-                isBiometricPromptShown = false
-            },
-            onError = { error ->
-                // Erreur d'authentification, fermer l'app ou déconnecter
-                isBiometricPromptShown = false
-                if (error.contains("dépassé") || error.contains("verrouillé")) {
-                    // Trop d'échecs, déconnecter l'utilisateur pour sécurité
-                    signOut()
-                } else {
-                    // Autre erreur, redemander l'authentification
+        // Petit délai pour s'assurer que l'overlay est affiché
+        binding.root.postDelayed({
+            biometricManager.authenticate(
+                activity = this,
+                title = "Authentification requise",
+                subtitle = "Utilisez votre empreinte digitale pour accéder à l'application",
+                negativeButtonText = "Annuler",
+                onSuccess = {
+                    // Authentification réussie, retirer l'overlay
+                    isBiometricPromptShown = false
+                    removeLockOverlay()
+                },
+                onError = { error ->
+                    // Erreur d'authentification
+                    isBiometricPromptShown = false
+                    if (error.contains("dépassé") || error.contains("verrouillé")) {
+                        // Trop d'échecs, déconnecter l'utilisateur pour sécurité
+                        signOut()
+                    } else {
+                        // Autre erreur, garder l'overlay et permettre de réessayer
+                        updateLockOverlayError(error)
+                    }
+                },
+                onCancel = {
+                    // L'utilisateur a annulé, fermer l'app
+                    isBiometricPromptShown = false
                     finish()
                 }
-            },
-            onCancel = {
-                // L'utilisateur a annulé, fermer l'app
+            )
+        }, 100)
+    }
+    
+    private fun showLockOverlay() {
+        if (biometricLockOverlay == null) {
+            // Créer l'overlay
+            val inflater = LayoutInflater.from(this)
+            biometricLockOverlay = inflater.inflate(R.layout.overlay_biometric_lock, null)
+            
+            // Configurer le bouton de déverrouillage
+            biometricLockOverlay?.findViewById<View>(R.id.unlockButton)?.setOnClickListener {
                 isBiometricPromptShown = false
-                finish()
+                checkBiometricAuthentication()
             }
-        )
+            
+            // Ajouter l'overlay à la vue racine
+            val rootView = findViewById<ViewGroup>(android.R.id.content)
+            rootView.addView(biometricLockOverlay)
+        }
+        
+        // S'assurer que l'overlay est visible
+        biometricLockOverlay?.visibility = View.VISIBLE
+    }
+    
+    private fun removeLockOverlay() {
+        biometricLockOverlay?.let {
+            it.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction {
+                    it.visibility = View.GONE
+                    val rootView = findViewById<ViewGroup>(android.R.id.content)
+                    rootView.removeView(it)
+                    biometricLockOverlay = null
+                }
+                .start()
+        }
+    }
+    
+    private fun updateLockOverlayError(error: String) {
+        biometricLockOverlay?.findViewById<View>(R.id.lockSubtitle)?.let { subtitle ->
+            if (subtitle is android.widget.TextView) {
+                subtitle.text = "Erreur: $error\nAppuyez pour réessayer"
+            }
+        }
     }
     
     private fun signOut() {
