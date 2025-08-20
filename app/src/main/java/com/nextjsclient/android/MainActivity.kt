@@ -100,15 +100,6 @@ class MainActivity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
-        
-        android.util.Log.d("MainActivity", "🔄 === onResume() START ===")
-        android.util.Log.d("MainActivity", "📊 États avant vérification:")
-        android.util.Log.d("MainActivity", "   • isAppInBackground: $isAppInBackground")
-        android.util.Log.d("MainActivity", "   • isInternalNavigation: $isInternalNavigation")
-        android.util.Log.d("MainActivity", "   • isBiometricPromptShown: $isBiometricPromptShown")
-        android.util.Log.d("MainActivity", "   • lastStopTime: $lastStopTime")
-        android.util.Log.d("MainActivity", "   • biometricEnabled: ${biometricManager.isBiometricEnabledInApp()}")
-        
         // Mettre à jour la visibilité du menu quand on revient de la page paramètres
         updateNavigationVisibility()
         
@@ -116,63 +107,32 @@ class MainActivity : AppCompatActivity() {
         // (pas d'une navigation interne comme Settings)
         val shouldCheckBiometric = isAppInBackground && !isInternalNavigation && !isBiometricPromptShown && biometricManager.isBiometricEnabledInApp()
         
-        android.util.Log.d("MainActivity", "🔍 Décision biométrique: shouldCheckBiometric = $shouldCheckBiometric")
-        
         if (shouldCheckBiometric) {
-            android.util.Log.d("MainActivity", "🔐 Lancement de l'authentification biométrique")
             checkBiometricAuthentication()
-        } else {
-            android.util.Log.d("MainActivity", "⏭️ Pas d'authentification biométrique nécessaire")
         }
         
-        // Réinitialiser les flags APRÈS avoir pris la décision
-        android.util.Log.d("MainActivity", "🧹 Réinitialisation des flags")
+        // Réinitialiser les flags
         isAppInBackground = false
         isInternalNavigation = false
         lastStopTime = 0L
-        
-        android.util.Log.d("MainActivity", "✅ === onResume() END ===")
     }
     
     override fun onPause() {
         super.onPause()
-        
-        android.util.Log.d("MainActivity", "⏸️ === onPause() START ===")
-        android.util.Log.d("MainActivity", "📊 États avant pause:")
-        android.util.Log.d("MainActivity", "   • isInternalNavigation: $isInternalNavigation")
-        android.util.Log.d("MainActivity", "   • isBiometricPromptShown: $isBiometricPromptShown")
-        
         // Marquer que l'app va potentiellement en arrière-plan
         // Sera confirmé dans onStop() si c'est un vrai arrière-plan
         isBiometricPromptShown = false
-        android.util.Log.d("MainActivity", "🔐 isBiometricPromptShown reset to false")
         
         // IMPORTANT: Ne PAS réinitialiser isInternalNavigation ici
         // Il sera réinitialisé seulement dans onResume()
-        android.util.Log.d("MainActivity", "📌 Gardant isInternalNavigation = $isInternalNavigation pour onResume()")
-        
-        android.util.Log.d("MainActivity", "✅ === onPause() END ===")
     }
     
     override fun onStop() {
         super.onStop()
         
-        android.util.Log.d("MainActivity", "⏹️ === onStop() START ===")
-        android.util.Log.d("MainActivity", "📊 États avant stop:")
-        android.util.Log.d("MainActivity", "   • isInternalNavigation: $isInternalNavigation")
-        
         // L'app va en arrière-plan, mais on garde la trace si c'était une navigation interne
-        if (isInternalNavigation) {
-            android.util.Log.d("MainActivity", "📱 Navigation interne détectée - ne pas marquer comme arrière-plan")
-        } else {
-            android.util.Log.d("MainActivity", "🏠 Vraie mise en arrière-plan détectée")
-        }
-        
         isAppInBackground = true
         lastStopTime = System.currentTimeMillis()
-        
-        android.util.Log.d("MainActivity", "📅 isAppInBackground = true, lastStopTime = $lastStopTime")
-        android.util.Log.d("MainActivity", "✅ === onStop() END ===")
     }
     
     private fun setupSupplierNavigation() {
@@ -347,10 +307,7 @@ class MainActivity : AppCompatActivity() {
      * Méthode publique pour marquer une navigation interne (utilisée par les fragments)
      */
     fun markInternalNavigation() {
-        android.util.Log.d("MainActivity", "📌 markInternalNavigation() appelée")
-        android.util.Log.d("MainActivity", "   • Avant: isInternalNavigation = $isInternalNavigation")
         isInternalNavigation = true
-        android.util.Log.d("MainActivity", "   • Après: isInternalNavigation = $isInternalNavigation")
     }
     
     /**
@@ -466,14 +423,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_settings -> {
-                android.util.Log.d("MainActivity", "⚙️ === NAVIGATION VERS SETTINGS ===")
-                android.util.Log.d("MainActivity", "   • Avant: isInternalNavigation = $isInternalNavigation")
-                
                 isInternalNavigation = true
-                
-                android.util.Log.d("MainActivity", "   • Après: isInternalNavigation = $isInternalNavigation")
-                android.util.Log.d("MainActivity", "🚀 Lancement de SettingsActivity")
-                
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
