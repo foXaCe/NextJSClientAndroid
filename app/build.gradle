@@ -51,10 +51,21 @@ android {
             }
             // Local configuration (fallback)
             else if (file('../nextjs-client-release.keystore').exists()) {
-                storeFile file('../nextjs-client-release.keystore')
-                storePassword 'NextJS2024!'
-                keyAlias 'nextjs-client'
-                keyPassword 'NextJS2024!'
+                def keystorePropertiesFile = rootProject.file("keystore.properties")
+                if (keystorePropertiesFile.exists()) {
+                    def keystoreProperties = new Properties()
+                    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                    storeFile file('../nextjs-client-release.keystore')
+                    storePassword keystoreProperties['storePassword']
+                    keyAlias 'nextjs-client'
+                    keyPassword keystoreProperties['keyPassword']
+                } else {
+                    // Fallback pour éviter les erreurs de build
+                    storeFile file('../nextjs-client-release.keystore')
+                    storePassword 'changeme'
+                    keyAlias 'nextjs-client'
+                    keyPassword 'changeme'
+                }
             }
             // Use debug keystore as fallback to prevent build errors
             else {
