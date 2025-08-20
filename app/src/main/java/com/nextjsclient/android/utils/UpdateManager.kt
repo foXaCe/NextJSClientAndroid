@@ -287,10 +287,10 @@ class UpdateManager(private val context: Context) {
                             Log.d(TAG, "   • File exists: ${downloadFile.exists()}")
                             
                             if (downloadFile.exists()) {
-                                Log.d(TAG, "🎉 File found! Auto-installing...")
+                                Log.d(TAG, "🎉 File found! Notifying completion...")
                                 withContext(Dispatchers.Main) {
-                                    // Lancer automatiquement l'installation
-                                    installUpdate(downloadFile)
+                                    // Notifier que le fichier est prêt pour installation
+                                    listener?.onDownloadCompleted(downloadFile)
                                 }
                             } else {
                                 Log.e(TAG, "❌ Downloaded file not found!")

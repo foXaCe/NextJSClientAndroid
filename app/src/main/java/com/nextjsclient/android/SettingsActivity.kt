@@ -176,11 +176,14 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onUpdateAvailable(release: Release) {
-                binding.updateStatus.text = getString(R.string.update_available)
+                binding.updateStatus.text = "${getString(R.string.update_available)} • ${getString(R.string.click_here)}"
                 binding.updateButton.visibility = View.GONE
                 pendingUpdate = release
                 // Rendre la carte cliquable pour ouvrir la bottom sheet
                 binding.updateSection.isClickable = true
+                
+                // Ajouter effet visuel pour indiquer qu'il y a une mise à jour
+                addUpdateAvailableEffect()
             }
             
             override fun onUpToDate() {
@@ -202,7 +205,13 @@ class SettingsActivity : AppCompatActivity() {
                 binding.updateStatus.text = getString(R.string.installing)
                 binding.updateButton.visibility = View.GONE
                 downloadedFile = file
-                // L'installation automatique est gérée par UpdateManager
+                
+                android.util.Log.d("SettingsActivity", "📦 Fichier téléchargé avec succès: ${file.absolutePath}")
+                android.util.Log.d("SettingsActivity", "   • Fichier existe: ${file.exists()}")
+                android.util.Log.d("SettingsActivity", "   • Taille: ${file.length()} bytes")
+                
+                // Lancer l'installation automatiquement
+                updateManager.installUpdate(file)
             }
             
             override fun onError(message: String) {
@@ -403,8 +412,9 @@ class SettingsActivity : AppCompatActivity() {
         val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
         
-        // Mettre à jour le contenu
-        updateVersion.text = getString(R.string.update_version_format, release.tagName)
+        // Afficher la date de mise à jour au format Paris
+        val updateDateText = formatUpdateDate(release.publishedAt)
+        updateVersion.text = "${getString(R.string.update_date)} : $updateDateText"
         
         // Formater le changelog (commits)
         val formattedChangelog = formatChangelog(release.body)
@@ -447,6 +457,44 @@ class SettingsActivity : AppCompatActivity() {
             formattedLines.joinToString("\n")
         } else {
             getString(R.string.update_fallback_detailed)
+        }
+    }
+    
+    private fun formatUpdateDate(publishedAt: String): String {
+        return try {
+            // Parse la date ISO 8601 de GitHub
+            val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault())
+            inputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            
+            val date = inputFormat.parse(publishedAt) ?: return publishedAt
+            
+            // Format français avec timezone Paris
+            val outputFormat = java.text.SimpleDateFormat("d MMMM yyyy 'à' HH:mm", java.util.Locale.FRENCH)
+            outputFormat.timeZone = java.util.TimeZone.getTimeZone("Europe/Paris")
+            
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            // Fallback en cas d'erreur de parsing
+            publishedAt
+        }
+    }
+    
+    private fun addUpdateAvailableEffect() {
+        // Animation de pulsation pour attirer l'attention
+        val pulseAnimation = android.animation.ObjectAnimator.ofFloat(binding.updateSection, "alpha", 1f, 0.7f, 1f)
+        pulseAnimation.duration = 1500
+        pulseAnimation.repeatCount = android.animation.ObjectAnimator.INFINITE
+        pulseAnimation.repeatMode = android.animation.ObjectAnimator.REVERSE
+        pulseAnimation.start()
+        
+        // Essayer de caster en MaterialCardView pour ajouter une bordure
+        try {
+            (binding.updateSection as? com.google.android.material.card.MaterialCardView)?.apply {
+                strokeWidth = 4
+                strokeColor = getColor(R.color.md_theme_light_primary)
+            }
+        } catch (e: Exception) {
+            android.util.Log.d("SettingsActivity", "Could not add border effect: ${e.message}")
         }
     }
     

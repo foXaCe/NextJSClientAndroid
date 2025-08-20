@@ -170,4 +170,5 @@
     
     <!-- Update notifications -->
     <string name="click_here">Haga clic aquí</string>
+    <string name="update_date">Fecha de actualización</string>
 </resources>
