@@ -318,6 +318,13 @@ class OverviewFragment : Fragment() {
     private fun setupButtons() {
         // Settings button
         binding.settingsButton.setOnClickListener {
+            android.util.Log.d("OverviewFragment", "⚙️ === NAVIGATION VERS SETTINGS (depuis OverviewFragment) ===")
+            
+            // Marquer comme navigation interne dans MainActivity
+            val mainActivity = activity as? com.nextjsclient.android.MainActivity
+            mainActivity?.markInternalNavigation()
+            android.util.Log.d("OverviewFragment", "   • Navigation interne marquée dans MainActivity")
+            
             val intent = Intent(requireContext(), SettingsActivity::class.java)
             startActivity(intent)
         }

@@ -43,6 +43,8 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        android.util.Log.d("SettingsActivity", "⚙️ === SettingsActivity onCreate() ===")
+        
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
@@ -63,6 +65,13 @@ class SettingsActivity : AppCompatActivity() {
         
         // Check for updates when entering settings
         checkForUpdates()
+        
+        android.util.Log.d("SettingsActivity", "✅ SettingsActivity onCreate() terminé")
+    }
+    
+    override fun onDestroy() {
+        android.util.Log.d("SettingsActivity", "🖯️ SettingsActivity onDestroy() - Retour vers MainActivity")
+        super.onDestroy()
     }
     
     private fun setupWindowInsets() {
@@ -575,7 +584,14 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     override fun onSupportNavigateUp(): Boolean {
+        android.util.Log.d("SettingsActivity", "⬅️ onSupportNavigateUp() - Bouton retour toolbar pressé")
         finish()
         return true
+    }
+    
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        android.util.Log.d("SettingsActivity", "🔙 onBackPressed() - Bouton retour système pressé")
+        super.onBackPressed()
     }
 }
