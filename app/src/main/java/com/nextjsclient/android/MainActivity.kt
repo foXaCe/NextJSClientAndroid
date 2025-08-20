@@ -18,6 +18,7 @@ import com.nextjsclient.android.ui.overview.OverviewFragment
 import com.nextjsclient.android.utils.ThemeManager
 import com.nextjsclient.android.utils.SupplierThemeManager
 import com.nextjsclient.android.utils.SupplierPreferences
+import com.nextjsclient.android.utils.BiometricManager
 
 class MainActivity : AppCompatActivity() {
     
@@ -27,7 +28,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeManager: ThemeManager
     private lateinit var supplierThemeManager: SupplierThemeManager
     private lateinit var supplierPreferences: SupplierPreferences
+    private lateinit var biometricManager: BiometricManager
     private var currentScamarkFragment: ScamarkFragment? = null
+    private var isBiometricPromptShown = false
     private var currentSupplier: String = "anecoop"
     
     // Cache pour les données préchargées
@@ -44,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         supplierThemeManager = SupplierThemeManager(this)
         supplierPreferences = SupplierPreferences(this)
+        biometricManager = BiometricManager(this)
         
         // Check if user is logged in
         if (auth.currentUser == null) {
@@ -80,12 +84,29 @@ class MainActivity : AppCompatActivity() {
         
         // Apply initial theme
         applySupplierTheme(currentSupplier)
+        
+        // Vérifier l'authentification biométrique si activée (première fois seulement)
+        if (savedInstanceState == null) {
+            checkBiometricAuthentication()
+        }
     }
     
     override fun onResume() {
         super.onResume()
         // Mettre à jour la visibilité du menu quand on revient de la page paramètres
         updateNavigationVisibility()
+        
+        // Vérifier l'authentification biométrique si activée (seulement au retour d'arrière-plan)
+        // Le check initial se fait dans onCreate() si savedInstanceState == null
+        if (isBiometricPromptShown == false) {
+            checkBiometricAuthentication()
+        }
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // Réinitialiser le flag biométrique quand l'app va en arrière-plan
+        isBiometricPromptShown = false
     }
     
     private fun setupSupplierNavigation() {
@@ -389,6 +410,47 @@ class MainActivity : AppCompatActivity() {
                 // For now, do nothing
             }
         }
+    }
+    
+    private fun checkBiometricAuthentication() {
+        // Éviter d'afficher plusieurs prompts biométriques
+        if (isBiometricPromptShown) {
+            return
+        }
+        
+        // Vérifier si la biométrie est activée dans l'app
+        if (!biometricManager.isBiometricEnabledInApp()) {
+            return
+        }
+        
+        isBiometricPromptShown = true
+        
+        biometricManager.authenticate(
+            activity = this,
+            title = "Authentification requise",
+            subtitle = "Utilisez votre empreinte digitale pour accéder à l'application",
+            negativeButtonText = "Annuler",
+            onSuccess = {
+                // Authentification réussie, l'utilisateur peut utiliser l'app
+                isBiometricPromptShown = false
+            },
+            onError = { error ->
+                // Erreur d'authentification, fermer l'app ou déconnecter
+                isBiometricPromptShown = false
+                if (error.contains("dépassé") || error.contains("verrouillé")) {
+                    // Trop d'échecs, déconnecter l'utilisateur pour sécurité
+                    signOut()
+                } else {
+                    // Autre erreur, redemander l'authentification
+                    finish()
+                }
+            },
+            onCancel = {
+                // L'utilisateur a annulé, fermer l'app
+                isBiometricPromptShown = false
+                finish()
+            }
+        )
     }
     
     private fun signOut() {
