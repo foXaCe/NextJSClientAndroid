@@ -120,27 +120,11 @@ class UpdateManager(private val context: Context) {
                     val currentVersion = getCurrentVersion()
                     val latestVersion = tagName.removePrefix("v")
                     
-                    // For nightly builds, we want to check the commit hash to see if it's newer
-                    val actualLatestVersion = if (latestVersion == "nightly") {
-                        // Extract commit hash from release name like "nightly-20250819-dc10f7d"
-                        val commitPattern = Regex("nightly-\\d+-([a-f0-9]+)")
-                        val commitMatch = commitPattern.find(name)
-                        val latestCommit = commitMatch?.groupValues?.get(1) ?: ""
-                        
-                        Log.d(TAG, "Found commit hash in release: $latestCommit")
-                        
-                        // For nightly builds, always consider as potentially newer
-                        // We'll use the commit hash as version identifier
-                        "nightly-$latestCommit"
-                    } else {
-                        latestVersion
-                    }
-                    
                     Log.d(TAG, "Current version: $currentVersion")
                     Log.d(TAG, "Latest version: $latestVersion")
-                    Log.d(TAG, "Actual latest version: $actualLatestVersion")
                     
-                    val isNewer = isNewerVersion(currentVersion, actualLatestVersion)
+                    // SIMPLIFIÉ : Compare seulement les versions directement
+                    val isNewer = isNewerVersion(currentVersion, latestVersion)
                     Log.d(TAG, "Is newer version available: $isNewer")
                     
                     withContext(Dispatchers.Main) {
@@ -519,24 +503,12 @@ class UpdateManager(private val context: Context) {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             val versionName = packageInfo.versionName ?: "1.0"
             
-            // Try to get commit hash from BuildConfig if available
-            val commitHash = try {
-                com.nextjsclient.android.BuildConfig.COMMIT_HASH
-            } catch (e: Exception) {
-                ""
-            }
-            
             Log.d(TAG, "Current app version: $versionName")
-            Log.d(TAG, "Current commit hash: $commitHash")
             
-            // If we have a valid commit hash, return version with commit format
-            if (commitHash.isNotEmpty() && commitHash != "unknown") {
-                val formattedVersion = "nightly-$commitHash"
-                Log.d(TAG, "Using commit-based version: $formattedVersion")
-                formattedVersion
-            } else {
-                versionName
-            }
+            // SIMPLIFIÉ : Retourner seulement le versionName
+            // Plus de logique compliquée avec les commits
+            versionName
+            
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get current version", e)
             "1.0"
@@ -547,83 +519,31 @@ class UpdateManager(private val context: Context) {
         return try {
             Log.d(TAG, "🔍 Comparing versions: current='$current' vs latest='$latest'")
             
-            // Handle special tags like "nightly", "beta", "alpha", etc.
-            val specialTags = listOf("nightly", "beta", "alpha", "dev", "test", "pre-release")
+            // LOGIQUE SIMPLIFIÉE : Compare seulement les numéros de version
+            // Ignore complètement les commits et les tags nightly
             
-            // If latest is a special tag (like nightly), check if it's actually different
-            if (specialTags.any { latest.lowercase().contains(it) }) {
-                Log.d(TAG, "🌙 Latest version contains special tag: $latest")
-                
-                return when {
-                    // If current version is also a special tag, compare commit hashes
-                    specialTags.any { current.lowercase().contains(it) } -> {
-                        Log.d(TAG, "🔄 Both versions are special tags - comparing commits")
-                        // Extract commit hashes and compare
-                        val currentCommit = current.substringAfterLast("-", "")
-                        val latestCommit = latest.substringAfterLast("-", "")
-                        
-                        // Pour les versions nightly, on vérifie si les commits sont différents
-                        // mais on n'offre pas automatiquement la mise à jour car on ne peut pas 
-                        // déterminer l'ordre chronologique des commits
-                        val isNewer = when {
-                            currentCommit.isEmpty() || latestCommit.isEmpty() -> {
-                                Log.d(TAG, "🔍 Empty commit hash - assuming newer")
-                                true
-                            }
-                            currentCommit == latestCommit -> {
-                                Log.d(TAG, "🔍 Same commit hash - no update needed")
-                                false
-                            }
-                            else -> {
-                                Log.d(TAG, "🔍 Different commit hashes - checking if we should update")
-                                // Pour les builds nightly, on peut être plus conservateur
-                                // et seulement proposer la mise à jour si on est sûr qu'elle est plus récente
-                                
-                                // Vérifier si l'APK installé est debug et la release est release
-                                val isCurrentDebug = try {
-                                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                                    (packageInfo.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-                                } catch (e: Exception) {
-                                    false
-                                }
-                                
-                                Log.d(TAG, "🔍 Current app is debug: $isCurrentDebug")
-                                
-                                // Si l'app actuelle est debug et qu'il y a une release disponible, proposer la mise à jour
-                                isCurrentDebug
-                            }
-                        }
-                        Log.d(TAG, "🔍 Commit comparison: current=$currentCommit vs latest=$latestCommit, newer=$isNewer")
-                        isNewer
-                    }
-                    // If current version is numbered, only offer nightly if commit is different from what we expect
-                    current.matches(Regex("^[0-9]+(\\.[0-9]+)*$")) -> {
-                        Log.d(TAG, "📅 Current version is numbered: $current, checking if nightly is actually newer")
-                        // For numbered versions, we assume nightly is newer unless we can determine otherwise
-                        val latestCommit = latest.substringAfterLast("-", "")
-                        // Only offer update if there's a valid commit hash in the nightly build
-                        val hasValidCommit = latestCommit.isNotEmpty() && latestCommit.matches(Regex("[a-f0-9]+"))
-                        Log.d(TAG, "🔍 Nightly has valid commit: $hasValidCommit (commit: $latestCommit)")
-                        hasValidCommit
-                    }
-                    else -> {
-                        Log.d(TAG, "🤷 Unknown current version format - being conservative")
-                        false
-                    }
-                }
+            // Extraire les numéros de version (ignorer tout ce qui suit après le premier espace ou tiret)
+            val currentVersion = current.split(" ", "-").firstOrNull() ?: current
+            val latestVersion = latest.split(" ", "-").firstOrNull() ?: latest
+            
+            Log.d(TAG, "📊 Simplified comparison: '$currentVersion' vs '$latestVersion'")
+            
+            // Si les versions sont identiques, pas de mise à jour
+            if (currentVersion == latestVersion) {
+                Log.d(TAG, "🟰 Same version - no update needed")
+                return false
             }
             
-            // If current version contains special tags, treat numbered releases as newer
-            if (specialTags.any { current.lowercase().contains(it) }) {
-                // Check if latest is a numbered version
-                if (latest.matches(Regex("^[0-9]+(\\.[0-9]+)*$"))) {
-                    Log.d(TAG, "📊 Current has special tag, latest is numbered - latest is newer")
-                    return true
-                }
-            }
+            // Essayer de comparer comme des numéros de version
+            val currentParts = currentVersion.split(".").mapNotNull { it.toIntOrNull() }
+            val latestParts = latestVersion.split(".").mapNotNull { it.toIntOrNull() }
             
-            val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
-            val latestParts = latest.split(".").map { it.toIntOrNull() ?: 0 }
+            // Si on n'arrive pas à parser les versions comme des numéros, 
+            // comparer comme des strings et être conservateur
+            if (currentParts.isEmpty() || latestParts.isEmpty()) {
+                Log.d(TAG, "⚠️ Cannot parse versions as numbers - no update")
+                return false
+            }
             
             Log.d(TAG, "📊 Current parts: $currentParts")
             Log.d(TAG, "📊 Latest parts: $latestParts")
@@ -642,14 +562,15 @@ class UpdateManager(private val context: Context) {
                         return true
                     }
                     latestPart < currentPart -> {
-                        Log.d(TAG, "📱 Current version is newer")
+                        Log.d(TAG, "📱 Current version is newer or equal")
                         return false
                     }
                 }
             }
             
-            Log.d(TAG, "🟰 Versions are equal")
+            Log.d(TAG, "🟰 Versions are equal - no update needed")
             false
+            
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error comparing versions", e)
             false
