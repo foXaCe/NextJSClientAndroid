@@ -124,12 +124,12 @@ class UpdateManager(private val context: Context) {
                     Log.d(TAG, "Latest version: $latestVersion")
                     
                     // SIMPLIFIÉ : Compare seulement les versions directement
-                    val isNewer = isNewerVersion(currentVersion, latestVersion)
+                    val release = Release(tagName, name, body, downloadUrl, publishedAt)
+                    val isNewer = isNewerVersion(currentVersion, latestVersion, release)
                     Log.d(TAG, "Is newer version available: $isNewer")
                     
                     withContext(Dispatchers.Main) {
                         if (isNewer) {
-                            val release = Release(tagName, name, body, downloadUrl, publishedAt)
                             Log.d(TAG, "✅ Update available: ${release.tagName}")
                             Log.d(TAG, "📦 Download URL: ${release.downloadUrl}")
                             listener?.onUpdateAvailable(release)
@@ -511,11 +511,10 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private fun isNewerVersion(current: String, latest: String): Boolean {
+    private fun isNewerVersion(current: String, latest: String, release: Release): Boolean {
         return try {
             Log.d(TAG, "🔍 Comparing versions: current='$current' vs latest='$latest'")
             
-            // LOGIQUE LAWNCHAIR : Compare les BUILD NUMBERS
             // Extraire le build number actuel depuis BuildConfig
             val currentBuildNumber = try {
                 com.nextjsclient.android.BuildConfig.BUILD_NUMBER
@@ -524,25 +523,79 @@ class UpdateManager(private val context: Context) {
                 0
             }
             
-            Log.d(TAG, "📊 Current build number: $currentBuildNumber")
-            
-            // Extraire le build number depuis le nom de l'asset GitHub
-            // Format attendu du nom de fichier: "NextJSClient-{buildNumber}-nightly.apk"
-            // ou similaire - à adapter selon notre workflow GitHub Actions
-            val latestBuildNumber = try {
-                // Pour l'instant, retourner 0 - sera implémenté quand on aura
-                // les vrais assets avec build numbers dans le nom
-                0
+            val currentCommit = try {
+                com.nextjsclient.android.BuildConfig.COMMIT_HASH
             } catch (e: Exception) {
+                Log.w(TAG, "Cannot get current commit hash", e)
+                ""
+            }
+            
+            Log.d(TAG, "📊 Current build number: $currentBuildNumber")
+            Log.d(TAG, "📊 Current commit: $currentCommit")
+            
+            // Extraire le build number depuis la date de publication GitHub
+            // Format de la date: "2025-08-20T19:17:00Z"
+            val latestBuildNumber = try {
+                val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault())
+                inputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                
+                // Utiliser la publishedAt de la release pour générer un build number
+                val releaseDate = inputFormat.parse(release.publishedAt)
+                val releaseBuildNumber = releaseDate?.time?.div(1000)?.toInt() ?: 0
+                releaseBuildNumber
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot extract build number from release date", e)
                 0
             }
             
+            // Extraire le commit depuis le nom de la release
+            val latestCommit = try {
+                // Format: "🌙 Nightly Build - Version ... - nightly-20250820-547d00c"
+                val releaseName = release.name
+                val commitRegex = Regex("([a-f0-9]{7})")
+                val match = commitRegex.findAll(releaseName).lastOrNull()
+                match?.value ?: ""
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot extract commit from release name", e)
+                ""
+            }
+            
             Log.d(TAG, "📊 Latest build number: $latestBuildNumber")
+            Log.d(TAG, "📊 Latest commit: $latestCommit")
             
-            // Comparaison simple : latest > current
-            val isNewer = latestBuildNumber > currentBuildNumber
-            Log.d(TAG, "📊 Is newer: $isNewer ($latestBuildNumber > $currentBuildNumber)")
+            // Logique de comparaison améliorée:
+            // 1. Si les commits sont différents, c'est une mise à jour
+            // 2. Sinon, comparer les build numbers (timestamp de publication)
+            val isNewer = when {
+                latestCommit.isNotEmpty() && currentCommit.isNotEmpty() && latestCommit != currentCommit -> {
+                    Log.d(TAG, "📊 Different commits detected: $currentCommit -> $latestCommit")
+                    true
+                }
+                latestBuildNumber > 0 -> {
+                    // Toujours considérer une release GitHub comme plus récente que le build local
+                    // car elle a été publiée après compilation locale
+                    val timeDiff = System.currentTimeMillis() / 1000 - latestBuildNumber
+                    Log.d(TAG, "📊 Release timestamp: $latestBuildNumber, time diff: ${timeDiff}s ago")
+                    
+                    // Si la release GitHub a moins de 24h et même commit = nouvelle release
+                    if (timeDiff < 86400 && latestCommit == currentCommit) {
+                        Log.d(TAG, "📊 Recent release with same commit - update available")
+                        true
+                    } else if (latestBuildNumber > currentBuildNumber) {
+                        Log.d(TAG, "📊 Newer build timestamp: $currentBuildNumber -> $latestBuildNumber")
+                        true
+                    } else {
+                        Log.d(TAG, "📊 Older or same timestamp")
+                        false
+                    }
+                }
+                else -> {
+                    Log.d(TAG, "📊 Cannot determine version - assuming up to date")
+                    false
+                }
+            }
             
+            Log.d(TAG, "📊 Is newer: $isNewer")
             return isNewer
             
         } catch (e: Exception) {
