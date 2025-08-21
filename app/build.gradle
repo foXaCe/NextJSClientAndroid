@@ -86,8 +86,11 @@ android {
             }
             // Use debug keystore as fallback to prevent build errors
             else {
-                // This will create an unsigned APK when no release keystore is available
-                storeFile = null
+                // Fallback vers le keystore debug pour assurer une signature valide
+                storeFile file(System.getProperty("user.home") + "/.android/debug.keystore")
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
             }
         }
     }
@@ -96,10 +99,8 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // Only use signing config if keystore is available
-            if (System.getenv("KEYSTORE_BASE64") || file('../nextjs-client-release.keystore').exists()) {
-                signingConfig signingConfigs.release
-            }
+            // Toujours appliquer la signature (avec keystore de production ou debug en fallback)
+            signingConfig signingConfigs.release
         }
     }
     
