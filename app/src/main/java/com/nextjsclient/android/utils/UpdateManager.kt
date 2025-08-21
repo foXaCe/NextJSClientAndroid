@@ -170,8 +170,8 @@ class UpdateManager(private val context: Context) {
     
     private fun cleanOldUpdates() {
         try {
-            // Utiliser le dossier public NextJSUpdates dans la mémoire interne
-            val appUpdateDir = File(Environment.getExternalStorageDirectory(), "NextJSUpdates")
+            // Utiliser le dossier Download standard
+            val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             if (appUpdateDir.exists() && appUpdateDir.isDirectory) {
                 val oldFiles = appUpdateDir.listFiles { file ->
                     file.name.startsWith("NextJSClient-") && file.name.endsWith(".apk")
@@ -205,8 +205,8 @@ class UpdateManager(private val context: Context) {
             val fileName = "NextJSClient-${release.tagName}.apk"
             Log.d(TAG, "📁 Target filename: $fileName")
             
-            // Utiliser un dossier public NextJSUpdates dans la mémoire interne
-            val appUpdateDir = File(Environment.getExternalStorageDirectory(), "NextJSUpdates")
+            // Utiliser le dossier Download standard
+            val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             Log.d(TAG, "📂 Updates directory: ${appUpdateDir.absolutePath}")
             Log.d(TAG, "📊 Directory exists before: ${appUpdateDir.exists()}")
             Log.d(TAG, "📊 Directory writable: ${appUpdateDir.canWrite()}")
@@ -222,11 +222,14 @@ class UpdateManager(private val context: Context) {
             
             // Lister le contenu du répertoire avant téléchargement
             Log.d(TAG, "📋 Directory contents BEFORE download:")
-            appUpdateDir.listFiles()?.forEach { file ->
+            val nextjsFiles = appUpdateDir.listFiles { file ->
+                file.name.startsWith("NextJSClient-") && file.name.endsWith(".apk")
+            }
+            nextjsFiles?.forEach { file ->
                 Log.d(TAG, "   • ${file.name} (${file.length()} bytes)")
-            } ?: Log.d(TAG, "   • Directory is empty or null")
+            } ?: Log.d(TAG, "   • No NextJSClient APK files found")
             
-            Log.d(TAG, "🗺 Storage info: Public NextJSUpdates folder in internal storage")
+            Log.d(TAG, "🗺 Storage info: Public Download folder")
             
             val destinationFile = File(appUpdateDir, fileName)
             Log.d(TAG, "📂 Expected destination file: ${destinationFile.absolutePath}")
@@ -234,15 +237,15 @@ class UpdateManager(private val context: Context) {
             val request = DownloadManager.Request(Uri.parse(release.downloadUrl))
                 .setTitle("NextJS Client Update")
                 .setDescription("Téléchargement de la mise à jour ${release.tagName}")
-                .setDestinationInExternalPublicDir("NextJSUpdates", fileName)
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
             
             Log.d(TAG, "⚙️ DownloadManager request configured")
             Log.d(TAG, "   • Title: NextJS Client Update")
             Log.d(TAG, "   • Description: Téléchargement de la mise à jour ${release.tagName}")
-            Log.d(TAG, "   • Destination: NextJSUpdates/$fileName")
+            Log.d(TAG, "   • Destination: Download/$fileName")
             
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadId = downloadManager.enqueue(request)
@@ -329,8 +332,8 @@ class UpdateManager(private val context: Context) {
                                 }
                             }
                             
-                            // Chercher le fichier téléchargé dans le répertoire public NextJSUpdates
-                            val appUpdateDir = File(Environment.getExternalStorageDirectory(), "NextJSUpdates")
+                            // Chercher le fichier téléchargé dans le répertoire Download
+                            val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                             Log.d(TAG, "🔍 === ANALYSE DU RÉPERTOIRE UPDATES ===")
                             Log.d(TAG, "📂 Directory path: ${appUpdateDir.absolutePath}")
                             Log.d(TAG, "📊 Directory exists: ${appUpdateDir.exists()}")
