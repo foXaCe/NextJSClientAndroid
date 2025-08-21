@@ -11,7 +11,7 @@
     "workarounds:all"
   ],
   "timezone": "Europe/Paris",
-  "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+  "schedule": ["at any time"],
   "labels": ["dependencies", "renovate"],
   "assignees": ["foXaCe"],
   "reviewers": ["foXaCe"],
