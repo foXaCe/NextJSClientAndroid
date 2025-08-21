@@ -156,9 +156,9 @@
     <string name="overview_title">Overview</string>
     
     <!-- Date formatting -->
-    <string name="date_range_separator">to</string>
-    <string name="week_label">Week</string>
-    <string name="week_short">W</string>
+    <string name="date_range_separator">au</string>
+    <string name="week_label">Semaine</string>
+    <string name="week_short">S</string>
     
     <!-- Filter messages -->
     <string name="filter_incoming_message">🟢 Showing incoming products • Pull down to refresh</string>
