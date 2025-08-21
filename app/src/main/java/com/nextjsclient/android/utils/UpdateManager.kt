@@ -263,7 +263,7 @@ class UpdateManager(private val context: Context) {
                 .setTitle("NextJS Client Update")
                 .setDescription("Téléchargement de la mise à jour ${release.tagName}")
                 .setDestinationUri(destinationUri)
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
             
