@@ -118,11 +118,11 @@ class SettingsActivity : AppCompatActivity() {
                 "0"
             }
             
-            // Affichage simple - Build seulement
-            binding.buildInfo.text = "Build #$runNumber"
+            // Affichage simple - Numéro de build seulement
+            binding.buildInfo.text = "#$runNumber"
             
         } catch (e: Exception) {
-            binding.buildInfo.text = "Build #0"
+            binding.buildInfo.text = "#0"
         }
         
         // Tech stack info

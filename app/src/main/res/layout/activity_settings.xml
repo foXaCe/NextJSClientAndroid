@@ -103,20 +103,10 @@
                 android:orientation="vertical"
                 android:paddingHorizontal="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/update_section_title"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/accent"
-                    android:letterSpacing="0.1"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginBottom="12dp" />
-
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
                     android:layout_marginBottom="24dp"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
