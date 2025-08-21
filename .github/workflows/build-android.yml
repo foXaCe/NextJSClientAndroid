@@ -103,16 +103,18 @@ jobs:
           
           echo "✅ Variables d'environnement exportées pour Gradle"
         else
-          echo "❌ Pas de keystore configuré - impossible de signer l'APK"
-          echo "Configurez les secrets GitHub: KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD"
-          exit 1
+          echo "❌ Pas de keystore configuré - build debug uniquement"
+          echo "⚠️ Les secrets GitHub ne sont pas accessibles - vérifiez repository settings"
+          # Ne pas exit 1, continuer avec debug build
         fi
 
     - name: Build APK
       run: |
-        if [ "${{ github.event_name }}" == "push" ]; then
+        if [ "${{ github.event_name }}" == "push" ] && [ -n "${KEYSTORE_BASE64:-}" ]; then
+          echo "🏗️ Building signed release APK..."
           ./gradlew --no-daemon assembleRelease
         else
+          echo "🏗️ Building debug APK (no keystore or PR)..."
           ./gradlew --no-daemon assembleDebug
         fi
     
