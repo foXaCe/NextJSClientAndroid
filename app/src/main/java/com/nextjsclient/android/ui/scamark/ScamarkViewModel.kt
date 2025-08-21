@@ -509,7 +509,7 @@ class ScamarkViewModel : ViewModel() {
         val weekStr = week.toString().padStart(2, '0')
         
         val weekShort = context?.getString(com.nextjsclient.android.R.string.week_short) ?: "S"
-        val separator = context?.getString(com.nextjsclient.android.R.string.date_range_separator) ?: "to"
+        val separator = context?.getString(com.nextjsclient.android.R.string.date_range_separator) ?: "au"
         
         return "$weekShort$weekStr - ${dateFormat.format(weekStart)} $separator ${dateFormat.format(weekEnd)}"
     }
@@ -528,7 +528,7 @@ class ScamarkViewModel : ViewModel() {
         val weekEnd = calendar.time
         
         val dateFormat = java.text.SimpleDateFormat("dd/MM", Locale.getDefault())
-        val separator = context?.getString(com.nextjsclient.android.R.string.date_range_separator) ?: "to"
+        val separator = context?.getString(com.nextjsclient.android.R.string.date_range_separator) ?: "au"
         
         return "${dateFormat.format(weekStart)} $separator ${dateFormat.format(weekEnd)}"
     }
