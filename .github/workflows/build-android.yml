@@ -13,6 +13,15 @@ jobs:
     timeout-minutes: 15
     
     steps:
+    - name: Clean Gradle cache to prevent BouncyCastle corruption
+      run: |
+        echo "🧹 Cleaning Gradle cache FIRST to prevent corruption..."
+        rm -rf ~/.gradle/caches/
+        rm -rf ~/.gradle/wrapper/
+        rm -rf /tmp/.gradle* || true
+        rm -f ~/.gradle/caches/jars-9/*/bcprov-jdk18on-*.jar || true
+        echo "✅ Gradle cache nettoyé avant checkout"
+
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -40,16 +49,6 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
     
-    - name: Clean Gradle cache to prevent BouncyCastle corruption
-      run: |
-        echo "🧹 Cleaning Gradle cache completely..."
-        rm -rf ~/.gradle/caches/
-        rm -rf ~/.gradle/wrapper/
-        # Also clean any temp gradle files
-        rm -rf /tmp/.gradle*
-        # Remove specific corrupted jar if it exists
-        rm -f ~/.gradle/caches/jars-9/*/bcprov-jdk18on-*.jar
-        echo "✅ Gradle cache nettoyé"
 
     - name: Create local.properties
       run: |
