@@ -407,13 +407,9 @@ class UpdateManager(private val context: Context) {
                                 Log.d(TAG, "🎉 === FICHIER TROUVÉ ET VALIDE ===")
                                 Log.d(TAG, "✅ File found! Size: ${downloadFile.length()} bytes")
                                 
-                                // Nettoyer la notification après avoir confirmé le fichier
-                                try {
-                                    downloadManager.remove(downloadId)
-                                    Log.d(TAG, "🧹 Notification cleared")
-                                } catch (e: Exception) {
-                                    Log.w(TAG, "Could not clear notification: ${e.message}")
-                                }
+                                // Ne PAS supprimer le téléchargement car cela supprime aussi le fichier !
+                                // Le fichier sera nettoyé à la prochaine mise à jour via cleanOldUpdates()
+                                Log.d(TAG, "🧹 Download completed, keeping file for installation")
                                 
                                 withContext(Dispatchers.Main) {
                                     Log.d(TAG, "🚀 Notifying download completion to UI")
