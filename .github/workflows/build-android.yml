@@ -35,26 +35,30 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-          ~/.gradle/buildOutputCleanup
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          ${{ runner.os }}-
+    # Cache désactivé temporairement à cause de l'erreur BouncyCastle jar corruption
+    # - name: Cache Gradle packages
+    #   uses: actions/cache@v4
+    #   with:
+    #     path: |
+    #       ~/.gradle/caches
+    #       ~/.gradle/wrapper
+    #       ~/.gradle/buildOutputCleanup
+    #     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-gradle-
+    #       ${{ runner.os }}-
 
     - name: Make gradlew executable
       run: chmod +x gradlew
     
-    - name: Clean Gradle cache if corrupted
+    - name: Clean Gradle cache and fix BouncyCastle issue
       run: |
-        echo "🧹 Cleaning corrupted Gradle cache..."
+        echo "🧹 Cleaning Gradle cache and fixing BouncyCastle issue..."
         rm -rf ~/.gradle/caches/
-        echo "✅ Cache complètement nettoyé"
+        # Force download fresh dependencies
+        ./gradlew --stop || true
+        ./gradlew clean --refresh-dependencies || true
+        echo "✅ Cache nettoyé et dépendances rafraîchies"
 
     - name: Create local.properties
       run: |
