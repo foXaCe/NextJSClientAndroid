@@ -173,9 +173,9 @@ class UpdateManager(private val context: Context) {
             // Utiliser le dossier cache externe de l'app (pas de permissions requises)
             val appUpdateDir = File(context.externalCacheDir, "updates")
             if (appUpdateDir.exists() && appUpdateDir.isDirectory) {
-                // Supprimer uniquement les anciens APK NextJSClient, sauf celui qu'on va télécharger
+                // Supprimer les anciens APK NextJSClient et les fichiers temporaires d'installation
                 val oldFiles = appUpdateDir.listFiles { file ->
-                    file.name.startsWith("NextJSClient-") && 
+                    (file.name.startsWith("NextJSClient-") || file.name.startsWith("install_")) && 
                     file.name.endsWith(".apk") &&
                     file.name != keepFileName
                 }
@@ -263,7 +263,7 @@ class UpdateManager(private val context: Context) {
                 .setTitle("NextJS Client Update")
                 .setDescription("Téléchargement de la mise à jour ${release.tagName}")
                 .setDestinationUri(destinationUri)
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
             
@@ -407,13 +407,30 @@ class UpdateManager(private val context: Context) {
                                 Log.d(TAG, "🎉 === FICHIER TROUVÉ ET VALIDE ===")
                                 Log.d(TAG, "✅ File found! Size: ${downloadFile.length()} bytes")
                                 
-                                // Ne PAS supprimer le téléchargement car cela supprime aussi le fichier !
-                                // Le fichier sera nettoyé à la prochaine mise à jour via cleanOldUpdates()
-                                Log.d(TAG, "🧹 Download completed, keeping file for installation")
-                                
-                                withContext(Dispatchers.Main) {
-                                    Log.d(TAG, "🚀 Notifying download completion to UI")
-                                    listener?.onDownloadCompleted(downloadFile)
+                                // Copier le fichier vers un emplacement sûr avant de nettoyer l'entrée DownloadManager
+                                val safeFile = File(appUpdateDir, "install_${downloadFile.name}")
+                                try {
+                                    downloadFile.copyTo(safeFile, overwrite = true)
+                                    Log.d(TAG, "📁 Fichier copié vers: ${safeFile.absolutePath}")
+                                    
+                                    // Maintenant on peut nettoyer l'entrée DownloadManager sans perdre le fichier
+                                    try {
+                                        downloadManager.remove(downloadId)
+                                        Log.d(TAG, "🧹 Entrée DownloadManager nettoyée")
+                                    } catch (e: Exception) {
+                                        Log.w(TAG, "Could not clear download entry: ${e.message}")
+                                    }
+                                    
+                                    withContext(Dispatchers.Main) {
+                                        Log.d(TAG, "🚀 Notifying download completion to UI")
+                                        listener?.onDownloadCompleted(safeFile)
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Erreur lors de la copie du fichier: ${e.message}")
+                                    // En cas d'erreur, utiliser le fichier original
+                                    withContext(Dispatchers.Main) {
+                                        listener?.onDownloadCompleted(downloadFile)
+                                    }
                                 }
                             } else {
                                 Log.e(TAG, "❌ === FICHIER NON TROUVÉ OU INVALIDE ===")
