@@ -168,22 +168,32 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private fun cleanOldUpdates() {
+    private fun cleanOldUpdates(keepFileName: String? = null) {
         try {
             // Utiliser le dossier Download standard
             val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             if (appUpdateDir.exists() && appUpdateDir.isDirectory) {
+                // Supprimer uniquement les anciens APK NextJSClient, sauf celui qu'on va télécharger
                 val oldFiles = appUpdateDir.listFiles { file ->
-                    file.name.startsWith("NextJSClient-") && file.name.endsWith(".apk")
+                    file.name.startsWith("NextJSClient-") && 
+                    file.name.endsWith(".apk") &&
+                    file.name != keepFileName
                 }
                 
                 oldFiles?.forEach { file ->
-                    Log.d(TAG, "🗑️ Deleting old update: ${file.name}")
-                    file.delete()
+                    Log.d(TAG, "🗑️ Deleting old NextJSClient APK: ${file.name}")
+                    val deleted = file.delete()
+                    if (deleted) {
+                        Log.d(TAG, "   ✅ Successfully deleted: ${file.name}")
+                    } else {
+                        Log.w(TAG, "   ⚠️ Failed to delete: ${file.name}")
+                    }
                 }
                 
                 if (oldFiles?.isNotEmpty() == true) {
-                    Log.d(TAG, "✅ Cleaned ${oldFiles.size} old update file(s)")
+                    Log.d(TAG, "✅ Cleaned ${oldFiles.size} old NextJSClient APK file(s)")
+                } else {
+                    Log.d(TAG, "📋 No old NextJSClient APK files to clean")
                 }
             }
         } catch (e: Exception) {
@@ -199,17 +209,29 @@ class UpdateManager(private val context: Context) {
             Log.d(TAG, "   • Name: ${release.name}")
             Log.d(TAG, "   • URL: ${release.downloadUrl}")
             
-            // Nettoyer les anciennes mises à jour avant de télécharger
-            cleanOldUpdates()
-            
             val fileName = "NextJSClient-${release.tagName}.apk"
             Log.d(TAG, "📁 Target filename: $fileName")
+            
+            // Nettoyer les anciennes mises à jour avant de télécharger (garde le nouveau nom)
+            cleanOldUpdates(keepFileName = fileName)
             
             // Utiliser le dossier Download standard
             val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             Log.d(TAG, "📂 Updates directory: ${appUpdateDir.absolutePath}")
             Log.d(TAG, "📊 Directory exists before: ${appUpdateDir.exists()}")
             Log.d(TAG, "📊 Directory writable: ${appUpdateDir.canWrite()}")
+            
+            // Vérifier si le fichier existe déjà et le supprimer
+            val existingFile = File(appUpdateDir, fileName)
+            if (existingFile.exists()) {
+                Log.d(TAG, "⚠️ File already exists: ${existingFile.name}")
+                val deleted = existingFile.delete()
+                if (deleted) {
+                    Log.d(TAG, "✅ Deleted existing file: ${existingFile.name}")
+                } else {
+                    Log.w(TAG, "❌ Failed to delete existing file: ${existingFile.name}")
+                }
+            }
             
             if (!appUpdateDir.exists()) {
                 val created = appUpdateDir.mkdirs()
