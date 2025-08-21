@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 15
     
     steps:
@@ -135,10 +135,10 @@ jobs:
           echo "KEY_PASSWORD présent: $([[ -n "$KEY_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
           echo ""
           echo "🏗️ Building signed release APK..."
-          ./gradlew assembleRelease
+          ./gradlew --no-daemon --no-parallel --stacktrace assembleRelease
         else
           echo "🏗️ Building debug APK for PR..."
-          ./gradlew assembleDebug
+          ./gradlew --no-daemon --no-parallel assembleDebug
         fi
     
     - name: Install build tools
@@ -212,7 +212,7 @@ jobs:
   nightly-release:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
       contents: write
