@@ -2,6 +2,7 @@ package com.nextjsclient.android.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -12,6 +13,7 @@ class BiometricManager(private val context: Context) {
     companion object {
         private const val PREFS_NAME = "biometric_prefs"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val TAG = "BiometricManager"
     }
     
     private val sharedPrefs: SharedPreferences = 
@@ -44,20 +46,41 @@ class BiometricManager(private val context: Context) {
      * Retourne le type de biométrie disponible
      */
     fun getBiometricType(): String {
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
+        Log.d(TAG, "=== BIOMETRIC TYPE DETECTION ===")
+        
+        val strongResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        val weakResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        val combinedResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        
+        Log.d(TAG, "BIOMETRIC_STRONG result: $strongResult")
+        Log.d(TAG, "BIOMETRIC_WEAK result: $weakResult")
+        Log.d(TAG, "Combined result: $combinedResult")
+        
+        return when (combinedResult) {
             BiometricManager.BIOMETRIC_SUCCESS -> {
                 // Déterminer les types disponibles
                 val availableTypes = mutableListOf<String>()
                 
-                if (context.packageManager.hasSystemFeature("android.hardware.fingerprint")) {
+                val hasFingerprint = context.packageManager.hasSystemFeature("android.hardware.fingerprint")
+                val hasFace = context.packageManager.hasSystemFeature("android.hardware.biometrics.face")
+                val hasIris = context.packageManager.hasSystemFeature("android.hardware.biometrics.iris")
+                
+                Log.d(TAG, "Hardware features:")
+                Log.d(TAG, "  - android.hardware.fingerprint: $hasFingerprint")
+                Log.d(TAG, "  - android.hardware.biometrics.face: $hasFace")
+                Log.d(TAG, "  - android.hardware.biometrics.iris: $hasIris")
+                
+                if (hasFingerprint) {
                     availableTypes.add("Empreinte digitale")
                 }
-                if (context.packageManager.hasSystemFeature("android.hardware.biometrics.face")) {
+                if (hasFace) {
                     availableTypes.add("Reconnaissance faciale")
                 }
-                if (context.packageManager.hasSystemFeature("android.hardware.biometrics.iris")) {
+                if (hasIris) {
                     availableTypes.add("Reconnaissance de l'iris")
                 }
+                
+                Log.d(TAG, "Available types: $availableTypes")
                 
                 when {
                     availableTypes.isEmpty() -> "Authentification biométrique"
@@ -146,20 +169,45 @@ class BiometricManager(private val context: Context) {
         })
         
         // Déterminer le niveau d'authentification à utiliser
+        Log.d(TAG, "=== AUTHENTICATION SETUP ===")
+        val strongAvailable = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
+        val weakAvailable = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
+        
+        Log.d(TAG, "BIOMETRIC_STRONG available: $strongAvailable")
+        Log.d(TAG, "BIOMETRIC_WEAK available: $weakAvailable")
+        
         val authenticators = when {
-            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS -> 
+            strongAvailable -> {
+                Log.d(TAG, "Using BIOMETRIC_STRONG")
                 BiometricManager.Authenticators.BIOMETRIC_STRONG
-            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS ->
+            }
+            weakAvailable -> {
+                Log.d(TAG, "Using BIOMETRIC_WEAK")
                 BiometricManager.Authenticators.BIOMETRIC_WEAK
-            else -> BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+            }
+            else -> {
+                Log.d(TAG, "Using combined BIOMETRIC_STRONG | BIOMETRIC_WEAK")
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+            }
         }
 
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(title)
-            .setSubtitle(subtitle)
-            .setNegativeButtonText(negativeButtonText)
-            .setAllowedAuthenticators(authenticators)
-            .build()
+        // Configuration pour afficher toutes les options biométriques
+        val promptInfo = if (authenticators == BiometricManager.Authenticators.BIOMETRIC_STRONG) {
+            // Pour BIOMETRIC_STRONG, ne pas spécifier setAllowedAuthenticators
+            // laisse Android afficher toutes les options disponibles
+            BiometricPrompt.PromptInfo.Builder()
+                .setTitle(title)
+                .setSubtitle(subtitle)
+                .setNegativeButtonText(negativeButtonText)
+                .build()
+        } else {
+            BiometricPrompt.PromptInfo.Builder()
+                .setTitle(title)
+                .setSubtitle(subtitle)
+                .setNegativeButtonText(negativeButtonText)
+                .setAllowedAuthenticators(authenticators)
+                .build()
+        }
         
         biometricPrompt.authenticate(promptInfo)
     }
