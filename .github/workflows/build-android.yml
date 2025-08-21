@@ -13,25 +13,6 @@ jobs:
     timeout-minutes: 15
     
     steps:
-    - name: Debug secrets availability
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      run: |
-        echo "🔍 Debug des secrets:"
-        echo "Event: ${{ github.event_name }}"
-        echo "Actor: ${{ github.actor }}"
-        echo "Ref: ${{ github.ref }}"
-        echo "KEYSTORE_BASE64 présent: $([[ -n "${{ secrets.KEYSTORE_BASE64 }}" ]] && echo "✅ OUI" || echo "❌ NON")"
-        echo "KEYSTORE_PASSWORD présent: $([[ -n "${{ secrets.KEYSTORE_PASSWORD }}" ]] && echo "✅ OUI" || echo "❌ NON")"
-        echo "KEY_ALIAS: ${{ secrets.KEY_ALIAS }}"
-        echo "KEY_PASSWORD présent: $([[ -n "${{ secrets.KEY_PASSWORD }}" ]] && echo "✅ OUI" || echo "❌ NON")"
-        echo ""
-        echo "🔍 Test direct des variables:"
-        echo "KEYSTORE_BASE64 length: ${#KEYSTORE_BASE64}"
-        
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -128,17 +109,9 @@ jobs:
     - name: Build APK
       run: |
         if [ "${{ github.event_name }}" == "push" ]; then
-          echo "🔐 Secrets validation:"
-          echo "KEYSTORE_BASE64 présent: $([[ -n "$KEYSTORE_BASE64" ]] && echo "✅ OUI" || echo "❌ NON")"
-          echo "KEYSTORE_PASSWORD présent: $([[ -n "$KEYSTORE_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
-          echo "KEY_ALIAS: ${KEY_ALIAS:-'❌ NON DÉFINI'}"
-          echo "KEY_PASSWORD présent: $([[ -n "$KEY_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
-          echo ""
-          echo "🏗️ Building signed release APK..."
-          ./gradlew --no-daemon --no-parallel --stacktrace assembleRelease
+          ./gradlew --no-daemon assembleRelease
         else
-          echo "🏗️ Building debug APK for PR..."
-          ./gradlew --no-daemon --no-parallel assembleDebug
+          ./gradlew --no-daemon assembleDebug
         fi
     
     - name: Install build tools
