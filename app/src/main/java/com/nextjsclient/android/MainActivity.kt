@@ -468,7 +468,7 @@ class MainActivity : AppCompatActivity() {
             biometricManager.authenticate(
                 activity = this,
                 title = "Authentification requise",
-                subtitle = "Utilisez votre empreinte digitale pour accéder à l'application",
+                subtitle = "Utilisez votre empreinte digitale ou reconnaissance faciale pour accéder à l'application",
                 negativeButtonText = "Annuler",
                 onSuccess = {
                     // Authentification réussie, retirer l'overlay

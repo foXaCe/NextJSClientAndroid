@@ -23,7 +23,7 @@ class BiometricManager(private val context: Context) {
      * Vérifie si la biométrie est disponible sur l'appareil
      */
     fun isBiometricAvailable(): Boolean {
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
             BiometricManager.BIOMETRIC_SUCCESS -> true
             else -> false
         }
@@ -33,7 +33,7 @@ class BiometricManager(private val context: Context) {
      * Vérifie si l'utilisateur a configuré la biométrie
      */
     fun isBiometricConfigured(): Boolean {
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
             BiometricManager.BIOMETRIC_SUCCESS -> true
             BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> false
             else -> false
@@ -44,7 +44,7 @@ class BiometricManager(private val context: Context) {
      * Retourne le type de biométrie disponible
      */
     fun getBiometricType(): String {
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
             BiometricManager.BIOMETRIC_SUCCESS -> {
                 // Déterminer les types disponibles
                 val availableTypes = mutableListOf<String>()
@@ -79,11 +79,11 @@ class BiometricManager(private val context: Context) {
      * Retourne un message d'état pour l'utilisateur
      */
     fun getBiometricStatusMessage(): String {
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
             BiometricManager.BIOMETRIC_SUCCESS -> "Disponible et configurée"
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> "Votre appareil ne supporte pas la biométrie"
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> "Capteur biométrique temporairement indisponible"
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> "Aucune empreinte configurée dans les paramètres"
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> "Aucune biométrie configurée dans les paramètres"
             BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> "Mise à jour de sécurité requise"
             BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> "Biométrie non supportée par votre version Android"
             BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> "État de la biométrie inconnu"
@@ -145,10 +145,20 @@ class BiometricManager(private val context: Context) {
             }
         })
         
+        // Déterminer le niveau d'authentification à utiliser
+        val authenticators = when {
+            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS -> 
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS ->
+                BiometricManager.Authenticators.BIOMETRIC_WEAK
+            else -> BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+        }
+
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle(title)
             .setSubtitle(subtitle)
             .setNegativeButtonText(negativeButtonText)
+            .setAllowedAuthenticators(authenticators)
             .build()
         
         biometricPrompt.authenticate(promptInfo)
