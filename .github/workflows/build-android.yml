@@ -246,9 +246,6 @@ jobs:
         
         ### 📦 APK Disponible
         - **NextJSClient-run${{ steps.version.outputs.RUN_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk**: Version release signée avec certificat de production
-        
-        ---
-        🤖 **Build automatique** généré par GitHub Actions
         EOF
         
         gh release create nightly \
