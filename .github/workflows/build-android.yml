@@ -85,6 +85,10 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
+        echo "🔍 Debug keystore vars:"
+        echo "KEYSTORE_BASE64 length: ${#KEYSTORE_BASE64}"
+        echo "KEYSTORE_PASSWORD set: $([[ -n "$KEYSTORE_PASSWORD" ]] && echo "YES" || echo "NO")"
+        
         if [ -n "$KEYSTORE_BASE64" ]; then
           echo "$KEYSTORE_BASE64" | base64 -d > nextjs-client-release.keystore
           echo "✅ Keystore décodé depuis les secrets"
