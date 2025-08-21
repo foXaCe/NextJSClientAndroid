@@ -137,6 +137,13 @@ dependencies {
     // implementation 'com.google.firebase:firebase-storage-ktx'
     // implementation 'com.google.firebase:firebase-analytics-ktx'
     
+    // Force BouncyCastle version to prevent corruption (même sans Firebase)
+    configurations.all {
+        resolutionStrategy {
+            force 'org.bouncycastle:bcprov-jdk18on:1.76'
+        }
+    }
+    
     // Architecture Components
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.8.7'

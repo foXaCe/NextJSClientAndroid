@@ -40,18 +40,16 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
     
-    - name: Workaround BouncyCastle jar corruption in GitHub Actions
+    - name: Clean Gradle cache to prevent BouncyCastle corruption
       run: |
-        echo "🧹 Applying BouncyCastle workaround..."
-        rm -rf ~/.gradle/
-        # Force use local gradle wrapper instead of cached
-        ./gradlew wrapper --gradle-version=8.2 --distribution-type=bin
-        # Create gradle.properties with specific JVM args to avoid jar corruption
-        mkdir -p ~/.gradle
-        echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError" > ~/.gradle/gradle.properties
-        echo "org.gradle.parallel=false" >> ~/.gradle/gradle.properties
-        echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
-        echo "✅ BouncyCastle workaround appliqué"
+        echo "🧹 Cleaning Gradle cache completely..."
+        rm -rf ~/.gradle/caches/
+        rm -rf ~/.gradle/wrapper/
+        # Also clean any temp gradle files
+        rm -rf /tmp/.gradle*
+        # Remove specific corrupted jar if it exists
+        rm -f ~/.gradle/caches/jars-9/*/bcprov-jdk18on-*.jar
+        echo "✅ Gradle cache nettoyé"
 
     - name: Create local.properties
       run: |
