@@ -12,6 +12,8 @@
   ],
   "timezone": "Europe/Paris",
   "schedule": ["at any time"],
+  "automerge": true,
+  "platformAutomerge": true,
   "labels": ["dependencies", "renovate"],
   "assignees": ["foXaCe"],
   "reviewers": ["foXaCe"],
@@ -92,9 +94,9 @@
       "labels": ["testing"]
     },
     {
-      "description": "Mises à jour mineures auto-merge (désactivé pour sécurité)",
+      "description": "Mises à jour mineures auto-merge",
       "matchUpdateTypes": ["minor", "patch"],
-      "automerge": false,
+      "automerge": true,
       "labels": ["auto-update-candidate"]
     },
     {
