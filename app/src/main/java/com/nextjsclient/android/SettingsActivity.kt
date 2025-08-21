@@ -109,7 +109,6 @@ class SettingsActivity : AppCompatActivity() {
         // Affichage version GITHUB uniquement
         try {
             val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
-            val commitHash = com.nextjsclient.android.BuildConfig.COMMIT_HASH
             
             // Extraire le run number 
             val runNumber = if (versionDisplayName.contains("#")) {

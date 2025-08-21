@@ -87,7 +87,7 @@ class ScamarkFragment : Fragment() {
                 // Handle edit click
                 showEditDialog(product)
             },
-            onDeleteClick = { product ->
+            onDeleteClick = { _ ->
                 // TODO: Implémenter la suppression si nécessaire
             },
             getProductStatus = { productName ->
@@ -361,7 +361,7 @@ class ScamarkFragment : Fragment() {
         startActivity(intent)
     }
     
-    private fun showEditDialog(product: com.nextjsclient.android.data.models.ScamarkProduct) {
+    private fun showEditDialog(_product: com.nextjsclient.android.data.models.ScamarkProduct) {
         // Show edit dialog
         // You can implement an edit dialog fragment
     }
