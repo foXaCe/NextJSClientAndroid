@@ -66,6 +66,10 @@ apksigner verify --verbose --print-certs app.apk
 - **Ne commitez jamais** le keystore ou les mots de passe
 - Toutes les APK signées avec le même keystore sont **compatibles** pour les mises à jour
 
+## Test de stabilité signature
+
+Signature APK run95: SHA-256 `3cc8a75b54faa695489a4211192cf11a7d4a5941344c6abc8ddd72650a1f980d`
+
 ## Dépannage
 
 ### "Package invalide" lors de l'installation
