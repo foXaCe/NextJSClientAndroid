@@ -13,14 +13,16 @@ jobs:
     timeout-minutes: 15
     
     steps:
-    - name: Validate secrets
-      if: false  # Désactivé temporairement pour debug
+    - name: Debug secrets availability
       run: |
-        if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-          echo "❌ KEYSTORE_BASE64 manquant"
-          exit 1
-        fi
-        echo "✅ Secrets validés"
+        echo "🔍 Debug des secrets:"
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "KEYSTORE_BASE64 présent: $([[ -n "${{ secrets.KEYSTORE_BASE64 }}" ]] && echo "✅ OUI" || echo "❌ NON")"
+        echo "KEYSTORE_PASSWORD présent: $([[ -n "${{ secrets.KEYSTORE_PASSWORD }}" ]] && echo "✅ OUI" || echo "❌ NON")"
+        echo "KEY_ALIAS: ${{ secrets.KEY_ALIAS }}"
+        echo "KEY_PASSWORD présent: $([[ -n "${{ secrets.KEY_PASSWORD }}" ]] && echo "✅ OUI" || echo "❌ NON")"
         
     - name: Checkout code
       uses: actions/checkout@v4
