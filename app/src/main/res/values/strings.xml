@@ -102,7 +102,7 @@
     <string name="version_title">Version 1.0.0</string>
     <string name="developer_title">Developer</string>
     <string name="developer_name">Stéphane Chabrol</string>
-    <string name="build_title">Build</string>
+    <string name="build_title">Commit</string>
     <string name="build_type">Release</string>
     <string name="technologies_title">TECHNOLOGIES</string>
     <string name="android_version">Android 14</string>
