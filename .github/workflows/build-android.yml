@@ -80,23 +80,8 @@ jobs:
     - name: Auto-increment version
       if: github.event_name == 'push'
       run: |
-        # Lire la version actuelle
-        CURRENT_VERSION=$(grep "versionName" app/build.gradle | sed 's/.*"\([^"]*\)".*/\1/')
-        CURRENT_CODE=$(grep "versionCode" app/build.gradle | sed 's/.*\([0-9]\+\).*/\1/')
-        
-        echo "Version actuelle: $CURRENT_VERSION (code: $CURRENT_CODE)"
-        
-        # Calculer la nouvelle version basée sur la date et le commit
-        NEW_VERSION="1.$(date +'%m%d')"  # Format: 1.MMDD (ex: 1.0819 pour le 19 août)
-        NEW_CODE=$((CURRENT_CODE + 1))
-        
-        echo "Nouvelle version: $NEW_VERSION (code: $NEW_CODE)"
-        
-        # Mettre à jour le fichier build.gradle
-        sed -i "s/versionCode $CURRENT_CODE/versionCode $NEW_CODE/" app/build.gradle
-        sed -i "s/versionName \"$CURRENT_VERSION\"/versionName \"$NEW_VERSION\"/" app/build.gradle
-        
-        echo "✅ Version mise à jour automatiquement"
+        echo "🔢 Version sera gérée automatiquement par Gradle via git commit count"
+        echo "✅ Version mise à jour automatiquement via buildNumber et versionDisplayName"
 
     - name: Decode Keystore
       if: github.event_name == 'push'
