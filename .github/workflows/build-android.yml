@@ -107,14 +107,26 @@ jobs:
           # Ne pas exit 1, continuer avec debug build
         fi
 
-    - name: Build APK
+    - name: Build APK with retry logic
       run: |
         if [ "${{ github.event_name }}" == "push" ] && [ -n "${KEYSTORE_BASE64:-}" ]; then
-          echo "🏗️ Building signed release APK..."
-          ./gradlew --no-daemon assembleRelease
+          echo "🏗️ Building signed release APK with retry..."
+          for i in 1 2 3; do
+            echo "Attempt $i/3"
+            ./gradlew --no-daemon --refresh-dependencies assembleRelease && break
+            echo "Build failed, retrying in 10s..."
+            rm -rf ~/.gradle/caches/ || true
+            sleep 10
+          done
         else
-          echo "🏗️ Building debug APK (no keystore or PR)..."
-          ./gradlew --no-daemon assembleDebug
+          echo "🏗️ Building debug APK with retry..."
+          for i in 1 2 3; do
+            echo "Attempt $i/3"
+            ./gradlew --no-daemon --refresh-dependencies assembleDebug && break
+            echo "Build failed, retrying in 10s..."
+            rm -rf ~/.gradle/caches/ || true
+            sleep 10
+          done
         fi
     
     - name: Install build tools

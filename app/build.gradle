@@ -137,11 +137,10 @@ dependencies {
     // implementation 'com.google.firebase:firebase-storage-ktx'
     // implementation 'com.google.firebase:firebase-analytics-ktx'
     
-    // Force BouncyCastle version to prevent corruption (même sans Firebase)
+    // Exclude problematic BouncyCastle completely
     configurations.all {
-        resolutionStrategy {
-            force 'org.bouncycastle:bcprov-jdk18on:1.76'
-        }
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+        exclude group: 'org.bouncycastle'
     }
     
     // Architecture Components
