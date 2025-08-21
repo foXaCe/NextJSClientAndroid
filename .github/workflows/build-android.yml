@@ -46,6 +46,13 @@ jobs:
 
     - name: Make gradlew executable
       run: chmod +x gradlew
+    
+    - name: Clean Gradle cache if corrupted
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          echo "🧹 Cleaning Gradle cache for PR..."
+          rm -rf ~/.gradle/caches/jars-*
+        fi
 
     - name: Create local.properties
       run: |
