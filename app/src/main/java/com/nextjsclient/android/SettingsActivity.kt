@@ -373,9 +373,8 @@ class SettingsActivity : AppCompatActivity() {
         val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
         
-        // Afficher la date de mise à jour au format Paris
-        val updateDateText = formatUpdateDate(release.publishedAt)
-        updateVersion.text = "${getString(R.string.update_date)} : $updateDateText"
+        // Afficher la version
+        updateVersion.text = "Version ${release.tagName}"
         
         // Formater le changelog (commits)
         val formattedChangelog = formatChangelog(release.body)
@@ -400,10 +399,31 @@ class SettingsActivity : AppCompatActivity() {
         
         val lines = body.split("\n")
         val formattedLines = mutableListOf<String>()
+        var skipSection = false
         
         for (line in lines) {
             val trimmedLine = line.trim()
-            if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
+            
+            // Ignorer les sections indésirables
+            if (trimmedLine.startsWith("🔍") || trimmedLine.startsWith("🔢") || 
+                trimmedLine.startsWith("🌟") || trimmedLine.startsWith("📱") || 
+                trimmedLine.startsWith("📦") || trimmedLine.contains("Installation") ||
+                trimmedLine.contains("Sources inconnues") || trimmedLine.contains("APK Disponible") ||
+                trimmedLine.contains("Commit:") || trimmedLine.contains("Run Number:") ||
+                trimmedLine.contains("Branch:") || trimmedLine.contains("Build Time:") ||
+                trimmedLine.contains("Version:") || trimmedLine.contains(".apk")) {
+                skipSection = true
+                continue
+            }
+            
+            // Réinitialiser après une ligne vide
+            if (trimmedLine.isEmpty()) {
+                skipSection = false
+                continue
+            }
+            
+            // Ajouter seulement les vraies modifications
+            if (!skipSection && trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
                 // Ajouter une puce si ce n'est pas déjà fait
                 val formatted = if (trimmedLine.startsWith("•") || trimmedLine.startsWith("-") || trimmedLine.startsWith("*")) {
                     "• ${trimmedLine.substring(1).trim()}"
