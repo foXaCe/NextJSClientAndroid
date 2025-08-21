@@ -141,7 +141,7 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onUpdateAvailable(release: Release) {
-                binding.updateStatus.text = "${getString(R.string.update_available)} • ${getString(R.string.click_here)}"
+                binding.updateStatus.text = "Version ${release.tagName} disponible • ${getString(R.string.click_here)}"
                 binding.updateButton.visibility = View.GONE
                 pendingUpdate = release
                 // Rendre la carte cliquable pour ouvrir la bottom sheet
