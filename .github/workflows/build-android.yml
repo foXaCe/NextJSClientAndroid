@@ -15,7 +15,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 20
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -29,9 +29,11 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          ~/.gradle/buildOutputCleanup
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+          ${{ runner.os }}-
 
     - name: Make gradlew executable
       run: chmod +x gradlew
@@ -97,25 +99,19 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: ./gradlew assembleRelease
     
+    - name: Install build tools
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -y apksigner aapt2
+    
     - name: Verify APK signature
       run: |
         echo "🔍 Vérification de la signature de l'APK..."
         
-        # Installer apksigner si nécessaire
-        if ! command -v apksigner &> /dev/null; then
-          echo "Installation d'apksigner..."
-          sudo apt-get update
-          sudo apt-get install -y apksigner
-        fi
-        
-        # Vérifier la signature
         apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
         
         if [ $? -eq 0 ]; then
           echo "✅ APK correctement signé!"
-          echo ""
-          echo "📝 Informations du certificat:"
-          apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep -E "DN:|SHA-256"
         else
           echo "❌ L'APK n'est pas signé correctement!"
           exit 1
@@ -142,12 +138,6 @@ jobs:
       run: |
         SIGNED_SIZE=$(du -h app/build/outputs/apk/release/app-release.apk | cut -f1)
         echo "SIGNED_SIZE=$SIGNED_SIZE" >> $GITHUB_OUTPUT
-        
-        # Extraire les infos de signature
-        CERT_INFO=$(apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "DN:" | head -1 | sed 's/.*CN=//' | cut -d',' -f1)
-        SHA256=$(apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "SHA-256" | head -1 | awk '{print substr($3, 1, 16) "..."}')
-        echo "CERT_INFO=$CERT_INFO" >> $GITHUB_OUTPUT
-        echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
 
     - name: Comment PR with APK info
       if: github.event_name == 'pull_request'
@@ -226,7 +216,7 @@ jobs:
         echo "Version APK: $APK_VERSION"
         
         # Générer le changelog depuis les derniers commits
-        CHANGELOG=$(git log --oneline -10 --pretty=format:"- %s (%h)" | head -10)
+        CHANGELOG=$(git log --oneline -5 --pretty=format:"- %s" | head -5)
         
         # Renommer l'APK avec le numéro de run (style Lawnchair)
         if [ -f ./apks/app-release.apk ]; then
