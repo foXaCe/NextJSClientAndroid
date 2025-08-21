@@ -251,8 +251,8 @@ class SettingsActivity : AppCompatActivity() {
         val isConfigured = biometricManager.isBiometricConfigured()
         
         if (!isAvailable) {
-            // Masquer la section si la biométrie n'est pas disponible
-            binding.biometricSection.visibility = View.GONE
+            // Masquer toute la section sécurité si la biométrie n'est pas disponible
+            binding.securitySection.visibility = View.GONE
             return
         }
         
