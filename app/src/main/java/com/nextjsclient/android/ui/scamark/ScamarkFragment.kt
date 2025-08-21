@@ -349,6 +349,9 @@ class ScamarkFragment : Fragment() {
         val selectedWeek = viewModel.selectedWeek.value ?: getCurrentISOWeek()
         val selectedYear = viewModel.selectedYear.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
         
+        // Marquer comme navigation interne pour éviter la re-authentification biométrique
+        (activity as? com.nextjsclient.android.MainActivity)?.markInternalNavigation()
+        
         val intent = com.nextjsclient.android.ProductDetailActivity.createIntent(
             requireContext(), 
             product, 
