@@ -14,6 +14,11 @@ jobs:
     
     steps:
     - name: Debug secrets availability
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
         echo "🔍 Debug des secrets:"
         echo "Event: ${{ github.event_name }}"
@@ -23,6 +28,9 @@ jobs:
         echo "KEYSTORE_PASSWORD présent: $([[ -n "${{ secrets.KEYSTORE_PASSWORD }}" ]] && echo "✅ OUI" || echo "❌ NON")"
         echo "KEY_ALIAS: ${{ secrets.KEY_ALIAS }}"
         echo "KEY_PASSWORD présent: $([[ -n "${{ secrets.KEY_PASSWORD }}" ]] && echo "✅ OUI" || echo "❌ NON")"
+        echo ""
+        echo "🔍 Test direct des variables:"
+        echo "KEYSTORE_BASE64 length: ${#KEYSTORE_BASE64}"
         
     - name: Checkout code
       uses: actions/checkout@v4
