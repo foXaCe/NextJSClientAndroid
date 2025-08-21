@@ -61,9 +61,12 @@ android {
         release {
             // Configuration for GitHub Actions
             if (System.getenv("KEYSTORE_BASE64")) {
-                storeFile file("../nextjs-client-release.keystore")
+                def keystorePath = "../nextjs-client-release.keystore"
+                println "🔐 GitHub Actions: Using keystore at: ${file(keystorePath).absolutePath}"
+                println "🔐 Keystore exists: ${file(keystorePath).exists()}"
+                storeFile file(keystorePath)
                 storePassword System.getenv("KEYSTORE_PASSWORD")
-                keyAlias System.getenv("KEY_ALIAS")
+                keyAlias System.getenv("KEY_ALIAS") 
                 keyPassword System.getenv("KEY_PASSWORD")
             }
             // Local configuration (fallback)

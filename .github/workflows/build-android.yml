@@ -85,6 +85,8 @@ jobs:
         if [ -n "$KEYSTORE_BASE64" ]; then
           echo "$KEYSTORE_BASE64" | base64 -d > nextjs-client-release.keystore
           echo "✅ Keystore décodé depuis les secrets"
+          echo "📂 Keystore path: $(pwd)/nextjs-client-release.keystore"
+          ls -la nextjs-client-release.keystore
         else
           echo "❌ Pas de keystore configuré - impossible de signer l'APK"
           echo "Configurez les secrets GitHub: KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD"
@@ -97,7 +99,15 @@ jobs:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      run: ./gradlew assembleRelease
+      run: |
+        echo "🔐 Secrets validation:"
+        echo "KEYSTORE_BASE64 présent: $([[ -n "$KEYSTORE_BASE64" ]] && echo "✅ OUI" || echo "❌ NON")"
+        echo "KEYSTORE_PASSWORD présent: $([[ -n "$KEYSTORE_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
+        echo "KEY_ALIAS: ${KEY_ALIAS:-'❌ NON DÉFINI'}"
+        echo "KEY_PASSWORD présent: $([[ -n "$KEY_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
+        echo ""
+        echo "🏗️ Building signed APK..."
+        ./gradlew assembleRelease
     
     - name: Install build tools
       run: |
