@@ -179,4 +179,7 @@
     <!-- Update notifications -->
     <string name="click_here">Click here</string>
     <string name="update_date">Update date</string>
+    
+    <!-- Test update system -->
+    <string name="test_update">Test update system v1</string>
 </resources>
