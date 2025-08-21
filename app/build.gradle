@@ -130,12 +130,12 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.8.4'
     implementation 'androidx.navigation:navigation-ui-ktx:2.8.4'
     
-    // Firebase temporairement désactivé pour debug BouncyCastle
-    // implementation platform('com.google.firebase:firebase-bom:33.6.0')
-    // implementation 'com.google.firebase:firebase-auth-ktx'
-    // implementation 'com.google.firebase:firebase-firestore-ktx'
-    // implementation 'com.google.firebase:firebase-storage-ktx'
-    // implementation 'com.google.firebase:firebase-analytics-ktx'
+    // Firebase - réactivé maintenant que BouncyCastle est fixé
+    implementation platform('com.google.firebase:firebase-bom:33.6.0')
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
+    implementation 'com.google.firebase:firebase-storage-ktx'
+    implementation 'com.google.firebase:firebase-analytics-ktx'
     
     // Force newer BouncyCastle version to avoid 1.79 corruption bug
     configurations.all {
