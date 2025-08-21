@@ -138,7 +138,13 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onUpdateAvailable(release: Release) {
-                binding.updateStatus.text = "Version ${release.tagName} disponible • ${getString(R.string.click_here)}"
+                // Utiliser le nom complet de la release au lieu du tag
+                val versionText = if (release.name.contains("nightly", ignoreCase = true) || release.name.contains("Nightly")) {
+                    release.name // Afficher le nom complet pour les builds nightly
+                } else {
+                    "Version ${release.tagName}"
+                }
+                binding.updateStatus.text = "$versionText disponible • ${getString(R.string.click_here)}"
                 binding.updateButton.visibility = View.GONE
                 pendingUpdate = release
                 // Rendre la carte cliquable pour ouvrir la bottom sheet
@@ -370,8 +376,12 @@ class SettingsActivity : AppCompatActivity() {
         val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
         
-        // Afficher la version
-        updateVersion.text = "Version ${release.tagName}"
+        // Afficher la version - utiliser le nom complet pour les builds nightly
+        updateVersion.text = if (release.name.contains("nightly", ignoreCase = true) || release.name.contains("Nightly")) {
+            release.name // Afficher le nom complet pour les builds nightly
+        } else {
+            "Version ${release.tagName}"
+        }
         
         // Formater le changelog (commits)
         val formattedChangelog = formatChangelog(release.body)
