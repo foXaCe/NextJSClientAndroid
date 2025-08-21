@@ -9,9 +9,18 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
     
     steps:
+    - name: Validate secrets
+      run: |
+        if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          echo "❌ KEYSTORE_BASE64 manquant"
+          exit 1
+        fi
+        echo "✅ Secrets validés"
+        
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -59,6 +68,7 @@ jobs:
         fi
 
     - name: Auto-increment version
+      if: github.event_name == 'push'
       run: |
         # Lire la version actuelle
         CURRENT_VERSION=$(grep "versionName" app/build.gradle | sed 's/.*"\([^"]*\)".*/\1/')
@@ -79,6 +89,7 @@ jobs:
         echo "✅ Version mise à jour automatiquement"
 
     - name: Decode Keystore
+      if: github.event_name == 'push'
       env:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
       run: |
@@ -93,21 +104,26 @@ jobs:
           exit 1
         fi
 
-    - name: Build Release APK (signed)
+    - name: Build APK
       env:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
-        echo "🔐 Secrets validation:"
-        echo "KEYSTORE_BASE64 présent: $([[ -n "$KEYSTORE_BASE64" ]] && echo "✅ OUI" || echo "❌ NON")"
-        echo "KEYSTORE_PASSWORD présent: $([[ -n "$KEYSTORE_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
-        echo "KEY_ALIAS: ${KEY_ALIAS:-'❌ NON DÉFINI'}"
-        echo "KEY_PASSWORD présent: $([[ -n "$KEY_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
-        echo ""
-        echo "🏗️ Building signed APK..."
-        ./gradlew assembleRelease
+        if [ "${{ github.event_name }}" == "push" ]; then
+          echo "🔐 Secrets validation:"
+          echo "KEYSTORE_BASE64 présent: $([[ -n "$KEYSTORE_BASE64" ]] && echo "✅ OUI" || echo "❌ NON")"
+          echo "KEYSTORE_PASSWORD présent: $([[ -n "$KEYSTORE_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
+          echo "KEY_ALIAS: ${KEY_ALIAS:-'❌ NON DÉFINI'}"
+          echo "KEY_PASSWORD présent: $([[ -n "$KEY_PASSWORD" ]] && echo "✅ OUI" || echo "❌ NON")"
+          echo ""
+          echo "🏗️ Building signed release APK..."
+          ./gradlew assembleRelease
+        else
+          echo "🏗️ Building debug APK for PR..."
+          ./gradlew assembleDebug
+        fi
     
     - name: Install build tools
       run: |
@@ -179,7 +195,8 @@ jobs:
   nightly-release:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
     permissions:
       contents: write
     
