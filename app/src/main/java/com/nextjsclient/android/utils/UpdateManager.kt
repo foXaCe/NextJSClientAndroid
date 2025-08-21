@@ -48,6 +48,40 @@ class UpdateManager(private val context: Context) {
         this.listener = listener
     }
     
+    /**
+     * Nettoie les anciennes APK du dossier Downloads
+     * Supprime tous les fichiers NextJSClient*.apk
+     */
+    fun cleanOldApks() {
+        try {
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            if (downloadsDir.exists() && downloadsDir.isDirectory) {
+                val apkFiles = downloadsDir.listFiles { file ->
+                    file.name.startsWith("NextJSClient") && file.name.endsWith(".apk")
+                }
+                
+                apkFiles?.forEach { file ->
+                    try {
+                        if (file.delete()) {
+                            Log.d(TAG, "Deleted old APK: ${file.name}")
+                        } else {
+                            Log.w(TAG, "Failed to delete: ${file.name}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error deleting ${file.name}: ${e.message}")
+                    }
+                }
+                
+                val deletedCount = apkFiles?.size ?: 0
+                if (deletedCount > 0) {
+                    Log.i(TAG, "Cleaned $deletedCount old APK file(s) from Downloads")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cleaning old APKs: ${e.message}")
+        }
+    }
+    
     suspend fun checkForUpdates() {
         withContext(Dispatchers.IO) {
             try {

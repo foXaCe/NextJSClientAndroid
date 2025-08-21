@@ -22,6 +22,10 @@ import com.nextjsclient.android.utils.ThemeManager
 import com.nextjsclient.android.utils.SupplierThemeManager
 import com.nextjsclient.android.utils.SupplierPreferences
 import com.nextjsclient.android.utils.BiometricManager
+import com.nextjsclient.android.utils.UpdateManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     
@@ -55,6 +59,9 @@ class MainActivity : AppCompatActivity() {
         supplierThemeManager = SupplierThemeManager(this)
         supplierPreferences = SupplierPreferences(this)
         biometricManager = BiometricManager(this)
+        
+        // Nettoyer les anciennes APK au démarrage
+        cleanOldApks()
         
         // Check if user is logged in
         if (auth.currentUser == null) {
@@ -95,6 +102,20 @@ class MainActivity : AppCompatActivity() {
         // Vérifier l'authentification biométrique si activée (première fois seulement)
         if (savedInstanceState == null) {
             checkBiometricAuthentication()
+        }
+    }
+    
+    /**
+     * Nettoie les anciennes APK téléchargées pour libérer de l'espace
+     */
+    private fun cleanOldApks() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val updateManager = UpdateManager(this@MainActivity)
+                updateManager.cleanOldApks()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
     
