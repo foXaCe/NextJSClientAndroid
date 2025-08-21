@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 15
     
     steps:
@@ -51,14 +51,16 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
     
-    - name: Clean Gradle cache and fix BouncyCastle issue
+    - name: Fix BouncyCastle jar corruption issue
       run: |
-        echo "🧹 Cleaning Gradle cache and fixing BouncyCastle issue..."
-        rm -rf ~/.gradle/caches/
-        # Force download fresh dependencies
-        ./gradlew --stop || true
-        ./gradlew clean --refresh-dependencies || true
-        echo "✅ Cache nettoyé et dépendances rafraîchies"
+        echo "🧹 Fixing BouncyCastle jar corruption issue..."
+        rm -rf ~/.gradle/
+        # Clear system-wide gradle cache too
+        sudo rm -rf /home/runner/.gradle/ || true
+        # Create fresh gradle directory with proper permissions
+        mkdir -p ~/.gradle/caches
+        chmod -R 755 ~/.gradle
+        echo "✅ Gradle complètement réinitialisé"
 
     - name: Create local.properties
       run: |
