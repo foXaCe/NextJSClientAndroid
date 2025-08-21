@@ -118,13 +118,11 @@ class SettingsActivity : AppCompatActivity() {
                 "0"
             }
             
-            // Affichage simple
-            binding.appVersion.text = "Build #$runNumber"
-            binding.buildInfo.text = commitHash
+            // Affichage simple - Build seulement
+            binding.buildInfo.text = "Build #$runNumber"
             
         } catch (e: Exception) {
-            binding.appVersion.text = "Build #0"
-            binding.buildInfo.text = ""
+            binding.buildInfo.text = "Build #0"
         }
         
         // Tech stack info
