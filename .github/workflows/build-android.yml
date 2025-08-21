@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     
     steps:
@@ -202,7 +202,7 @@ jobs:
   nightly-release:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
