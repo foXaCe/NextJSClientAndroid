@@ -140,7 +140,7 @@ dependencies {
     // Force newer BouncyCastle version to avoid 1.79 corruption bug
     configurations.all {
         resolutionStrategy {
-            force 'org.bouncycastle:bcprov-jdk18on:1.78.1'  // Use older stable version
+            force 'org.bouncycastle:bcprov-jdk18on:1.81'  // Use older stable version
             force 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
             force 'org.bouncycastle:bcutil-jdk18on:1.81'
         }
