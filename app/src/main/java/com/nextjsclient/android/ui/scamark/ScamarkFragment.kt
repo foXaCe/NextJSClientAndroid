@@ -121,7 +121,17 @@ class ScamarkFragment : Fragment() {
                 if (week != null && year != null) {
                     val weekStr = week.toString().padStart(2, '0')
                     val dates = viewModel.formatWeekDatesOnly(year, week)
-                    currentWeekDisplay.text = "S$weekStr - $dates"
+                    val weekLabel = getString(R.string.week_label)
+                    currentWeekDisplay.text = "$weekLabel $weekStr - $dates"
+                    
+                    // Gérer la visibilité du bouton "Actuelle"
+                    val calendar = java.util.Calendar.getInstance()
+                    val actualCurrentYear = calendar.get(java.util.Calendar.YEAR)
+                    val actualCurrentWeek = getCurrentISOWeek()
+                    
+                    // Afficher le bouton seulement si on n'est PAS sur la semaine actuelle
+                    val isOnCurrentWeek = week == actualCurrentWeek && year == actualCurrentYear
+                    currentWeekButton.visibility = if (isOnCurrentWeek) View.GONE else View.VISIBLE
                 }
             }
         }
