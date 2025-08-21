@@ -170,8 +170,8 @@ class UpdateManager(private val context: Context) {
     
     private fun cleanOldUpdates(keepFileName: String? = null) {
         try {
-            // Utiliser le dossier Download standard
-            val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            // Utiliser le dossier cache externe de l'app (pas de permissions requises)
+            val appUpdateDir = File(context.externalCacheDir, "updates")
             if (appUpdateDir.exists() && appUpdateDir.isDirectory) {
                 // Supprimer uniquement les anciens APK NextJSClient, sauf celui qu'on va télécharger
                 val oldFiles = appUpdateDir.listFiles { file ->
@@ -215,11 +215,17 @@ class UpdateManager(private val context: Context) {
             // Nettoyer les anciennes mises à jour avant de télécharger (garde le nouveau nom)
             cleanOldUpdates(keepFileName = fileName)
             
-            // Utiliser le dossier Download standard
-            val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            // Utiliser le dossier cache externe de l'app (pas de permissions requises)
+            val appUpdateDir = File(context.externalCacheDir, "updates")
             Log.d(TAG, "📂 Updates directory: ${appUpdateDir.absolutePath}")
             Log.d(TAG, "📊 Directory exists before: ${appUpdateDir.exists()}")
             Log.d(TAG, "📊 Directory writable: ${appUpdateDir.canWrite()}")
+            
+            if (!appUpdateDir.exists()) {
+                val created = appUpdateDir.mkdirs()
+                Log.d(TAG, "📁 Directory creation result: $created")
+                Log.d(TAG, "📁 Created updates directory: ${appUpdateDir.absolutePath}")
+            }
             
             // Vérifier si le fichier existe déjà et le supprimer
             val existingFile = File(appUpdateDir, fileName)
@@ -231,12 +237,6 @@ class UpdateManager(private val context: Context) {
                 } else {
                     Log.w(TAG, "❌ Failed to delete existing file: ${existingFile.name}")
                 }
-            }
-            
-            if (!appUpdateDir.exists()) {
-                val created = appUpdateDir.mkdirs()
-                Log.d(TAG, "📁 Directory creation result: $created")
-                Log.d(TAG, "📁 Created updates directory: ${appUpdateDir.absolutePath}")
             }
             
             Log.d(TAG, "📊 Directory exists after: ${appUpdateDir.exists()}")
@@ -251,15 +251,18 @@ class UpdateManager(private val context: Context) {
                 Log.d(TAG, "   • ${file.name} (${file.length()} bytes)")
             } ?: Log.d(TAG, "   • No NextJSClient APK files found")
             
-            Log.d(TAG, "🗺 Storage info: Public Download folder")
+            Log.d(TAG, "🗺 Storage info: App external cache directory (no permissions required)")
             
             val destinationFile = File(appUpdateDir, fileName)
             Log.d(TAG, "📂 Expected destination file: ${destinationFile.absolutePath}")
             
+            // Utiliser setDestinationUri pour spécifier le chemin exact dans le cache externe
+            val destinationUri = Uri.fromFile(File(appUpdateDir, fileName))
+            
             val request = DownloadManager.Request(Uri.parse(release.downloadUrl))
                 .setTitle("NextJS Client Update")
                 .setDescription("Téléchargement de la mise à jour ${release.tagName}")
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                .setDestinationUri(destinationUri)
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
@@ -267,7 +270,7 @@ class UpdateManager(private val context: Context) {
             Log.d(TAG, "⚙️ DownloadManager request configured")
             Log.d(TAG, "   • Title: NextJS Client Update")
             Log.d(TAG, "   • Description: Téléchargement de la mise à jour ${release.tagName}")
-            Log.d(TAG, "   • Destination: Download/$fileName")
+            Log.d(TAG, "   • Destination: ${destinationUri.path}")
             
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadId = downloadManager.enqueue(request)
@@ -354,8 +357,8 @@ class UpdateManager(private val context: Context) {
                                 }
                             }
                             
-                            // Chercher le fichier téléchargé dans le répertoire Download
-                            val appUpdateDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                            // Chercher le fichier téléchargé dans le cache externe de l'app
+                            val appUpdateDir = File(context.externalCacheDir, "updates")
                             Log.d(TAG, "🔍 === ANALYSE DU RÉPERTOIRE UPDATES ===")
                             Log.d(TAG, "📂 Directory path: ${appUpdateDir.absolutePath}")
                             Log.d(TAG, "📊 Directory exists: ${appUpdateDir.exists()}")
@@ -506,11 +509,40 @@ class UpdateManager(private val context: Context) {
     
     fun installUpdate(file: File) {
         try {
+            Log.d(TAG, "📦 === DÉBUT INSTALLATION ===")
+            Log.d(TAG, "📂 File path: ${file.absolutePath}")
+            Log.d(TAG, "📊 File exists: ${file.exists()}")
+            Log.d(TAG, "📊 File readable: ${file.canRead()}")
+            Log.d(TAG, "📏 File size: ${file.length()} bytes")
+            
+            // Vérifier que le fichier existe et est valide
+            if (!file.exists()) {
+                Log.e(TAG, "❌ Le fichier APK n'existe pas: ${file.absolutePath}")
+                listener?.onError("Fichier APK introuvable")
+                return
+            }
+            
+            if (!file.canRead()) {
+                Log.e(TAG, "❌ Le fichier APK n'est pas lisible: ${file.absolutePath}")
+                listener?.onError("Impossible de lire le fichier APK")
+                return
+            }
+            
+            if (file.length() == 0L) {
+                Log.e(TAG, "❌ Le fichier APK est vide: ${file.absolutePath}")
+                listener?.onError("Le fichier APK est vide")
+                return
+            }
+            
+            Log.d(TAG, "✅ Fichier APK valide, préparation de l'installation...")
+            
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
                 file
             )
+            
+            Log.d(TAG, "📍 FileProvider URI: $uri")
             
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, "application/vnd.android.package-archive")
@@ -524,8 +556,13 @@ class UpdateManager(private val context: Context) {
             Log.i(TAG, "⚠️ Si l'installation échoue, désinstallez d'abord l'app actuelle")
             
             context.startActivity(intent)
+            Log.d(TAG, "✅ === FIN LANCEMENT INSTALLATION ===")
+            
         } catch (e: Exception) {
-            Log.e(TAG, "Error installing update", e)
+            Log.e(TAG, "❌ Error installing update", e)
+            Log.e(TAG, "❌ Exception type: ${e.javaClass.simpleName}")
+            Log.e(TAG, "❌ Exception message: ${e.message}")
+            Log.e(TAG, "❌ Stack trace: ${e.stackTraceToString()}")
             listener?.onError("Erreur d'installation: ${e.message}")
         }
     }
