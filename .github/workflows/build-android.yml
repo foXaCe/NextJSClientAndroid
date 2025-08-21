@@ -52,10 +52,9 @@ jobs:
     
     - name: Clean Gradle cache if corrupted
       run: |
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
-          echo "🧹 Cleaning Gradle cache for PR..."
-          rm -rf ~/.gradle/caches/jars-*
-        fi
+        echo "🧹 Cleaning corrupted Gradle cache..."
+        rm -rf ~/.gradle/caches/
+        echo "✅ Cache complètement nettoyé"
 
     - name: Create local.properties
       run: |
