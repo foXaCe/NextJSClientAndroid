@@ -14,6 +14,7 @@ jobs:
     
     steps:
     - name: Validate secrets
+      if: github.event_name == 'push'
       run: |
         if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
           echo "❌ KEYSTORE_BASE64 manquant"
