@@ -46,15 +46,23 @@ class BiometricManager(private val context: Context) {
     fun getBiometricType(): String {
         return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
             BiometricManager.BIOMETRIC_SUCCESS -> {
-                // Essayer de déterminer le type spécifique
+                // Déterminer les types disponibles
+                val availableTypes = mutableListOf<String>()
+                
                 if (context.packageManager.hasSystemFeature("android.hardware.fingerprint")) {
-                    "Empreinte digitale"
-                } else if (context.packageManager.hasSystemFeature("android.hardware.biometrics.face")) {
-                    "Reconnaissance faciale"
-                } else if (context.packageManager.hasSystemFeature("android.hardware.biometrics.iris")) {
-                    "Reconnaissance de l'iris"
-                } else {
-                    "Authentification biométrique"
+                    availableTypes.add("Empreinte digitale")
+                }
+                if (context.packageManager.hasSystemFeature("android.hardware.biometrics.face")) {
+                    availableTypes.add("Reconnaissance faciale")
+                }
+                if (context.packageManager.hasSystemFeature("android.hardware.biometrics.iris")) {
+                    availableTypes.add("Reconnaissance de l'iris")
+                }
+                
+                when {
+                    availableTypes.isEmpty() -> "Authentification biométrique"
+                    availableTypes.size == 1 -> availableTypes.first()
+                    else -> availableTypes.joinToString(" et ")
                 }
             }
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> "Non disponible"
@@ -103,7 +111,7 @@ class BiometricManager(private val context: Context) {
     fun authenticate(
         activity: FragmentActivity,
         title: String = "Authentification biométrique",
-        subtitle: String = "Utilisez votre empreinte pour vous authentifier",
+        subtitle: String = "Utilisez votre empreinte digitale ou reconnaissance faciale",
         negativeButtonText: String = "Annuler",
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
