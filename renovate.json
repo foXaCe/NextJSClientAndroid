@@ -1,0 +1,135 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Configuration Renovate pour NextJSClientAndroid",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":automergeDisabled",
+    "group:monorepos",
+    "group:recommended",
+    "workarounds:all"
+  ],
+  "timezone": "Europe/Paris",
+  "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+  "labels": ["dependencies", "renovate"],
+  "assignees": ["foXaCe"],
+  "reviewers": ["foXaCe"],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "branchConcurrentLimit": 10,
+  "commitMessagePrefix": "deps:",
+  "commitMessageAction": "Mise à jour",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "vers {{newVersion}}",
+  "prTitle": "deps: Mise à jour {{depName}} vers {{newVersion}}",
+  "prBodyTemplate": "Ce PR met à jour {{depName}} de `{{currentVersion}}` vers `{{newVersion}}`.\n\n{{#if displayPendingStatus}}\n⚠️ **Attention**: Cette mise à jour a des dépendances en attente.\n{{/if}}\n\n### 📋 Changelog\n\n{{#if releases}}\n{{#each releases}}\n- {{#if releaseNotes}}[{{version}}]({{releaseNotes.url}}) - {{releaseNotes.title}}{{/if}}\n{{/each}}\n{{/if}}\n\n---\n\n🤖 **Généré automatiquement par Renovate Bot**\n\n{{footer}}",
+  "packageRules": [
+    {
+      "description": "Grouper les mises à jour Android",
+      "groupName": "Android SDK & Tools",
+      "matchDatasources": ["gradle-version", "java-version"],
+      "matchPackagePatterns": [
+        "com.android.tools.build:gradle",
+        "compileSdk",
+        "targetSdk",
+        "buildToolsVersion"
+      ],
+      "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+      "automerge": false,
+      "labels": ["android-tools"]
+    },
+    {
+      "description": "Grouper les dépendances AndroidX",
+      "groupName": "AndroidX",
+      "matchPackagePatterns": ["androidx.*"],
+      "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+      "automerge": false,
+      "labels": ["androidx"]
+    },
+    {
+      "description": "Grouper Firebase",
+      "groupName": "Firebase",
+      "matchPackagePatterns": [
+        "com.google.firebase:*",
+        "com.google.gms:google-services"
+      ],
+      "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+      "automerge": false,
+      "labels": ["firebase"]
+    },
+    {
+      "description": "Grouper Kotlin",
+      "groupName": "Kotlin",
+      "matchPackagePatterns": [
+        "org.jetbrains.kotlin.*",
+        "org.jetbrains.kotlinx:*"
+      ],
+      "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+      "automerge": false,
+      "labels": ["kotlin"]
+    },
+    {
+      "description": "Grouper Material Design",
+      "groupName": "Material Design",
+      "matchPackagePatterns": [
+        "com.google.android.material:*"
+      ],
+      "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+      "automerge": false,
+      "labels": ["material-design"]
+    },
+    {
+      "description": "Grouper les outils de test",
+      "groupName": "Testing",
+      "matchPackagePatterns": [
+        "*:junit:*",
+        "androidx.test.*",
+        "*espresso*"
+      ],
+      "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+      "automerge": false,
+      "labels": ["testing"]
+    },
+    {
+      "description": "Mises à jour mineures auto-merge (désactivé pour sécurité)",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": false,
+      "labels": ["auto-update-candidate"]
+    },
+    {
+      "description": "Mises à jour majeures avec attention particulière",
+      "matchUpdateTypes": ["major"],
+      "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+      "automerge": false,
+      "labels": ["major-update", "needs-review"],
+      "reviewers": ["foXaCe"],
+      "prPriority": 10
+    },
+    {
+      "description": "Ignorer les versions alpha/beta/rc",
+      "matchPackagePatterns": ["*"],
+      "allowedVersions": "!/alpha|beta|rc|snapshot|dev/i"
+    }
+  ],
+  "gradle": {
+    "enabled": true,
+    "timeout": 300
+  },
+  "java": {
+    "enabled": true
+  },
+  "ignoreDeps": [
+    "gradle"
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/build/**",
+    "**/.gradle/**"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["at 06:00 on saturday", "at 06:00 on sunday"],
+    "commitMessageAction": "Mise à jour lockfiles"
+  }
+}

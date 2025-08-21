@@ -138,6 +138,7 @@ jobs:
         echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
     
     - name: Verify APK signature
+      if: github.event_name == 'push' && github.actor != 'renovate[bot]'
       run: |
         echo "🔍 Vérification de la signature de l'APK..."
         
