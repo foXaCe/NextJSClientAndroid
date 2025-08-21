@@ -18,8 +18,8 @@ jobs:
         echo "🧹 Cleaning Gradle cache FIRST to prevent corruption..."
         rm -rf ~/.gradle/caches/
         rm -rf ~/.gradle/wrapper/
+        rm -rf ~/.gradle/caches/jars-9/ || true
         rm -rf /tmp/.gradle* || true
-        rm -f ~/.gradle/caches/jars-9/*/bcprov-jdk18on-*.jar || true
         echo "✅ Gradle cache nettoyé avant checkout"
 
     - name: Checkout code
