@@ -29,9 +29,15 @@ final def getBuildNumber = { ->
 final def ciBuild = System.getenv("CI") == "true"
 final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
 final def buildNumber = getBuildNumber()
-final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
-final def version = "1"
-final def versionDisplayName = "${version}.${devReleaseName}"
+final def majorVersion = "1"
+final def minorVersion = "0"
+final def patchVersion = "0"
+final def baseVersion = "${majorVersion}.${minorVersion}.${patchVersion}"
+final def versionDisplayName = if (ciBuild) {
+    "${baseVersion} (Build #${ciRunNumber})"
+} else {
+    "${baseVersion}-dev+${buildCommit}"
+}
 
 android {
     namespace 'com.nextjsclient.android'

@@ -93,12 +93,12 @@ class ProductDetailActivity : AppCompatActivity() {
             }
         }
         
-        private fun calculateConsecutiveWeeks(product: ScamarkProduct): Int {
+        private fun calculateConsecutiveWeeks(_product: ScamarkProduct): Int {
             // Valeur par défaut en cas de problème Firebase
             return 5
         }
         
-        private fun calculateTotalReferences(product: ScamarkProduct): Int {
+        private fun calculateTotalReferences(_product: ScamarkProduct): Int {
             // Valeur par défaut en cas de problème Firebase  
             return 15
         }
@@ -536,7 +536,7 @@ class ProductDetailActivity : AppCompatActivity() {
     /**
      * Met à jour seulement l'affichage des semaines consécutives
      */
-    private fun updateConsecutiveDisplay(consecutiveWeeks: Int, isLoading: Boolean = false) {
+    private fun updateConsecutiveDisplay(consecutiveWeeks: Int, _isLoading: Boolean = false) {
         val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
@@ -566,7 +566,7 @@ class ProductDetailActivity : AppCompatActivity() {
     /**
      * Met à jour seulement l'affichage du total
      */
-    private fun updateTotalDisplay(totalReferences: Int, isLoading: Boolean = false) {
+    private fun updateTotalDisplay(totalReferences: Int, _isLoading: Boolean = false) {
         val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)
         val totalStart = totalText.indexOf("$totalReferences fois")

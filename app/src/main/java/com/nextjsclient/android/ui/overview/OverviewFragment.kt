@@ -537,42 +537,9 @@ class OverviewFragment : Fragment() {
      * Charge les données de la semaine précédente pour calcul des entrants/sortants
      * NOTE: Cette méthode n'est plus utilisée car le chargement est fait en parallèle dans loadInitialData()
      */
-    private fun loadPreviousWeekData(currentYear: Int, currentWeek: Int) {
+    private fun loadPreviousWeekData(_currentYear: Int, _currentWeek: Int) {
         // Méthode conservée pour compatibilité mais ne fait plus rien
         return
-        val (previousYear, previousWeek) = getPreviousWeek(currentYear, currentWeek)
-        
-        android.util.Log.d("OverviewFragment", "🎯 loadPreviousWeekData() DÉBUT - currentYear: $currentYear, currentWeek: $currentWeek")
-        android.util.Log.d("OverviewFragment", "   → Semaine précédente calculée: $previousYear-$previousWeek")
-        
-        viewModel.viewModelScope.launch {
-            try {
-                android.util.Log.d("OverviewFragment", "🔄 Chargement semaine précédente: $previousYear-$previousWeek")
-                
-                // Utiliser le repository directement pour charger la semaine précédente
-                val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
-                android.util.Log.d("OverviewFragment", "📦 Repository créé, appel getWeekDecisions($previousYear, $previousWeek, 'all')")
-                
-                previousWeekProducts = repository.getWeekDecisions(previousYear, previousWeek, "all")
-                
-                android.util.Log.d("OverviewFragment", "✅ Semaine précédente chargée: ${previousWeekProducts.size} produits totaux")
-                previousWeekProducts.groupBy { it.supplier.lowercase() }.forEach { (supplier, prods) ->
-                    android.util.Log.d("OverviewFragment", "   • Semaine précédente - $supplier: ${prods.size} produits")
-                }
-                
-                // Recalculer les stats avec les nouvelles données
-                viewModel.products.value?.let { currentProducts ->
-                    android.util.Log.d("OverviewFragment", "🔄 Recalcul des stats avec ${currentProducts.size} produits actuels")
-                    calculateAndDisplayStats(currentProducts)
-                }
-                
-            } catch (e: Exception) {
-                android.util.Log.e("OverviewFragment", "❌ ERREUR loadPreviousWeekData: ${e.message}", e)
-                e.printStackTrace()
-                // Si impossible de charger, garder une liste vide
-                previousWeekProducts = emptyList()
-            }
-        }
     }
     
     /**
@@ -590,45 +557,9 @@ class OverviewFragment : Fragment() {
      * Précharge les données des deux fournisseurs pour la semaine sélectionnée
      * NOTE: Cette méthode n'est plus utilisée car le chargement est fait en parallèle dans loadInitialData()
      */
-    private fun preloadSupplierData(year: Int, week: Int) {
+    private fun preloadSupplierData(_year: Int, _week: Int) {
         // Méthode conservée pour compatibilité mais ne fait plus rien
         return
-        viewModel.viewModelScope.launch {
-            try {
-                android.util.Log.d("OverviewFragment", "🔄 Préchargement des données fournisseurs pour $year-$week")
-                val startTime = System.currentTimeMillis()
-                
-                val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
-                
-                // Précharger en parallèle les données et semaines de chaque fournisseur
-                val anecoopProductsDeferred = async { 
-                    repository.getWeekDecisions(year, week, "anecoop")
-                }
-                val solagoraProductsDeferred = async { 
-                    repository.getWeekDecisions(year, week, "solagora") 
-                }
-                val anecoopWeeksDeferred = async { 
-                    repository.getAvailableWeeks("anecoop")
-                }
-                val solagoraWeeksDeferred = async { 
-                    repository.getAvailableWeeks("solagora")
-                }
-                
-                // Attendre tous les chargements
-                preloadedAnecoopProducts = anecoopProductsDeferred.await()
-                preloadedSolagoraProducts = solagoraProductsDeferred.await()
-                preloadedAnecoopWeeks = anecoopWeeksDeferred.await()
-                preloadedSolagoraWeeks = solagoraWeeksDeferred.await()
-                
-                val endTime = System.currentTimeMillis()
-                android.util.Log.d("OverviewFragment", "✅ Préchargement terminé en ${endTime - startTime}ms:")
-                android.util.Log.d("OverviewFragment", "   • Anecoop: ${preloadedAnecoopProducts.size} produits, ${preloadedAnecoopWeeks.size} semaines")
-                android.util.Log.d("OverviewFragment", "   • Solagora: ${preloadedSolagoraProducts.size} produits, ${preloadedSolagoraWeeks.size} semaines")
-                
-            } catch (e: Exception) {
-                android.util.Log.w("OverviewFragment", "⚠️ Erreur lors du préchargement: ${e.message}")
-            }
-        }
     }
     
     private fun updateSupplierDashboard(supplier: String, stats: ScamarkStats) {

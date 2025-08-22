@@ -627,7 +627,7 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private fun isNewerVersion(current: String, latest: String, release: Release, assetNames: List<String>): Boolean {
+    private fun isNewerVersion(_current: String, _latest: String, release: Release, _assetNames: List<String>): Boolean {
         return try {
             // UNIQUEMENT LES BUILDS GITHUB - pas de version locale
             

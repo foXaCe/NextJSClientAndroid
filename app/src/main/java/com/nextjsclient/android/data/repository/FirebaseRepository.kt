@@ -145,7 +145,7 @@ class FirebaseRepository {
             android.util.Log.d("FirebaseRepo", "⏱️ REPO_RANGE: Calcul range de semaines en ${System.currentTimeMillis() - rangeStart}ms - range: $startWeek..$endWeek")
             
             // Paralléliser les requêtes Firestore pour tous les fournisseurs
-            val parallelStart = System.currentTimeMillis()
+            val _parallelStart = System.currentTimeMillis()
             android.util.Log.d("FirebaseRepo", "⏱️ REPO_PARALLEL_START: Démarrage requêtes parallèles pour ${suppliers.size} fournisseurs")
             
             var totalFirestoreTime = 0L
@@ -182,7 +182,7 @@ class FirebaseRepository {
                 
                 // Attendre toutes les requêtes et collecter les résultats
                 val results = deferredQueries.awaitAll()
-                results.forEach { (week, firestoreTime, found) ->
+                results.forEach { (week, firestoreTime, _found) ->
                     totalFirestoreTime += firestoreTime
                     totalCollections++
                     
@@ -835,7 +835,8 @@ class FirebaseRepository {
         
         val referencedWeeks = mutableListOf<Pair<Int, Int>>()
         var totalQueries = 0
-        var foundReferences = 0
+        // Track found references for debugging
+        var _foundReferences = 0
         
         try {
             android.util.Log.d("FirebaseRepo", "🔍 PALMARES_SEARCH: Début scan Firebase pour produit='$productName' code='$productCode'")

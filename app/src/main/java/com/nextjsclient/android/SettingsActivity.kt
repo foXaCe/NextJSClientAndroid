@@ -106,22 +106,20 @@ class SettingsActivity : AppCompatActivity() {
             showLogoutDialog()
         }
         
-        // Affichage version GITHUB uniquement
+        // Affichage version complète
         try {
             val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
+            val buildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
             
-            // Extraire le run number 
-            val runNumber = if (versionDisplayName.contains("#")) {
-                versionDisplayName.substringAfter("#").substringBefore(")")
+            // Afficher la version complète ou le build number
+            binding.buildInfo.text = if (versionDisplayName.isNotBlank()) {
+                versionDisplayName // Ex: "1.Dev.(#123)" ou "1.Dev.(abc1234)"
             } else {
-                "0"
+                "Build #$buildNumber"
             }
             
-            // Affichage simple - Numéro de build seulement
-            binding.buildInfo.text = "#$runNumber"
-            
         } catch (e: Exception) {
-            binding.buildInfo.text = "#0"
+            binding.buildInfo.text = "Version inconnue"
         }
         
         // Tech stack info
@@ -138,11 +136,28 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onUpdateAvailable(release: Release) {
-                // Utiliser le nom complet de la release au lieu du tag
-                val versionText = if (release.name.contains("nightly", ignoreCase = true) || release.name.contains("Nightly")) {
-                    release.name // Afficher le nom complet pour les builds nightly
-                } else {
-                    "Version ${release.tagName}"
+                // Extraire la version depuis le nom de la release
+                val versionText = when {
+                    release.name.contains("nightly", ignoreCase = true) -> {
+                        // Extraire la version depuis le nom (ex: "Version 1.2.3" depuis le nom)
+                        val versionPattern = Regex("Version\\s+([\\d.]+)")
+                        val versionMatch = versionPattern.find(release.name)
+                        val version = versionMatch?.groupValues?.get(1) ?: ""
+                        
+                        // Extraire le run number
+                        val runPattern = Regex("run(\\d+)")
+                        val runMatch = runPattern.find(release.name)
+                        val runNumber = runMatch?.groupValues?.get(1) ?: ""
+                        
+                        if (version.isNotEmpty() && runNumber.isNotEmpty()) {
+                            "Version $version (Build #$runNumber)"
+                        } else if (runNumber.isNotEmpty()) {
+                            "Build #$runNumber"
+                        } else {
+                            release.tagName
+                        }
+                    }
+                    else -> "Version ${release.tagName}"
                 }
                 binding.updateStatus.text = "$versionText disponible • ${getString(R.string.click_here)}"
                 binding.updateButton.visibility = View.GONE
@@ -475,15 +490,8 @@ class SettingsActivity : AppCompatActivity() {
         pulseAnimation.repeatMode = android.animation.ObjectAnimator.REVERSE
         pulseAnimation.start()
         
-        // Essayer de caster en MaterialCardView pour ajouter une bordure
-        try {
-            (binding.updateSection as? com.google.android.material.card.MaterialCardView)?.apply {
-                strokeWidth = 4
-                strokeColor = getColor(R.color.md_theme_light_primary)
-            }
-        } catch (e: Exception) {
-            android.util.Log.d("SettingsActivity", "Could not add border effect: ${e.message}")
-        }
+        // Note: updateSection is a LinearLayout, not a MaterialCardView
+        // Border effect not applicable for LinearLayout
     }
     
     private fun showReleaseNotes(release: Release) {
@@ -624,8 +632,4 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
     
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        super.onBackPressed()
-    }
 }

@@ -21,7 +21,7 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
      * Met à jour une card fournisseur moderne
      */
     fun updateSupplierCard(supplier: String, stats: ScamarkStats, isAnecoop: Boolean = true) {
-        val binding = fragment.binding ?: return
+        val binding = fragment.binding
         
         val cardId = if (isAnecoop) R.id.anecoopModernCard else R.id.solagoraModernCard
         val card = binding.root.findViewById<View>(cardId) ?: return
@@ -208,7 +208,7 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
      * Met à jour l'affichage de la semaine dans le hero
      */
     fun updateWeekDisplay(weekText: String) {
-        val binding = fragment.binding ?: return
+        val binding = fragment.binding
         binding.root.findViewById<TextView>(R.id.currentWeekInfo)?.text = weekText
     }
 }
