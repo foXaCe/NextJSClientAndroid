@@ -170,7 +170,20 @@ class BiometricManager(private val context: Context) {
                 super.onAuthenticationSucceeded(result)
                 Log.d(TAG, "onAuthenticationSucceeded - Authentication successful!")
                 Log.d(TAG, "  Crypto object: ${result.cryptoObject}")
-                Log.d(TAG, "  Authentication type: ${result.authenticationType}")
+                
+                val authTypeString = when (result.authenticationType) {
+                    BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC -> "BIOMETRIC (Fingerprint or Face)"
+                    BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL -> "DEVICE_CREDENTIAL (PIN/Pattern/Password)"
+                    else -> "UNKNOWN (${result.authenticationType})"
+                }
+                Log.d(TAG, "  Authentication type: $authTypeString")
+                
+                // Type 2 = AUTHENTICATION_RESULT_TYPE_BIOMETRIC
+                // Malheureusement, Android ne distingue pas entre face et fingerprint dans le résultat
+                if (result.authenticationType == BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC) {
+                    Log.d(TAG, "  Note: Android ne distingue pas entre face/fingerprint dans le résultat")
+                }
+                
                 onSuccess()
             }
             
@@ -204,13 +217,18 @@ class BiometricManager(private val context: Context) {
             else -> subtitle
         }
         
-        // Utiliser BIOMETRIC_WEAK pour permettre face ID sur plus d'appareils
-        // BIOMETRIC_STRONG est plus restrictif et peut ne pas inclure la reconnaissance faciale sur certains appareils
+        // Pour forcer la priorité face, utiliser BIOMETRIC_STRONG qui privilégie les méthodes plus sécurisées
+        // Sur la plupart des appareils modernes, la reconnaissance faciale est considérée comme STRONG
         val authenticators = when {
+            useFaceFirst && hasFace && strongAvailable -> {
+                // Utiliser STRONG pour privilégier la reconnaissance faciale
+                Log.d(TAG, "Using BIOMETRIC_STRONG for Face priority")
+                BiometricManager.Authenticators.BIOMETRIC_STRONG
+            }
             useFaceFirst && hasFace -> {
-                // Priorité à la reconnaissance faciale avec WEAK pour meilleure compatibilité
-                Log.d(TAG, "Using BIOMETRIC_WEAK for Face priority")
-                BiometricManager.Authenticators.BIOMETRIC_WEAK
+                // Si STRONG pas disponible, utiliser la combinaison qui permet les deux
+                Log.d(TAG, "Using combined BIOMETRIC_STRONG | BIOMETRIC_WEAK for Face priority")
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
             }
             strongAvailable -> {
                 Log.d(TAG, "Using BIOMETRIC_STRONG")
