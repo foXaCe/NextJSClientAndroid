@@ -3,8 +3,8 @@
     <gradient
         android:type="linear"
         android:angle="45"
-        android:startColor="#4CAF50"
-        android:endColor="#388E3C" />
+        android:startColor="@color/solagora_primary"
+        android:endColor="@color/solagora_primary_variant" />
     <corners android:topLeftRadius="24dp"
              android:topRightRadius="24dp" />
 </shape>
