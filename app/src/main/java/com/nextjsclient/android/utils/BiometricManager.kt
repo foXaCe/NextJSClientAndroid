@@ -287,16 +287,6 @@ class BiometricManager(private val context: Context) {
         Log.d(TAG, "  - Fingerprint: $hasFingerprint")
         Log.d(TAG, "  - Iris: $hasIris")
         
-        // Vérifier aussi les types d'authentification disponibles
-        val strongResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-        val weakResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
-        val deviceCredentialResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.DEVICE_CREDENTIAL)
-        
-        Log.d(TAG, "Authentication levels:")
-        Log.d(TAG, "  - BIOMETRIC_STRONG: ${getStatusString(strongResult)}")
-        Log.d(TAG, "  - BIOMETRIC_WEAK: ${getStatusString(weakResult)}")
-        Log.d(TAG, "  - DEVICE_CREDENTIAL: ${getStatusString(deviceCredentialResult)}")
-        
         // Vérifier si la biométrie est configurée
         val isConfigured = isBiometricConfigured()
         Log.d(TAG, "Biometric configured: $isConfigured")
@@ -308,24 +298,20 @@ class BiometricManager(private val context: Context) {
         }
         
         if (hasFace) {
-            // Essayer d'abord avec la reconnaissance faciale
-            Log.d(TAG, "Attempting FACE authentication first")
-            authenticate(
+            // NOUVELLE APPROCHE: Essayer de forcer UNIQUEMENT la reconnaissance faciale
+            Log.d(TAG, "Attempting FACE-ONLY authentication first")
+            authenticateFaceOnly(
                 activity = activity,
-                title = "Authentification requise",
-                subtitle = "Regardez l'écran pour vous authentifier",
-                negativeButtonText = if (hasFingerprint) "Utiliser l'empreinte" else "Annuler",
                 onSuccess = onSuccess,
-                onError = { faceError ->
-                    Log.e(TAG, "Face authentication FAILED")
-                    Log.e(TAG, "  Error message: $faceError")
-                    if (hasFingerprint && faceError.contains("Annuler", ignoreCase = true).not()) {
-                        // Si échec face et fingerprint disponible, essayer fingerprint
-                        Log.d(TAG, "Face failed, attempting FINGERPRINT fallback")
+                onFaceError = { faceError ->
+                    Log.e(TAG, "Face-only authentication FAILED: $faceError")
+                    if (hasFingerprint) {
+                        // Fallback vers fingerprint
+                        Log.d(TAG, "Face failed, offering FINGERPRINT fallback")
                         authenticate(
                             activity = activity,
-                            title = "Authentification par empreinte",
-                            subtitle = "Placez votre doigt sur le capteur",
+                            title = "Reconnaissance faciale échouée",
+                            subtitle = "Utilisez votre empreinte digitale",
                             negativeButtonText = "Annuler",
                             onSuccess = onSuccess,
                             onError = onError,
@@ -336,10 +322,10 @@ class BiometricManager(private val context: Context) {
                         onError(faceError)
                     }
                 },
-                onCancel = {
+                onFaceCancel = {
                     if (hasFingerprint) {
-                        // Si l'utilisateur clique sur "Utiliser l'empreinte"
-                        Log.d(TAG, "User chose to use fingerprint instead")
+                        // L'utilisateur veut utiliser l'empreinte
+                        Log.d(TAG, "User cancelled face, offering fingerprint")
                         authenticate(
                             activity = activity,
                             title = "Authentification par empreinte",
@@ -353,8 +339,7 @@ class BiometricManager(private val context: Context) {
                     } else {
                         onCancel()
                     }
-                },
-                useFaceFirst = true
+                }
             )
         } else if (hasFingerprint) {
             // Si pas de face, utiliser directement fingerprint
@@ -378,6 +363,68 @@ class BiometricManager(private val context: Context) {
                 onError = onError,
                 onCancel = onCancel
             )
+        }
+    }
+    
+    /**
+     * Tente d'authentifier UNIQUEMENT avec la reconnaissance faciale
+     */
+    private fun authenticateFaceOnly(
+        activity: FragmentActivity,
+        onSuccess: () -> Unit,
+        onFaceError: (String) -> Unit,
+        onFaceCancel: () -> Unit
+    ) {
+        Log.d(TAG, "=== FACE-ONLY AUTHENTICATION ===")
+        
+        val executor = ContextCompat.getMainExecutor(context)
+        
+        val biometricPrompt = BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                Log.e(TAG, "Face-only onAuthenticationError - Code: $errorCode, Message: $errString")
+                when (errorCode) {
+                    BiometricPrompt.ERROR_USER_CANCELED,
+                    BiometricPrompt.ERROR_NEGATIVE_BUTTON -> {
+                        Log.d(TAG, "Face-only cancelled by user")
+                        onFaceCancel()
+                    }
+                    else -> {
+                        Log.e(TAG, "Face-only error: $errString")
+                        onFaceError(errString.toString())
+                    }
+                }
+            }
+            
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                Log.d(TAG, "Face-only authentication SUCCESS!")
+                onSuccess()
+            }
+            
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                Log.e(TAG, "Face-only authentication failed (retry possible)")
+                // Ne pas appeler onFaceError ici, laisser l'utilisateur réessayer
+            }
+        })
+        
+        // Essayer de forcer uniquement la reconnaissance faciale
+        // Utiliser DEVICE_CREDENTIAL combiné avec un message spécifique
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Reconnaissance faciale")
+            .setSubtitle("Regardez directement l'écran")
+            .setNegativeButtonText("Utiliser l'empreinte")
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .build()
+        
+        Log.d(TAG, "Starting face-only prompt with BIOMETRIC_WEAK")
+        
+        try {
+            biometricPrompt.authenticate(promptInfo)
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception in face-only authenticate: ${e.message}", e)
+            onFaceError("Erreur lors de l'authentification faciale: ${e.message}")
         }
     }
     
