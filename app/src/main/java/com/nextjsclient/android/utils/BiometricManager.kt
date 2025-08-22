@@ -409,16 +409,17 @@ class BiometricManager(private val context: Context) {
             }
         })
         
-        // Essayer de forcer uniquement la reconnaissance faciale
-        // Utiliser DEVICE_CREDENTIAL combiné avec un message spécifique
+        // Essayer de forcer uniquement la reconnaissance faciale avec déverrouillage automatique
+        // Utiliser BIOMETRIC_STRONG pour permettre l'authentification automatique sans validation
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Reconnaissance faciale")
             .setSubtitle("Regardez directement l'écran")
             .setNegativeButtonText("Utiliser l'empreinte")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+            .setConfirmationRequired(false) // IMPORTANT: Pas de validation manuelle
             .build()
         
-        Log.d(TAG, "Starting face-only prompt with BIOMETRIC_WEAK")
+        Log.d(TAG, "Starting face-only prompt with BIOMETRIC_STRONG and confirmationRequired=false")
         
         try {
             biometricPrompt.authenticate(promptInfo)
