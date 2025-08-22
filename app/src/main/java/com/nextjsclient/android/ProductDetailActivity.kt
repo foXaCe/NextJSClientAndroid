@@ -93,11 +93,13 @@ class ProductDetailActivity : AppCompatActivity() {
             }
         }
         
+        @Suppress("UNUSED_PARAMETER")
         private fun calculateConsecutiveWeeks(_product: ScamarkProduct): Int {
             // Valeur par défaut en cas de problème Firebase
             return 5
         }
         
+        @Suppress("UNUSED_PARAMETER")
         private fun calculateTotalReferences(_product: ScamarkProduct): Int {
             // Valeur par défaut en cas de problème Firebase  
             return 15
@@ -536,6 +538,7 @@ class ProductDetailActivity : AppCompatActivity() {
     /**
      * Met à jour seulement l'affichage des semaines consécutives
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun updateConsecutiveDisplay(consecutiveWeeks: Int, _isLoading: Boolean = false) {
         val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
@@ -566,6 +569,7 @@ class ProductDetailActivity : AppCompatActivity() {
     /**
      * Met à jour seulement l'affichage du total
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun updateTotalDisplay(totalReferences: Int, _isLoading: Boolean = false) {
         val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)

@@ -151,20 +151,32 @@ class BiometricManager(private val context: Context) {
         val biometricPrompt = BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                 super.onAuthenticationError(errorCode, errString)
+                Log.e(TAG, "onAuthenticationError - Code: $errorCode, Message: $errString")
+                Log.e(TAG, "Error code details: ${getErrorCodeString(errorCode)}")
                 when (errorCode) {
                     BiometricPrompt.ERROR_USER_CANCELED,
-                    BiometricPrompt.ERROR_NEGATIVE_BUTTON -> onCancel()
-                    else -> onError(errString.toString())
+                    BiometricPrompt.ERROR_NEGATIVE_BUTTON -> {
+                        Log.d(TAG, "User cancelled or pressed negative button")
+                        onCancel()
+                    }
+                    else -> {
+                        Log.e(TAG, "Authentication error passed to caller")
+                        onError(errString.toString())
+                    }
                 }
             }
             
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
+                Log.d(TAG, "onAuthenticationSucceeded - Authentication successful!")
+                Log.d(TAG, "  Crypto object: ${result.cryptoObject}")
+                Log.d(TAG, "  Authentication type: ${result.authenticationType}")
                 onSuccess()
             }
             
             override fun onAuthenticationFailed() {
                 super.onAuthenticationFailed()
+                Log.e(TAG, "onAuthenticationFailed - Single attempt failed (user can retry)")
                 onError("Authentification échouée")
             }
         })
@@ -222,7 +234,20 @@ class BiometricManager(private val context: Context) {
             .setAllowedAuthenticators(authenticators)
             .build()
         
-        biometricPrompt.authenticate(promptInfo)
+        Log.d(TAG, "=== STARTING BIOMETRIC PROMPT ===")
+        Log.d(TAG, "  Title: $title")
+        Log.d(TAG, "  Subtitle: $promptSubtitle")
+        Log.d(TAG, "  Negative button: $negativeButtonText")
+        Log.d(TAG, "  Authenticators: $authenticators")
+        Log.d(TAG, "  UseFaceFirst: $useFaceFirst")
+        
+        try {
+            biometricPrompt.authenticate(promptInfo)
+            Log.d(TAG, "BiometricPrompt.authenticate() called successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception calling authenticate: ${e.message}", e)
+            onError("Erreur lors de l'authentification: ${e.message}")
+        }
     }
     
     /**
@@ -236,12 +261,37 @@ class BiometricManager(private val context: Context) {
     ) {
         val hasFingerprint = context.packageManager.hasSystemFeature("android.hardware.fingerprint")
         val hasFace = context.packageManager.hasSystemFeature("android.hardware.biometrics.face")
+        val hasIris = context.packageManager.hasSystemFeature("android.hardware.biometrics.iris")
         
         Log.d(TAG, "=== AUTHENTICATION WITH FALLBACK ===")
-        Log.d(TAG, "Has Face: $hasFace, Has Fingerprint: $hasFingerprint")
+        Log.d(TAG, "Device capabilities:")
+        Log.d(TAG, "  - Face Recognition: $hasFace")
+        Log.d(TAG, "  - Fingerprint: $hasFingerprint")
+        Log.d(TAG, "  - Iris: $hasIris")
+        
+        // Vérifier aussi les types d'authentification disponibles
+        val strongResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        val weakResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        val deviceCredentialResult = biometricManager.canAuthenticate(BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+        
+        Log.d(TAG, "Authentication levels:")
+        Log.d(TAG, "  - BIOMETRIC_STRONG: ${getStatusString(strongResult)}")
+        Log.d(TAG, "  - BIOMETRIC_WEAK: ${getStatusString(weakResult)}")
+        Log.d(TAG, "  - DEVICE_CREDENTIAL: ${getStatusString(deviceCredentialResult)}")
+        
+        // Vérifier si la biométrie est configurée
+        val isConfigured = isBiometricConfigured()
+        Log.d(TAG, "Biometric configured: $isConfigured")
+        
+        if (!isConfigured) {
+            Log.e(TAG, "No biometric configured on device")
+            onError("Aucune biométrie configurée sur l'appareil")
+            return
+        }
         
         if (hasFace) {
             // Essayer d'abord avec la reconnaissance faciale
+            Log.d(TAG, "Attempting FACE authentication first")
             authenticate(
                 activity = activity,
                 title = "Authentification requise",
@@ -249,10 +299,11 @@ class BiometricManager(private val context: Context) {
                 negativeButtonText = if (hasFingerprint) "Utiliser l'empreinte" else "Annuler",
                 onSuccess = onSuccess,
                 onError = { faceError ->
-                    Log.d(TAG, "Face authentication failed: $faceError")
+                    Log.e(TAG, "Face authentication FAILED")
+                    Log.e(TAG, "  Error message: $faceError")
                     if (hasFingerprint && faceError.contains("Annuler", ignoreCase = true).not()) {
                         // Si échec face et fingerprint disponible, essayer fingerprint
-                        Log.d(TAG, "Falling back to fingerprint authentication")
+                        Log.d(TAG, "Face failed, attempting FINGERPRINT fallback")
                         authenticate(
                             activity = activity,
                             title = "Authentification par empreinte",
@@ -289,6 +340,7 @@ class BiometricManager(private val context: Context) {
             )
         } else if (hasFingerprint) {
             // Si pas de face, utiliser directement fingerprint
+            Log.d(TAG, "No face recognition available, using FINGERPRINT directly")
             authenticate(
                 activity = activity,
                 title = "Authentification par empreinte",
@@ -301,12 +353,45 @@ class BiometricManager(private val context: Context) {
             )
         } else {
             // Fallback générique
+            Log.d(TAG, "Using GENERIC biometric authentication")
             authenticate(
                 activity = activity,
                 onSuccess = onSuccess,
                 onError = onError,
                 onCancel = onCancel
             )
+        }
+    }
+    
+    private fun getStatusString(status: Int): String {
+        return when (status) {
+            BiometricManager.BIOMETRIC_SUCCESS -> "SUCCESS - Available"
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> "ERROR - No hardware"
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> "ERROR - Hardware unavailable"
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> "ERROR - None enrolled"
+            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> "ERROR - Security update required"
+            BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> "ERROR - Unsupported"
+            BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> "STATUS - Unknown"
+            else -> "Unknown status: $status"
+        }
+    }
+    
+    private fun getErrorCodeString(errorCode: Int): String {
+        return when (errorCode) {
+            BiometricPrompt.ERROR_CANCELED -> "ERROR_CANCELED - Operation canceled"
+            BiometricPrompt.ERROR_HW_NOT_PRESENT -> "ERROR_HW_NOT_PRESENT - No biometric hardware"
+            BiometricPrompt.ERROR_HW_UNAVAILABLE -> "ERROR_HW_UNAVAILABLE - Hardware unavailable"
+            BiometricPrompt.ERROR_LOCKOUT -> "ERROR_LOCKOUT - Too many attempts"
+            BiometricPrompt.ERROR_LOCKOUT_PERMANENT -> "ERROR_LOCKOUT_PERMANENT - Permanently locked"
+            BiometricPrompt.ERROR_NEGATIVE_BUTTON -> "ERROR_NEGATIVE_BUTTON - Negative button pressed"
+            BiometricPrompt.ERROR_NO_BIOMETRICS -> "ERROR_NO_BIOMETRICS - No biometrics enrolled"
+            BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL -> "ERROR_NO_DEVICE_CREDENTIAL - No device credential"
+            BiometricPrompt.ERROR_NO_SPACE -> "ERROR_NO_SPACE - Not enough storage"
+            BiometricPrompt.ERROR_TIMEOUT -> "ERROR_TIMEOUT - Operation timed out"
+            BiometricPrompt.ERROR_UNABLE_TO_PROCESS -> "ERROR_UNABLE_TO_PROCESS - Unable to process"
+            BiometricPrompt.ERROR_USER_CANCELED -> "ERROR_USER_CANCELED - User canceled"
+            BiometricPrompt.ERROR_VENDOR -> "ERROR_VENDOR - Vendor error"
+            else -> "Unknown error code: $errorCode"
         }
     }
 }
