@@ -310,8 +310,8 @@ class BiometricManager(private val context: Context) {
                         Log.d(TAG, "Face failed, offering FINGERPRINT fallback")
                         authenticate(
                             activity = activity,
-                            title = "Reconnaissance faciale échouée",
-                            subtitle = "Utilisez votre empreinte digitale",
+                            title = "Authentification digitale",
+                            subtitle = "Placez votre doigt sur le capteur",
                             negativeButtonText = "Annuler",
                             onSuccess = onSuccess,
                             onError = onError,
@@ -328,7 +328,7 @@ class BiometricManager(private val context: Context) {
                         Log.d(TAG, "User cancelled face, offering fingerprint")
                         authenticate(
                             activity = activity,
-                            title = "Authentification par empreinte",
+                            title = "Authentification digitale",
                             subtitle = "Placez votre doigt sur le capteur",
                             negativeButtonText = "Annuler",
                             onSuccess = onSuccess,
@@ -346,7 +346,7 @@ class BiometricManager(private val context: Context) {
             Log.d(TAG, "No face recognition available, using FINGERPRINT directly")
             authenticate(
                 activity = activity,
-                title = "Authentification par empreinte",
+                title = "Authentification digitale",
                 subtitle = "Placez votre doigt sur le capteur",
                 negativeButtonText = "Annuler",
                 onSuccess = onSuccess,
