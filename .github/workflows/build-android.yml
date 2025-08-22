@@ -9,19 +9,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     
     steps:
-    - name: Clean Gradle cache to prevent BouncyCastle corruption
-      run: |
-        echo "🧹 Cleaning Gradle cache FIRST to prevent corruption..."
-        rm -rf ~/.gradle/caches/
-        rm -rf ~/.gradle/wrapper/
-        rm -rf ~/.gradle/caches/jars-9/ || true
-        rm -rf /tmp/.gradle* || true
-        echo "✅ Gradle cache nettoyé avant checkout"
-
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -33,22 +24,27 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # Cache désactivé temporairement à cause de l'erreur BouncyCastle jar corruption
-    # - name: Cache Gradle packages
-    #   uses: actions/cache@v4
-    #   with:
-    #     path: |
-    #       ~/.gradle/caches
-    #       ~/.gradle/wrapper
-    #       ~/.gradle/buildOutputCleanup
-    #     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-gradle-
-    #       ${{ runner.os }}-
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ~/.gradle/buildOutputCleanup
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties', '**/libs.versions.toml') }}-${{ github.run_number }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties', '**/libs.versions.toml') }}-
+          ${{ runner.os }}-gradle-
+
+    - name: Clean problematic BouncyCastle jars from cache
+      run: |
+        echo "🧹 Nettoyage sélectif des JARs BouncyCastle corrompus..."
+        find ~/.gradle/caches -name "bcprov-*.jar" -o -name "bcpkix-*.jar" | xargs rm -f 2>/dev/null || true
+        rm -rf ~/.gradle/caches/jars-9/ 2>/dev/null || true
+        echo "✅ JARs problématiques supprimés du cache"
 
     - name: Make gradlew executable
       run: chmod +x gradlew
-    
 
     - name: Create local.properties
       run: |
@@ -107,25 +103,29 @@ jobs:
           # Ne pas exit 1, continuer avec debug build
         fi
 
-    - name: Build APK with retry logic
+    - name: Build APK with optimized retry logic
       run: |
         if [ "${{ github.event_name }}" == "push" ] && [ -n "${KEYSTORE_BASE64:-}" ]; then
-          echo "🏗️ Building signed release APK with retry..."
+          echo "🏗️ Building signed release APK..."
           for i in 1 2 3; do
             echo "Attempt $i/3"
-            ./gradlew --no-daemon --refresh-dependencies assembleRelease && break
-            echo "Build failed, retrying in 10s..."
-            rm -rf ~/.gradle/caches/ || true
-            sleep 10
+            ./gradlew --no-daemon --parallel --max-workers=2 assembleRelease && break
+            if [ $i -lt 3 ]; then
+              echo "Build failed, cleaning BouncyCastle and retrying..."
+              find ~/.gradle/caches -name "bcprov-*.jar" -o -name "bcpkix-*.jar" | xargs rm -f 2>/dev/null || true
+              sleep 5
+            fi
           done
         else
-          echo "🏗️ Building debug APK with retry..."
+          echo "🏗️ Building debug APK..."
           for i in 1 2 3; do
             echo "Attempt $i/3"
-            ./gradlew --no-daemon --refresh-dependencies assembleDebug && break
-            echo "Build failed, retrying in 10s..."
-            rm -rf ~/.gradle/caches/ || true
-            sleep 10
+            ./gradlew --no-daemon --parallel --max-workers=2 assembleDebug && break
+            if [ $i -lt 3 ]; then
+              echo "Build failed, cleaning BouncyCastle and retrying..."
+              find ~/.gradle/caches -name "bcprov-*.jar" -o -name "bcpkix-*.jar" | xargs rm -f 2>/dev/null || true
+              sleep 5
+            fi
           done
         fi
     
@@ -200,7 +200,7 @@ jobs:
   nightly-release:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
