@@ -39,7 +39,7 @@
         android:paddingBottom="8dp"
         app:menu="@menu/bottom_nav_menu"
         app:labelVisibilityMode="selected"
-        app:itemActiveIndicatorStyle="@style/App.Material3.ActiveIndicator"
+        app:itemActiveIndicatorStyle="@style/Widget.App.BottomNavigationView.ActiveIndicator"
         app:itemRippleColor="@color/material_3_ripple"
         app:itemIconTint="@color/bottom_nav_color_selector"
         app:itemTextColor="@color/bottom_nav_color_selector"
