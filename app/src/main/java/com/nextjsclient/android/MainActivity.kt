@@ -187,18 +187,22 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun animateIconSelection(itemId: Int) {
-        // Trouver la vue de l'icône sélectionnée et l'animer
+        // Trouver la vue de l'icône sélectionnée et l'animer avec rotation comme Play Store
         binding.bottomNavigation.findViewById<View>(itemId)?.let { view ->
-            // Animation de scale bounce
+            // Animation combinée : rotation + scale comme le Play Store Material expressive
             view.animate()
-                .scaleX(0.8f)
-                .scaleY(0.8f)
-                .setDuration(100)
+                .rotationBy(360f)  // Rotation complète de 360 degrés
+                .scaleX(1.2f)      // Légère augmentation de taille
+                .scaleY(1.2f)
+                .setDuration(300)   // Duration plus longue pour un effet fluide
+                .setInterpolator(android.view.animation.OvershootInterpolator())
                 .withEndAction {
+                    // Retour à la taille normale avec effet de rebond
                     view.animate()
                         .scaleX(1.0f)
                         .scaleY(1.0f)
-                        .setDuration(100)
+                        .setDuration(200)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .start()
                 }
                 .start()

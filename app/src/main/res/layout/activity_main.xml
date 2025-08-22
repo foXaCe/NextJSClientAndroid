@@ -36,11 +36,13 @@
         android:layout_gravity="bottom"
         android:background="?attr/colorSurfaceContainer"
         app:menu="@menu/bottom_nav_menu"
-        app:labelVisibilityMode="unlabeled"
+        app:labelVisibilityMode="labeled"
         app:itemActiveIndicatorStyle="@style/Widget.App.BottomNavigationView.ActiveIndicator"
         app:itemRippleColor="@color/material_3_ripple"
         app:itemIconTint="@color/bottom_nav_color_selector"
         app:itemTextColor="@color/bottom_nav_color_selector"
+        app:itemPaddingTop="12dp"
+        app:itemPaddingBottom="16dp"
         app:elevation="3dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

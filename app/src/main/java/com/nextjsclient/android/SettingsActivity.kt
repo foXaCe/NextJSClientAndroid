@@ -395,33 +395,9 @@ class SettingsActivity : AppCompatActivity() {
         bottomSheetDialog.setContentView(bottomSheetView)
         
         // Configurer les vues de la bottom sheet
-        val updateVersion = bottomSheetView.findViewById<TextView>(R.id.updateVersion)
         val updateChangelog = bottomSheetView.findViewById<TextView>(R.id.updateChangelog)
         val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
-        
-        // Afficher la version - gérer tous les cas possibles
-        val versionText = when {
-            // Si le nom est vide, juste des espaces, ou identique au tag
-            release.name.trim().isEmpty() || release.name.trim() == release.tagName -> {
-                "Version ${release.tagName}"
-            }
-            // Si le nom contient des caractères non imprimables ou est mal formaté
-            release.name.contains(Regex("[\\p{Cntrl}&&[^\r\n\t]]")) -> {
-                "Version ${release.tagName}"
-            }
-            // Pour les builds nightly avec un nom valide
-            release.name.contains("nightly", ignoreCase = true) -> {
-                release.name.trim()
-            }
-            // Si le nom est valide et différent du tag
-            else -> {
-                release.name.trim()
-            }
-        }
-        
-        Log.d("SettingsActivity", "Displaying version in sheet: '$versionText' (raw name: '${release.name}', tag: '${release.tagName}')")
-        updateVersion.text = versionText
         
         // Formater le changelog (commits)
         val formattedChangelog = formatChangelog(release.body)
