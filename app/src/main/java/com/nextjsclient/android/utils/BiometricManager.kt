@@ -386,7 +386,7 @@ class BiometricManager(private val context: Context) {
                 when (errorCode) {
                     BiometricPrompt.ERROR_USER_CANCELED,
                     BiometricPrompt.ERROR_NEGATIVE_BUTTON -> {
-                        Log.d(TAG, "Face-only cancelled by user")
+                        Log.d(TAG, "Face-only cancelled by user - offering fingerprint automatically")
                         onFaceCancel()
                     }
                     else -> {
@@ -412,9 +412,9 @@ class BiometricManager(private val context: Context) {
         // Essayer de forcer uniquement la reconnaissance faciale avec déverrouillage automatique
         // Utiliser BIOMETRIC_STRONG pour permettre l'authentification automatique sans validation
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Reconnaissance faciale")
-            .setSubtitle("Regardez directement l'écran")
-            .setNegativeButtonText("Utiliser l'empreinte")
+            .setTitle("Authentification requise")
+            .setSubtitle("Regardez l'écran")
+            .setNegativeButtonText("Annuler")
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
             .setConfirmationRequired(false) // IMPORTANT: Pas de validation manuelle
             .build()
