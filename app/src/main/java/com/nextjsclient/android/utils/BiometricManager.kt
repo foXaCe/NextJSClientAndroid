@@ -413,7 +413,6 @@ class BiometricManager(private val context: Context) {
         // Utiliser BIOMETRIC_STRONG pour permettre l'authentification automatique sans validation
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Authentification requise")
-            .setSubtitle("Regardez l'écran")
             .setNegativeButtonText("Annuler")
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
             .setConfirmationRequired(false) // IMPORTANT: Pas de validation manuelle
