@@ -486,11 +486,9 @@ class MainActivity : AppCompatActivity() {
         
         // Petit délai pour s'assurer que l'overlay est affiché
         binding.root.postDelayed({
-            biometricManager.authenticate(
+            // Utiliser la nouvelle méthode avec fallback automatique face -> fingerprint
+            biometricManager.authenticateWithFallback(
                 activity = this,
-                title = "Authentification requise",
-                subtitle = "Utilisez votre empreinte digitale ou reconnaissance faciale pour accéder à l'application",
-                negativeButtonText = "Annuler",
                 onSuccess = {
                     // Authentification réussie, retirer l'overlay
                     isBiometricPromptShown = false

@@ -296,11 +296,9 @@ class SettingsActivity : AppCompatActivity() {
         // Listener pour le switch
         binding.biometricSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked && isConfigured) {
-                // Tester l'authentification avant d'activer
-                biometricManager.authenticate(
+                // Tester l'authentification avant d'activer avec fallback face -> fingerprint
+                biometricManager.authenticateWithFallback(
                     activity = this,
-                    title = getString(R.string.biometric_activate_title),
-                    subtitle = getString(R.string.biometric_activate_subtitle),
                     onSuccess = {
                         biometricManager.setBiometricEnabled(true)
                         updateBiometricUI()
