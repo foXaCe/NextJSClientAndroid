@@ -4,6 +4,7 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
@@ -399,21 +400,28 @@ class SettingsActivity : AppCompatActivity() {
         val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
         
-        // Afficher la version - gérer les cas où le nom est vide ou mal formaté
-        updateVersion.text = when {
-            release.name.isBlank() || release.name == release.tagName -> {
-                // Si le nom est vide ou identique au tag, afficher juste la version
+        // Afficher la version - gérer tous les cas possibles
+        val versionText = when {
+            // Si le nom est vide, juste des espaces, ou identique au tag
+            release.name.trim().isEmpty() || release.name.trim() == release.tagName -> {
                 "Version ${release.tagName}"
             }
-            release.name.contains("nightly", ignoreCase = true) -> {
-                // Pour les builds nightly, afficher le nom complet
-                release.name
+            // Si le nom contient des caractères non imprimables ou est mal formaté
+            release.name.contains(Regex("[\\p{Cntrl}&&[^\r\n\t]]")) -> {
+                "Version ${release.tagName}"
             }
+            // Pour les builds nightly avec un nom valide
+            release.name.contains("nightly", ignoreCase = true) -> {
+                release.name.trim()
+            }
+            // Si le nom est valide et différent du tag
             else -> {
-                // Sinon, utiliser le nom fourni par GitHub
-                release.name
+                release.name.trim()
             }
         }
+        
+        Log.d("SettingsActivity", "Displaying version in sheet: '$versionText' (raw name: '${release.name}', tag: '${release.tagName}')")
+        updateVersion.text = versionText
         
         // Formater le changelog (commits)
         val formattedChangelog = formatChangelog(release.body)

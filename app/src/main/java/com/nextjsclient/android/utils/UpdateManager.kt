@@ -120,14 +120,18 @@ class UpdateManager(private val context: Context) {
                     
                     val tagName = latestRelease.getString("tag_name")
                     val name = if (latestRelease.has("name") && !latestRelease.isNull("name")) {
-                        latestRelease.getString("name")
+                        val releaseName = latestRelease.getString("name").trim()
+                        // Si le nom est vide ou contient juste des espaces, utiliser tagName
+                        if (releaseName.isNotEmpty()) releaseName else tagName
                     } else {
-                        tagName // Utiliser tagName si name est vide
+                        tagName // Utiliser tagName si name n'existe pas
                     }
                     val body = latestRelease.getString("body")
                     val publishedAt = latestRelease.getString("published_at")
                     
-                    Log.d(TAG, "Found latest release: $tagName - $name")
+                    Log.d(TAG, "Raw release name from GitHub: '${if (latestRelease.has("name")) latestRelease.getString("name") else "null"}'")
+                    Log.d(TAG, "Processed release name: '$name'")
+                    Log.d(TAG, "Tag name: '$tagName'")
                     Log.d(TAG, "Published: $publishedAt")
                     
                     // Find APK download URL in assets
