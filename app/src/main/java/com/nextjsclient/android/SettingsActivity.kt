@@ -106,20 +106,30 @@ class SettingsActivity : AppCompatActivity() {
             showLogoutDialog()
         }
         
-        // Affichage version complète
+        // Affichage version simplifiée
         try {
             val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
             val buildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
             
-            // Afficher la version complète ou le build number
-            binding.buildInfo.text = if (versionDisplayName.isNotBlank()) {
-                versionDisplayName // Ex: "1.Dev.(#123)" ou "1.Dev.(abc1234)"
-            } else {
-                "Build #$buildNumber"
+            // Extraire uniquement la partie Build #XXX si disponible
+            binding.buildInfo.text = when {
+                versionDisplayName.contains("Build #") -> {
+                    // Extraire (Build #XXX) depuis "1.0.0 (Build #123)"
+                    val buildPart = versionDisplayName.substringAfter("(").substringBefore(")")
+                    "($buildPart)"
+                }
+                versionDisplayName.contains("-dev+") -> {
+                    // Pour les builds locaux, afficher le commit court
+                    val commit = versionDisplayName.substringAfter("-dev+").take(7)
+                    "(Build $commit)"
+                }
+                else -> {
+                    "(Build #$buildNumber)"
+                }
             }
             
         } catch (e: Exception) {
-            binding.buildInfo.text = "Version inconnue"
+            binding.buildInfo.text = "(Build unknown)"
         }
         
         // Tech stack info
