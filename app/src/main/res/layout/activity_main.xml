@@ -32,19 +32,15 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="?attr/colorSurfaceContainer"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
         app:menu="@menu/bottom_nav_menu"
-        app:labelVisibilityMode="selected"
+        app:labelVisibilityMode="unlabeled"
         app:itemActiveIndicatorStyle="@style/Widget.App.BottomNavigationView.ActiveIndicator"
         app:itemRippleColor="@color/material_3_ripple"
         app:itemIconTint="@color/bottom_nav_color_selector"
         app:itemTextColor="@color/bottom_nav_color_selector"
-        app:itemPaddingTop="8dp"
-        app:itemPaddingBottom="8dp"
         app:elevation="3dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -162,11 +162,11 @@ class MainActivity : AppCompatActivity() {
         
         // Configuration Material 3 expressive pour la navigation
         binding.bottomNavigation.apply {
-            // Activer les animations Material 3
-            itemIconTintList = null // Permet l'utilisation des couleurs définies dans le selector
-            
             setOnItemSelectedListener { item ->
-                // Animation de sélection Material 3
+                // Animation de l'icône au clic
+                animateIconSelection(item.itemId)
+                
+                // Navigation vers la destination
                 when (item.itemId) {
                     R.id.navigation_overview -> {
                         switchToOverview()
@@ -183,9 +183,25 @@ class MainActivity : AppCompatActivity() {
                     else -> false
                 }
             }
-            
-            // Activer les effets ripple Material 3
-            itemRippleColor = context.getColorStateList(android.R.color.transparent)
+        }
+    }
+    
+    private fun animateIconSelection(itemId: Int) {
+        // Trouver la vue de l'icône sélectionnée et l'animer
+        binding.bottomNavigation.findViewById<View>(itemId)?.let { view ->
+            // Animation de scale bounce
+            view.animate()
+                .scaleX(0.8f)
+                .scaleY(0.8f)
+                .setDuration(100)
+                .withEndAction {
+                    view.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(100)
+                        .start()
+                }
+                .start()
         }
     }
     
