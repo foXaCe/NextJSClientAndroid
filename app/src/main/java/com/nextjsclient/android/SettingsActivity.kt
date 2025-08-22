@@ -399,11 +399,20 @@ class SettingsActivity : AppCompatActivity() {
         val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
         
-        // Afficher la version - utiliser le nom complet pour les builds nightly
-        updateVersion.text = if (release.name.contains("nightly", ignoreCase = true) || release.name.contains("Nightly")) {
-            release.name // Afficher le nom complet pour les builds nightly
-        } else {
-            "Version ${release.tagName}"
+        // Afficher la version - gérer les cas où le nom est vide ou mal formaté
+        updateVersion.text = when {
+            release.name.isBlank() || release.name == release.tagName -> {
+                // Si le nom est vide ou identique au tag, afficher juste la version
+                "Version ${release.tagName}"
+            }
+            release.name.contains("nightly", ignoreCase = true) -> {
+                // Pour les builds nightly, afficher le nom complet
+                release.name
+            }
+            else -> {
+                // Sinon, utiliser le nom fourni par GitHub
+                release.name
+            }
         }
         
         // Formater le changelog (commits)

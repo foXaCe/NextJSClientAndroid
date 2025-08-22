@@ -119,7 +119,11 @@ class UpdateManager(private val context: Context) {
                     val latestRelease = releasesArray.getJSONObject(0)
                     
                     val tagName = latestRelease.getString("tag_name")
-                    val name = latestRelease.getString("name")
+                    val name = if (latestRelease.has("name") && !latestRelease.isNull("name")) {
+                        latestRelease.getString("name")
+                    } else {
+                        tagName // Utiliser tagName si name est vide
+                    }
                     val body = latestRelease.getString("body")
                     val publishedAt = latestRelease.getString("published_at")
                     
