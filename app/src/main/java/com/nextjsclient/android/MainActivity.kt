@@ -160,22 +160,32 @@ class MainActivity : AppCompatActivity() {
         // Mettre à jour la visibilité du menu selon les préférences
         updateNavigationVisibility()
         
-        binding.bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_overview -> {
-                    switchToOverview()
-                    true
+        // Configuration Material 3 expressive pour la navigation
+        binding.bottomNavigation.apply {
+            // Activer les animations Material 3
+            itemIconTintList = null // Permet l'utilisation des couleurs définies dans le selector
+            
+            setOnItemSelectedListener { item ->
+                // Animation de sélection Material 3
+                when (item.itemId) {
+                    R.id.navigation_overview -> {
+                        switchToOverview()
+                        true
+                    }
+                    R.id.navigation_anecoop -> {
+                        switchToSupplier("anecoop")
+                        true
+                    }
+                    R.id.navigation_solagora -> {
+                        switchToSupplier("solagora") 
+                        true
+                    }
+                    else -> false
                 }
-                R.id.navigation_anecoop -> {
-                    switchToSupplier("anecoop")
-                    true
-                }
-                R.id.navigation_solagora -> {
-                    switchToSupplier("solagora") 
-                    true
-                }
-                else -> false
             }
+            
+            // Activer les effets ripple Material 3
+            itemRippleColor = context.getColorStateList(android.R.color.transparent)
         }
     }
     

@@ -123,6 +123,15 @@
         <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
     </style>
     
+    <!-- Material 3 Expressive Active Indicator Style -->
+    <style name="App.Material3.ActiveIndicator">
+        <item name="android:color">?attr/colorSecondaryContainer</item>
+        <item name="android:width">72dp</item>
+        <item name="android:height">40dp</item>
+        <item name="marginHorizontal">12dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
+    </style>
+    
     <!-- Splash Screen Theme -->
     <style name="Theme.App.SplashScreen" parent="Theme.NextJSClient">
         <item name="android:windowBackground">@drawable/splash_screen_custom</item>
