@@ -108,88 +108,34 @@ class ScamarkFragment : Fragment() {
     }
     
     private fun setupModernWeekSelector() {
-        // Get week selector views
-        val currentWeekDisplay = binding.root.findViewById<TextView>(R.id.currentWeekDisplay)
-        val previousWeekButton = binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.previousWeekButton)
-        val nextWeekButton = binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.nextWeekButton)
-        val currentWeekButton = binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.currentWeekButton)
-        val weekListButton = binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.weekListButton)
+        // Get Material3 week selector
+        val weekSelector = binding.root.findViewById<com.nextjsclient.android.ui.components.Material3WeekSelector>(R.id.weekSelector)
         
-        // Observe current week changes
-        viewModel.selectedWeek.observe(viewLifecycleOwner) { week ->
-            viewModel.selectedYear.observe(viewLifecycleOwner) { year ->
-                if (week != null && year != null) {
-                    val weekStr = week.toString().padStart(2, '0')
-                    val dates = viewModel.formatWeekDatesOnly(year, week)
-                    val weekLabel = getString(R.string.week_label)
-                    currentWeekDisplay.text = "$weekLabel $weekStr - $dates"
-                    
-                    // Gérer la visibilité du bouton "Actuelle"
-                    val calendar = java.util.Calendar.getInstance()
-                    val actualCurrentYear = calendar.get(java.util.Calendar.YEAR)
-                    val actualCurrentWeek = getCurrentISOWeek()
-                    
-                    // Afficher le bouton seulement si on n'est PAS sur la semaine actuelle
-                    val isOnCurrentWeek = week == actualCurrentWeek && year == actualCurrentYear
-                    currentWeekButton.visibility = if (isOnCurrentWeek) View.GONE else View.VISIBLE
+        // Setup week selector with ViewModel
+        weekSelector?.let { selector ->
+            // Set initial week from ViewModel
+            viewModel.selectedWeek.value?.let { week ->
+                viewModel.selectedYear.value?.let { year ->
+                    selector.setWeek(week, year)
                 }
+            }
+            
+            // Set listener for week changes
+            selector.setOnWeekChangeListener { week, year ->
+                viewModel.selectWeek(year, week)
             }
         }
         
-        // Setup button listeners
-        previousWeekButton.setOnClickListener { navigateToPreviousWeek() }
-        nextWeekButton.setOnClickListener { navigateToNextWeek() }
-        currentWeekButton.setOnClickListener { navigateToCurrentWeek() }
-        weekListButton.setOnClickListener { showWeekListDialog() }
-    }
-    
-    private fun navigateToPreviousWeek() {
-        val currentWeek = viewModel.selectedWeek.value ?: return
-        val currentYear = viewModel.selectedYear.value ?: return
-        
-        if (currentWeek > 1) {
-            viewModel.selectWeek(currentYear, currentWeek - 1)
-        } else {
-            viewModel.selectWeek(currentYear - 1, 52) // Go to last week of previous year
+        // Observe week changes from ViewModel to update selector
+        viewModel.selectedWeek.observe(viewLifecycleOwner) { week ->
+            viewModel.selectedYear.observe(viewLifecycleOwner) { year ->
+                if (week != null && year != null) {
+                    weekSelector?.setWeek(week, year)
+                }
+            }
         }
     }
     
-    private fun navigateToNextWeek() {
-        val currentWeek = viewModel.selectedWeek.value ?: return
-        val currentYear = viewModel.selectedYear.value ?: return
-        
-        if (currentWeek < 52) {
-            viewModel.selectWeek(currentYear, currentWeek + 1)
-        } else {
-            viewModel.selectWeek(currentYear + 1, 1) // Go to first week of next year
-        }
-    }
-    
-    private fun navigateToCurrentWeek() {
-        val calendar = java.util.Calendar.getInstance()
-        val currentYear = calendar.get(java.util.Calendar.YEAR)
-        val currentWeek = getCurrentISOWeek()
-        viewModel.selectWeek(currentYear, currentWeek)
-    }
-    
-    private fun getCurrentISOWeek(): Int {
-        val calendar = java.util.Calendar.getInstance()
-        val date = calendar.time
-        
-        calendar.time = date
-        val dayOfWeek = (calendar.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
-        calendar.add(java.util.Calendar.DAY_OF_YEAR, -dayOfWeek + 3)
-        val firstThursday = calendar.timeInMillis
-        
-        calendar.set(java.util.Calendar.MONTH, 0)
-        calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
-        if (calendar.get(java.util.Calendar.DAY_OF_WEEK) != java.util.Calendar.THURSDAY) {
-            val daysToAdd = (4 - calendar.get(java.util.Calendar.DAY_OF_WEEK) + 7) % 7
-            calendar.add(java.util.Calendar.DAY_OF_YEAR, daysToAdd)
-        }
-        
-        return 1 + ((firstThursday - calendar.timeInMillis) / (7 * 24 * 60 * 60 * 1000)).toInt()
-    }
     
     private fun showWeekListDialog() {
         val availableWeeks = viewModel.availableWeeks.value ?: return
@@ -356,7 +302,7 @@ class ScamarkFragment : Fragment() {
     
     private fun showProductDetail(product: com.nextjsclient.android.data.models.ScamarkProduct) {
         // Navigate to product detail screen with selected week/year
-        val selectedWeek = viewModel.selectedWeek.value ?: getCurrentISOWeek()
+        val selectedWeek = viewModel.selectedWeek.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.WEEK_OF_YEAR)
         val selectedYear = viewModel.selectedYear.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
         
         // Marquer comme navigation interne pour éviter la re-authentification biométrique
@@ -400,33 +346,15 @@ class ScamarkFragment : Fragment() {
         // Vérifier que le binding existe (le fragment est créé)
         if (_binding == null) return
         
-        val weekSelector = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.weekSelector) ?: return
-        val context = requireContext()
-        
-        when (supplier.lowercase()) {
-            "anecoop" -> {
-                // Bleu pour Anecoop
-                weekSelector.strokeColor = androidx.core.content.ContextCompat.getColor(context, R.color.anecoop_primary)
-                weekSelector.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.anecoop_surface_variant))
-            }
-            "solagora" -> {
-                // Vert pour Solagora
-                weekSelector.strokeColor = androidx.core.content.ContextCompat.getColor(context, R.color.solagora_primary)
-                weekSelector.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.solagora_surface_variant))
-            }
-            else -> {
-                // Couleur par défaut
-                weekSelector.strokeColor = androidx.core.content.ContextCompat.getColor(context, R.color.md_theme_light_primary)
-                weekSelector.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.md_theme_light_surfaceContainerHigh))
-            }
-        }
+        // Le nouveau Material3WeekSelector gère automatiquement les couleurs via le thème
+        // Pas besoin de modification manuelle des couleurs
     }
     
     /**
      * Met à jour la visibilité du sélecteur de semaine selon le filtre actif
      */
     private fun updateWeekSelectorVisibility(filter: String) {
-        val weekSelector = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.weekSelector)
+        val weekSelector = binding.root.findViewById<com.nextjsclient.android.ui.components.Material3WeekSelector>(R.id.weekSelector)
         val filterMessage = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.filterMessage)
         
         if (filter != "all") {

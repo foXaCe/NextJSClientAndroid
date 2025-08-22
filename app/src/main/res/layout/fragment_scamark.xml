@@ -25,9 +25,11 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- Modern Week Selector -->
-                    <include 
-                        layout="@layout/week_selector_modern" />
+                    <!-- Material 3 Week Selector -->
+                    <com.nextjsclient.android.ui.components.Material3WeekSelector
+                        android:id="@+id/weekSelector"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
 
                     <!-- Filter Message (hidden by default) -->
                     <include 

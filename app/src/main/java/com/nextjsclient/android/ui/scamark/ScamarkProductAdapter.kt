@@ -269,26 +269,23 @@ class ScamarkProductAdapter(
         }
         
         private fun setSupplierColors(supplier: String, textView: TextView) {
-            val supplierColors = when (supplier.lowercase()) {
-                "anecoop" -> Pair(
-                    ContextCompat.getColor(itemView.context, android.R.color.holo_blue_dark),
-                    ContextCompat.getColor(itemView.context, android.R.color.white)
-                )
-                "solagora" -> Pair(
-                    ContextCompat.getColor(itemView.context, android.R.color.holo_green_dark),
-                    ContextCompat.getColor(itemView.context, android.R.color.white)
-                )
-                else -> Pair(
-                    ContextCompat.getColor(itemView.context, android.R.color.darker_gray),
-                    ContextCompat.getColor(itemView.context, android.R.color.white)
-                )
+            when (supplier.lowercase()) {
+                "anecoop" -> {
+                    // Vert pour Anecoop
+                    textView.background = ContextCompat.getDrawable(itemView.context, R.drawable.supplier_badge_anecoop)
+                    textView.setTextColor(ContextCompat.getColor(itemView.context, R.color.anecoop_on_primary))
+                }
+                "solagora" -> {
+                    // Orange pour Solagora
+                    textView.background = ContextCompat.getDrawable(itemView.context, R.drawable.supplier_badge_solagora)
+                    textView.setTextColor(ContextCompat.getColor(itemView.context, R.color.solagora_on_primary))
+                }
+                else -> {
+                    // Couleur par défaut
+                    textView.background = ContextCompat.getDrawable(itemView.context, R.drawable.supplier_badge)
+                    textView.setTextColor(ContextCompat.getColor(itemView.context, android.R.color.white))
+                }
             }
-            
-            // Créer un drawable de forme arrondie avec la couleur du fournisseur
-            val drawable = ContextCompat.getDrawable(itemView.context, R.drawable.supplier_badge)?.mutate()
-            drawable?.setTint(supplierColors.first)
-            textView.background = drawable
-            textView.setTextColor(supplierColors.second)
         }
         
         /**

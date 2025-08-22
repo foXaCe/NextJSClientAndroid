@@ -347,23 +347,23 @@ class ProductDetailActivity : AppCompatActivity() {
     }
     
     private fun setSupplierColors(supplier: String) {
-        val supplierColors = when (supplier.lowercase()) {
-            "anecoop" -> Pair(
-                ContextCompat.getColor(this, android.R.color.holo_blue_dark),
-                ContextCompat.getColor(this, android.R.color.white)
-            )
-            "solagora" -> Pair(
-                ContextCompat.getColor(this, android.R.color.holo_green_dark),
-                ContextCompat.getColor(this, android.R.color.white)
-            )
-            else -> Pair(
-                ContextCompat.getColor(this, android.R.color.darker_gray),
-                ContextCompat.getColor(this, android.R.color.white)
-            )
+        when (supplier.lowercase()) {
+            "anecoop" -> {
+                // Vert pour Anecoop
+                binding.supplierBadge.background = ContextCompat.getDrawable(this, R.drawable.supplier_badge_anecoop)
+                binding.supplierBadge.setTextColor(ContextCompat.getColor(this, R.color.anecoop_on_primary))
+            }
+            "solagora" -> {
+                // Orange pour Solagora
+                binding.supplierBadge.background = ContextCompat.getDrawable(this, R.drawable.supplier_badge_solagora)
+                binding.supplierBadge.setTextColor(ContextCompat.getColor(this, R.color.solagora_on_primary))
+            }
+            else -> {
+                // Couleur par défaut
+                binding.supplierBadge.background = ContextCompat.getDrawable(this, R.drawable.supplier_badge)
+                binding.supplierBadge.setTextColor(ContextCompat.getColor(this, android.R.color.white))
+            }
         }
-        
-        binding.supplierBadge.setBackgroundColor(supplierColors.first)
-        binding.supplierBadge.setTextColor(supplierColors.second)
     }
     
     private fun copyToClipboard(text: String, message: String) {
