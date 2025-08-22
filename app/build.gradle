@@ -33,7 +33,7 @@ final def majorVersion = "1"
 final def minorVersion = "0"
 final def patchVersion = "0"
 final def baseVersion = "${majorVersion}.${minorVersion}.${patchVersion}"
-final def versionDisplayName
+def versionDisplayName
 if (ciBuild) {
     versionDisplayName = "${baseVersion} (Build #${ciRunNumber})"
 } else {

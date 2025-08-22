@@ -927,7 +927,7 @@ class FirebaseRepository {
                     totalFirestoreTime += queryTime
                     if (found) {
                         referencedWeeks.add(weekPair)
-                        foundReferences++
+                        _foundReferences++
                     }
                 }
                 
@@ -1008,7 +1008,7 @@ class FirebaseRepository {
             0
         }
         
-        android.util.Log.d("FirebaseRepo", "📊 PALMARES_RESULT: '$productName' - $totalQueries requêtes, $foundReferences références trouvées, $consecutiveWeeks consécutives, $totalReferences total ($percentage% de $totalWeeksSinceOctober semaines) en ${endTime - startTime}ms")
+        android.util.Log.d("FirebaseRepo", "📊 PALMARES_RESULT: '$productName' - $totalQueries requêtes, $_foundReferences références trouvées, $consecutiveWeeks consécutives, $totalReferences total ($percentage% de $totalWeeksSinceOctober semaines) en ${endTime - startTime}ms")
         
         val result = ProductPalmares(
             consecutiveWeeks = consecutiveWeeks,
