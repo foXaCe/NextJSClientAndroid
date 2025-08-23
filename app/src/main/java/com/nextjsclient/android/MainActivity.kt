@@ -254,11 +254,15 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun showSearchButton() {
-        // Fonction vide - le bouton recherche dynamique a été supprimé
+        // Afficher le bouton recherche dans la barre de navigation
+        val searchMenuItem = binding.bottomNavigation.menu.findItem(R.id.navigation_search)
+        searchMenuItem?.isVisible = true
     }
     
     private fun hideSearchButton() {
-        // Fonction vide - le bouton recherche dynamique a été supprimé
+        // Masquer le bouton recherche dans la barre de navigation
+        val searchMenuItem = binding.bottomNavigation.menu.findItem(R.id.navigation_search)
+        searchMenuItem?.isVisible = false
     }
     
     private fun animateSearchButtonFromRight() {
