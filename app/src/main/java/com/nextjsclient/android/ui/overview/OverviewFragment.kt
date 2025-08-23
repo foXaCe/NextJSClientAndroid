@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.snackbar.Snackbar
+import com.nextjsclient.android.MainActivity
 import com.nextjsclient.android.R
 import com.nextjsclient.android.SettingsActivity
 import com.nextjsclient.android.databinding.FragmentOverviewBinding
@@ -377,6 +378,8 @@ class OverviewFragment : Fragment() {
                         .setDuration(150)
                         .start()
                     
+                    // Marquer comme navigation interne
+                    (activity as? MainActivity)?.markInternalNavigation()
                     val intent = Intent(requireContext(), SettingsActivity::class.java)
                     startActivity(intent)
                 }

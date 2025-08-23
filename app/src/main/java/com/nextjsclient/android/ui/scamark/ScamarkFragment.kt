@@ -382,6 +382,9 @@ class ScamarkFragment : Fragment() {
             putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_CONSECUTIVE_WEEKS, 0)
             putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_TOTAL_REFERENCES, product.totalScas)
         }
+        
+        // Marquer comme navigation interne pour éviter la demande de biométrie au retour
+        (activity as? com.nextjsclient.android.MainActivity)?.markInternalNavigation()
         startActivity(intent)
     }
     
