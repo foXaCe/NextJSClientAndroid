@@ -70,7 +70,7 @@
                 android:insetBottom="0dp"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 app:icon="@drawable/ic_arrow_left"
-                app:iconSize="14dp"
+                app:iconSize="12dp"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 android:contentDescription="Année précédente" />
@@ -99,7 +99,7 @@
                 android:insetBottom="0dp"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 app:icon="@drawable/ic_arrow_right"
-                app:iconSize="14dp"
+                app:iconSize="12dp"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 android:contentDescription="Année suivante" />
