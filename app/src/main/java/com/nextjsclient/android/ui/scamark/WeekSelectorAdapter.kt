@@ -37,40 +37,24 @@ class WeekSelectorAdapter(
     }
 
     inner class WeekViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val weekNumberText: TextView = itemView.findViewById(R.id.weekNumberText)
-        private val weekDatesText: TextView = itemView.findViewById(R.id.weekDatesText)
-        private val selectionIndicator: View = itemView.findViewById(R.id.selectionIndicator)
+        private val weekTitle: TextView = itemView.findViewById(R.id.weekTitle)
+        private val weekYear: TextView = itemView.findViewById(R.id.weekYear)
+        private val selectedIndicator: View = itemView.findViewById(R.id.selectedIndicator)
 
         fun bind(weekInfo: WeekInfo, isSelected: Boolean) {
             val weekStr = weekInfo.week.toString().padStart(2, '0')
-            val weekLabel = itemView.context.getString(R.string.week_label)
-            weekNumberText.text = "$weekLabel $weekStr"
+            weekTitle.text = "Semaine $weekStr"
             
-            // Format des dates de la semaine
-            weekDatesText.text = formatWeekDates(weekInfo.year, weekInfo.week)
+            // Afficher l'année
+            weekYear.text = weekInfo.year.toString()
             
             // Indicateur de sélection
-            selectionIndicator.visibility = if (isSelected) View.VISIBLE else View.GONE
+            selectedIndicator.visibility = if (isSelected) View.VISIBLE else View.GONE
             
             // Click listener
             itemView.setOnClickListener {
                 onWeekSelected(weekInfo)
             }
-        }
-        
-        private fun formatWeekDates(year: Int, week: Int): String {
-            val calendar = java.util.Calendar.getInstance()
-            calendar.set(java.util.Calendar.YEAR, year)
-            calendar.set(java.util.Calendar.WEEK_OF_YEAR, week)
-            calendar.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
-            
-            val startDate = calendar.time
-            calendar.add(java.util.Calendar.DAY_OF_WEEK, 6)
-            val endDate = calendar.time
-            
-            val dateFormat = java.text.SimpleDateFormat("dd/MM", java.util.Locale.getDefault())
-            val separator = itemView.context.getString(R.string.date_range_separator)
-            return "${dateFormat.format(startDate)} $separator ${dateFormat.format(endDate)}/$year"
         }
     }
 }

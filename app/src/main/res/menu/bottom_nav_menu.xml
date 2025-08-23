@@ -16,4 +16,9 @@
         android:icon="@drawable/ic_solagora"
         android:title="Solagora" />
 
+    <item
+        android:id="@+id/navigation_search"
+        android:icon="@drawable/ic_search"
+        android:title="Recherche" />
+
 </menu>

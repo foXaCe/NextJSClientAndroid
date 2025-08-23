@@ -1,13 +1,18 @@
 package com.nextjsclient.android
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.LayoutInflater
+import android.view.WindowInsetsController
+import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.appcompat.widget.SearchView
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
@@ -44,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private var biometricLockOverlay: View? = null
     private var currentSupplier: String = "anecoop"
     
+    
     // Cache pour les données préchargées
     private var preloadedData: MutableMap<String, Pair<List<com.nextjsclient.android.data.models.ScamarkProduct>, List<com.nextjsclient.android.data.models.AvailableWeek>>> = mutableMapOf()
     private var preloadedFilters: MutableMap<String, String> = mutableMapOf()
@@ -52,6 +58,9 @@ class MainActivity : AppCompatActivity() {
         // Initialize theme before calling super.onCreate()
         themeManager = ThemeManager(this)
         themeManager.initializeTheme()
+        
+        // Switch from splash screen theme to normal theme to show status bar
+        setTheme(R.style.Theme_NextJSClient)
         
         super.onCreate(savedInstanceState)
         
@@ -73,7 +82,11 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        setSupportActionBar(binding.toolbar)
+        setupWindowInsets()
+        // setSupportActionBar(binding.toolbar) // AppBarLayout supprimé
+        
+        // Configuration status bar
+        configureStatusBar()
         
         try {
             val navHostFragment = supportFragmentManager
@@ -85,9 +98,12 @@ class MainActivity : AppCompatActivity() {
             navController = null
         }
         
-        // Configure toolbar title directly (no navigation arrows)
-        supportActionBar?.title = "Scamark - Anecoop"
+        // Configure toolbar (no title, no navigation arrows)
+        supportActionBar?.title = ""
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        
+        // Configure status bar
+        configureStatusBar()
         
         // Setup custom bottom navigation for suppliers
         setupSupplierNavigation()
@@ -121,6 +137,10 @@ class MainActivity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
+        
+        // Re-configurer la status bar à chaque retour
+        configureStatusBar()
+        
         // Mettre à jour la visibilité du menu quand on revient de la page paramètres
         updateNavigationVisibility()
         
@@ -180,6 +200,10 @@ class MainActivity : AppCompatActivity() {
                         switchToSupplier("solagora") 
                         true
                     }
+                    R.id.navigation_search -> {
+                        triggerSearch()
+                        false // Ne pas sélectionner l'item recherche
+                    }
                     else -> false
                 }
             }
@@ -212,14 +236,44 @@ class MainActivity : AppCompatActivity() {
     private fun updateNavigationVisibility() {
         val menu = binding.bottomNavigation.menu
         
+        // S'assurer que le bouton overview est toujours visible
+        val overviewItem = menu.findItem(R.id.navigation_overview)
+        overviewItem?.isVisible = true
+        
         // Cacher/afficher les éléments de navigation selon les préférences
         menu.findItem(R.id.navigation_anecoop)?.isVisible = supplierPreferences.isAnecoopEnabled
         menu.findItem(R.id.navigation_solagora)?.isVisible = supplierPreferences.isSolagoraEnabled
         
-        android.util.Log.d("MainActivity", "🧭 Navigation visibility updated - Anecoop: ${supplierPreferences.isAnecoopEnabled}, Solagora: ${supplierPreferences.isSolagoraEnabled}")
+        android.util.Log.d("MainActivity", "🧭 Navigation visibility updated:")
+        android.util.Log.d("MainActivity", "   - Overview: visible=${overviewItem?.isVisible}")
+        android.util.Log.d("MainActivity", "   - Anecoop: visible=${menu.findItem(R.id.navigation_anecoop)?.isVisible}")
+        android.util.Log.d("MainActivity", "   - Solagora: visible=${menu.findItem(R.id.navigation_solagora)?.isVisible}")
+        
+        // Forcer le refresh de la navigation
+        binding.bottomNavigation.invalidate()
+    }
+    
+    private fun showSearchButton() {
+        // Fonction vide - le bouton recherche dynamique a été supprimé
+    }
+    
+    private fun hideSearchButton() {
+        // Fonction vide - le bouton recherche dynamique a été supprimé
+    }
+    
+    private fun animateSearchButtonFromRight() {
+        // Fonction vide - le bouton recherche dynamique a été supprimé
+    }
+    
+    private fun animateSearchButtonToRight(onComplete: () -> Unit) {
+        // Fonction vide - le bouton recherche dynamique a été supprimé
+        onComplete()
     }
     
     private fun switchToOverview() {
+        // Masquer le bouton recherche avec animation
+        hideSearchButton()
+        
         // Create and show OverviewFragment
         val overviewFragment = OverviewFragment()
         
@@ -268,20 +322,40 @@ class MainActivity : AppCompatActivity() {
         val endTime = System.currentTimeMillis()
         android.util.Log.d("MainActivity", "✅ switchToSupplier TERMINÉ - Durée: ${endTime - startTime}ms")
         
-        // Show toolbar and update title
+        // Show toolbar with no title
         supportActionBar?.show()
-        supportActionBar?.title = when (supplier) {
-            "anecoop" -> "Scamark - Anecoop"
-            "solagora" -> "Scamark - Solagora"
-            else -> "Scamark"
-        }
+        supportActionBar?.title = ""
         
         // Apply supplier theme
         applySupplierTheme(supplier)
         
+        // Afficher le bouton recherche avec animation
+        showSearchButton()
+        
         // Update menu visibility (show search)
         invalidateOptionsMenu()
     }
+    
+    private fun triggerSearch() {
+        android.util.Log.d("MainActivity", "🔍 Bouton recherche cliqué")
+        
+        // Obtenir le fragment actuel
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+        
+        when (currentFragment) {
+            is ScamarkFragment -> {
+                // On est sur une page fournisseur, activer le mode recherche
+                android.util.Log.d("MainActivity", "🔍 Activation du mode recherche pour: $currentSupplier")
+                currentFragment.toggleSearchMode()
+            }
+            is OverviewFragment -> {
+                // On est sur la page overview, activer la recherche globale
+                android.util.Log.d("MainActivity", "🔍 Activation de la recherche sur l'aperçu")
+                currentFragment.toggleSearchMode()
+            }
+        }
+    }
+    
     
     /**
      * Stocke les données préchargées pour un fournisseur spécifique
@@ -412,90 +486,70 @@ class MainActivity : AppCompatActivity() {
         // window.statusBarColor = supplierThemeManager.getSupplierPrimaryColor(supplier)
     }
     
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Add search and settings directly to toolbar
-        menuInflater.inflate(R.menu.main_menu, menu)
-        
-        // Setup SearchView
-        val searchItem = menu.findItem(R.id.action_search)
-        val searchView = searchItem.actionView as SearchView
-        
-        searchView.queryHint = "Rechercher par SCA ou produit..."
-        searchView.maxWidth = Integer.MAX_VALUE
-        
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                performSearch(query)
-                return true
+    private fun configureStatusBar() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // API 30+ : Utiliser la nouvelle API WindowInsetsController
+            window.setDecorFitsSystemWindows(false)
+            window.statusBarColor = ContextCompat.getColor(this, android.R.color.transparent)
+            
+            // Adapter les icônes selon le thème (jour/nuit)
+            val nightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            val isNightMode = nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            
+            if (isNightMode) {
+                // Thème sombre : icônes claires
+                window.insetsController?.setSystemBarsAppearance(
+                    0,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
+            } else {
+                // Thème clair : icônes sombres  
+                window.insetsController?.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
             }
             
-            override fun onQueryTextChange(newText: String?): Boolean {
-                performSearch(newText)
-                return true
-            }
-        })
-        
-        // Hide search on Overview page
-        updateMenuVisibility(menu)
-        
-        return true
-    }
-    
-    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        updateMenuVisibility(menu)
-        return super.onPrepareOptionsMenu(menu)
-    }
-    
-    private fun updateMenuVisibility(menu: Menu) {
-        val currentFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
-        val searchItem = menu.findItem(R.id.action_search)
-        val settingsItem = menu.findItem(R.id.action_settings)
-        
-        when (currentFragment) {
-            is OverviewFragment -> {
-                // Hide search and settings on Overview page
-                searchItem.isVisible = false
-                settingsItem.isVisible = false
-            }
-            is ScamarkFragment -> {
-                // Show search and settings on Scamark pages
-                searchItem.isVisible = true
-                settingsItem.isVisible = true
-            }
-            else -> {
-                // Default: show search and settings
-                searchItem.isVisible = true
-                settingsItem.isVisible = true
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // API ancienne pour compatibilité
+            val transparentColor = ContextCompat.getColor(this, android.R.color.transparent)
+            window.statusBarColor = transparentColor
+            
+            // Edge-to-edge
+            window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or 
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // Adapter les icônes selon le thème
+                val nightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+                val isNightMode = nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+                
+                if (!isNightMode) {
+                    // Thème clair : icônes sombres
+                    window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or 
+                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                }
             }
         }
     }
     
     
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_settings -> {
-                isInternalNavigation = true
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, 0, 0, systemBars.bottom)
+            insets
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // No menu items in toolbar
+        return false
     }
     
-    private fun performSearch(query: String?) {
-        // Get the current fragment and perform search if it's ScamarkFragment
-        val currentFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
-        
-        when (currentFragment) {
-            is ScamarkFragment -> {
-                currentFragment.performSearch(query)
-            }
-            is OverviewFragment -> {
-                // Overview doesn't support search - maybe switch to Scamark with search?
-                // For now, do nothing
-            }
-        }
-    }
+    
+    
     
     private fun checkBiometricAuthentication() {
         // Éviter d'afficher plusieurs prompts biométriques

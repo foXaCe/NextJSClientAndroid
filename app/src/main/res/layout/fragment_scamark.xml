@@ -3,7 +3,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 
     <!-- Main Content with SwipeRefresh -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -29,7 +30,13 @@
                     <com.nextjsclient.android.ui.components.Material3WeekSelector
                         android:id="@+id/weekSelector"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="12dp" />
+
+                    <!-- Material 3 Search Bar with Suggestions (hidden by default) -->
+                    <include 
+                        android:id="@+id/searchBar"
+                        layout="@layout/search_bar_with_suggestions" />
 
                     <!-- Filter Message (hidden by default) -->
                     <include 
@@ -103,16 +110,5 @@
         </FrameLayout>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    <!-- Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        style="@style/Widget.App.FloatingActionButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:src="@drawable/ic_add"
-        android:visibility="gone" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

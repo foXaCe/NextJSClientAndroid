@@ -23,45 +23,47 @@ class Material3WeekSelector @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr) {
+) : MaterialCardView(context, attrs, defStyleAttr) {
 
     private lateinit var weekNumberDisplay: TextView
     private lateinit var dateRangeDisplay: TextView
     private lateinit var yearDisplay: TextView
     private lateinit var previousWeekButton: FloatingActionButton
     private lateinit var nextWeekButton: FloatingActionButton
-    private lateinit var weekProgress: LinearProgressIndicator
-    private lateinit var weekProgressText: TextView
-    private lateinit var todayButton: MaterialButton
-    private lateinit var currentWeekButton: MaterialButton
-    private lateinit var calendarButton: MaterialButton
     private lateinit var weekGridRecycler: RecyclerView
-    private lateinit var cardView: MaterialCardView
     
     private var currentWeek = Calendar.getInstance().get(Calendar.WEEK_OF_YEAR)
     private var currentYear = Calendar.getInstance().get(Calendar.YEAR)
     private var onWeekChangeListener: ((Int, Int) -> Unit)? = null
     
     init {
-        val view = LayoutInflater.from(context).inflate(R.layout.week_selector_material3, this, true)
-        initViews(view)
+        // Configurer la MaterialCardView
+        radius = 28.dpToPx()
+        cardElevation = 0f
+        setCardBackgroundColor(context.getColorFromAttr(com.google.android.material.R.attr.colorSecondaryContainer))
+        
+        // Inflater le contenu
+        LayoutInflater.from(context).inflate(R.layout.week_selector_content_material3, this, true)
+        initViews()
         setupListeners()
         updateWeekDisplay()
     }
     
-    private fun initViews(view: View) {
-        weekNumberDisplay = view.findViewById(R.id.weekNumberDisplay)
-        dateRangeDisplay = view.findViewById(R.id.dateRangeDisplay)
-        yearDisplay = view.findViewById(R.id.yearDisplay)
-        previousWeekButton = view.findViewById(R.id.previousWeekButton)
-        nextWeekButton = view.findViewById(R.id.nextWeekButton)
-        weekProgress = view.findViewById(R.id.weekProgress)
-        weekProgressText = view.findViewById(R.id.weekProgressText)
-        todayButton = view.findViewById(R.id.todayButton)
-        currentWeekButton = view.findViewById(R.id.currentWeekButton)
-        calendarButton = view.findViewById(R.id.calendarButton)
-        weekGridRecycler = view.findViewById(R.id.weekGridRecycler)
-        cardView = view.findViewById(R.id.weekSelector)
+    private fun Int.dpToPx(): Float = this * context.resources.displayMetrics.density
+    
+    private fun Context.getColorFromAttr(attr: Int): Int {
+        val typedValue = android.util.TypedValue()
+        theme.resolveAttribute(attr, typedValue, true)
+        return typedValue.data
+    }
+    
+    private fun initViews() {
+        weekNumberDisplay = findViewById(R.id.weekNumberDisplay)
+        dateRangeDisplay = findViewById(R.id.dateRangeDisplay)
+        yearDisplay = findViewById(R.id.yearDisplay)
+        previousWeekButton = findViewById(R.id.previousWeekButton)
+        nextWeekButton = findViewById(R.id.nextWeekButton)
+        weekGridRecycler = findViewById(R.id.weekGridRecycler)
     }
     
     private fun setupListeners() {
@@ -73,72 +75,39 @@ class Material3WeekSelector @JvmOverloads constructor(
             animateWeekChange(1)
         }
         
-        todayButton.setOnClickListener {
-            jumpToCurrentWeek()
+        // Week Number Button - Affiche la liste des semaines
+        weekNumberDisplay.setOnClickListener {
+            // Animation de feedback
+            weekNumberDisplay.animate()
+                .scaleX(0.95f)
+                .scaleY(0.95f)
+                .setDuration(100)
+                .withEndAction {
+                    weekNumberDisplay.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(150)
+                        .setInterpolator(OvershootInterpolator())
+                        .start()
+                }
+                .start()
+            onWeekHistoryRequested?.invoke()
         }
         
-        currentWeekButton.setOnClickListener {
-            jumpToCurrentWeek()
-        }
-        
-        calendarButton.setOnClickListener {
-            toggleCalendarView()
-        }
     }
     
     private fun animateWeekChange(direction: Int) {
-        // Material 3 expressive animations
+        // Subtle Material 3 animations - no loading, just update
+        changeWeek(direction)
+        updateWeekDisplay()
         
-        // Rotate FAB buttons
-        val targetButton = if (direction > 0) nextWeekButton else previousWeekButton
-        targetButton.animate()
-            .rotationBy(360f)
-            .setDuration(400)
-            .setInterpolator(OvershootInterpolator())
-            .start()
-        
-        // Fade out current text
-        dateRangeDisplay.animate()
-            .alpha(0f)
-            .scaleX(0.8f)
-            .setDuration(150)
-            .withEndAction {
-                // Update week
-                changeWeek(direction)
-                
-                // Fade in new text with scale
-                dateRangeDisplay.animate()
-                    .alpha(1f)
-                    .scaleX(1f)
-                    .setDuration(200)
-                    .setInterpolator(OvershootInterpolator())
-                    .start()
-            }
-            .start()
-        
-        // Animate week number with slide effect
-        weekNumberDisplay.animate()
-            .translationX(if (direction > 0) -50f else 50f)
-            .alpha(0f)
-            .setDuration(150)
-            .withEndAction {
-                weekNumberDisplay.translationX = if (direction > 0) 50f else -50f
-                updateWeekDisplay()
-                weekNumberDisplay.animate()
-                    .translationX(0f)
-                    .alpha(1f)
-                    .setDuration(200)
-                    .start()
-            }
-            .start()
-        
-        // Pulse the card
-        cardView.animate()
-            .scaleX(1.02f)
-            .scaleY(1.02f)
+        // Light pulse feedback
+        animate()
+            .scaleX(1.01f)
+            .scaleY(1.01f)
             .setDuration(100)
             .withEndAction {
-                cardView.animate()
+                animate()
                     .scaleX(1f)
                     .scaleY(1f)
                     .setDuration(100)
@@ -181,92 +150,26 @@ class Material3WeekSelector @JvmOverloads constructor(
         val startStr = dateFormat.format(startDate)
         val endStr = dateFormat.format(endDate)
         
-        weekNumberDisplay.text = "SEMAINE $currentWeek"
+        weekNumberDisplay.text = context.getString(R.string.week_format, currentWeek)
         dateRangeDisplay.text = "$startStr - $endStr"
         yearDisplay.text = currentYear.toString()
         
-        // Update progress (example: based on current day of week)
-        val today = Calendar.getInstance()
-        val progress = if (today.get(Calendar.WEEK_OF_YEAR) == currentWeek && 
-                          today.get(Calendar.YEAR) == currentYear) {
-            val dayOfWeek = today.get(Calendar.DAY_OF_WEEK)
-            val adjustedDay = if (dayOfWeek == 1) 7 else dayOfWeek - 1
-            (adjustedDay * 100 / 7)
-        } else {
-            0
-        }
-        
-        animateProgress(progress)
     }
     
-    private fun animateProgress(targetProgress: Int) {
-        val animator = ValueAnimator.ofInt(weekProgress.progress, targetProgress)
-        animator.duration = 500
-        animator.addUpdateListener { animation ->
-            val progress = animation.animatedValue as Int
-            weekProgress.progress = progress
-            weekProgressText.text = "$progress%"
-        }
-        animator.start()
+    private fun showWeekListDialog() {
+        // Get available weeks from ViewModel through callback
+        onWeekHistoryRequested?.invoke()
     }
     
-    private fun jumpToCurrentWeek() {
-        val today = Calendar.getInstance()
-        val targetWeek = today.get(Calendar.WEEK_OF_YEAR)
-        val targetYear = today.get(Calendar.YEAR)
-        
-        if (targetWeek != currentWeek || targetYear != currentYear) {
-            // Animate jump with bounce effect
-            cardView.animate()
-                .scaleX(0.95f)
-                .scaleY(0.95f)
-                .setDuration(100)
-                .withEndAction {
-                    currentWeek = targetWeek
-                    currentYear = targetYear
-                    updateWeekDisplay()
-                    onWeekChangeListener?.invoke(currentWeek, currentYear)
-                    
-                    cardView.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(300)
-                        .setInterpolator(OvershootInterpolator())
-                        .start()
-                }
-                .start()
-        }
+    private var onWeekListRequested: (() -> Unit)? = null
+    private var onWeekHistoryRequested: (() -> Unit)? = null
+    
+    fun setOnWeekListRequestedListener(listener: () -> Unit) {
+        onWeekListRequested = listener
     }
     
-    private fun toggleCalendarView() {
-        val isVisible = weekGridRecycler.isVisible
-        
-        // Rotate calendar button
-        calendarButton.animate()
-            .rotationBy(180f)
-            .setDuration(300)
-            .start()
-        
-        if (!isVisible) {
-            weekGridRecycler.visibility = View.VISIBLE
-            weekGridRecycler.alpha = 0f
-            weekGridRecycler.translationY = -20f
-            weekGridRecycler.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setDuration(300)
-                .setInterpolator(OvershootInterpolator())
-                .start()
-        } else {
-            weekGridRecycler.animate()
-                .alpha(0f)
-                .translationY(-20f)
-                .setDuration(200)
-                .withEndAction {
-                    weekGridRecycler.visibility = View.GONE
-                }
-                .start()
-        }
+    fun setOnWeekHistoryRequestedListener(listener: () -> Unit) {
+        onWeekHistoryRequested = listener
     }
     
     fun setOnWeekChangeListener(listener: (week: Int, year: Int) -> Unit) {
