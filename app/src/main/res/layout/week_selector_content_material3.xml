@@ -60,7 +60,8 @@
                 android:gravity="center_vertical"
                 android:layout_marginTop="4dp">
 
-                <!-- Previous Week - Plus petit et proche -->
+                <!-- Previous Week - SUPPRIMÉ TEMPORAIREMENT -->
+                <!--
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/previousWeekButton"
                     android:layout_width="wrap_content"
@@ -72,6 +73,7 @@
                     app:tint="?attr/colorOnSurface"
                     android:src="@drawable/ic_arrow_left"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+                -->
 
                 <!-- Week Number - Clickable Button -->
                 <com.google.android.material.button.MaterialButton
@@ -100,7 +102,8 @@
                     android:elevation="4dp"
                     android:contentDescription="Sélectionner une semaine" />
 
-                <!-- Next Week - Plus petit et proche -->
+                <!-- Next Week - SUPPRIMÉ TEMPORAIREMENT -->
+                <!--
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/nextWeekButton"
                     android:layout_width="wrap_content"
@@ -112,6 +115,7 @@
                     app:tint="?attr/colorOnSurface"
                     android:src="@drawable/ic_arrow_right"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+                -->
 
             </LinearLayout>
 
