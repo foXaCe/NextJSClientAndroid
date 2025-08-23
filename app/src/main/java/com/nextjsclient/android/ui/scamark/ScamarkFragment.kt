@@ -58,36 +58,34 @@ class ScamarkFragment : Fragment() {
                 // Nettoyer les informations de navigation après utilisation
                 mainActivity.clearPreloadedCache()
             } else {
-                // Navigation normale
-                // IMPORTANT: Toujours forcer le rechargement même si c'est le même fournisseur
-                // car on peut venir de l'aperçu avec des données mixtes
-                if (viewModel.selectedSupplier.value == supplierFromArgs) {
-                    android.util.Log.d("ScamarkFragment", "🔄 Same supplier, forcing reload")
-                    // Nettoyer seulement les données mixtes sans affecter previousWeekProducts
-                    viewModel.forceReloadSupplierData(supplierFromArgs)
+                // Navigation normale - d'abord vérifier s'il y a des données préchargées
+                val hasDataFromOverview = mainActivity?.hasPreloadedDataFor(supplierFromArgs) == true
+                
+                if (hasDataFromOverview && mainActivity != null) {
+                    android.util.Log.d("ScamarkFragment", "📦 Loading preloaded data from overview for $supplierFromArgs")
+                    // Charger d'abord les données préchargées
+                    mainActivity.loadPreloadedDataToViewModel(supplierFromArgs, viewModel)
                 } else {
-                    android.util.Log.d("ScamarkFragment", "🆕 New supplier, selecting: $supplierFromArgs")
-                    viewModel.selectSupplier(supplierFromArgs)
+                    // Pas de données préchargées, navigation normale
+                    if (viewModel.selectedSupplier.value == supplierFromArgs) {
+                        android.util.Log.d("ScamarkFragment", "🔄 Same supplier, forcing reload")
+                        viewModel.forceReloadSupplierData(supplierFromArgs)
+                    } else {
+                        android.util.Log.d("ScamarkFragment", "🆕 New supplier, selecting: $supplierFromArgs")
+                        viewModel.selectSupplier(supplierFromArgs)
+                    }
                 }
-            }
-            
-            // IMPORTANT: Charger les données préchargées depuis l'aperçu
-            val hasDataFromOverview = mainActivity?.hasPreloadedDataFor(supplierFromArgs) == true
-            if (hasDataFromOverview && mainActivity != null) {
-                android.util.Log.d("ScamarkFragment", "📦 Loading preloaded data from overview for $supplierFromArgs")
-                mainActivity.loadPreloadedDataToViewModel(supplierFromArgs, viewModel)
-            }
-            
-            // Vérifier s'il y a un filtre à appliquer
-            val filterFromArgs = arguments?.getString("filter")
-            val currentVMFilter = viewModel.productFilter.value
-            
-            if (filterFromArgs != null && currentVMFilter == "all" && !hasDataFromOverview) {
-                // Nettoyer les arguments pour éviter la réapplication du filtre
-                arguments?.remove("filter")
-            } else if (filterFromArgs != null) {
-                android.util.Log.d("ScamarkFragment", "🔍 Applying filter: $filterFromArgs")
-                viewModel.setProductFilter(filterFromArgs)
+                
+                // Vérifier s'il y a un filtre à appliquer depuis les arguments
+                val filterFromArgs = arguments?.getString("filter")
+                if (filterFromArgs != null && !hasDataFromOverview) {
+                    // Seulement appliquer le filtre s'il n'y a PAS de données préchargées
+                    // Car les données préchargées sont déjà filtrées dans MainActivity.loadPreloadedDataToViewModel
+                    android.util.Log.d("ScamarkFragment", "🔍 Setting filter from args: $filterFromArgs")
+                    viewModel.setProductFilter(filterFromArgs)
+                } else if (filterFromArgs != null && hasDataFromOverview) {
+                    android.util.Log.d("ScamarkFragment", "⚠️ Skipping duplicate filter application - preloaded data already filtered")
+                }
             }
         } else {
             viewModel.selectSupplier("all")

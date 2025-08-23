@@ -1132,6 +1132,7 @@ class ScamarkViewModel : ViewModel() {
         if (currentFilter == "sortants" && products.isNotEmpty()) {
             // Les produits reçus sont DÉJÀ les sortants filtrés depuis OverviewFragment
             // On les met directement dans _products sans passer par filterProducts
+            android.util.Log.d("ScamarkVM", "📤 Setting sortants products directly, count=${products.size}")
             _allProducts.value = emptyList() // Pas de produits "all"
             _products.value = products // Directement les sortants
             
@@ -1140,6 +1141,7 @@ class ScamarkViewModel : ViewModel() {
         } else if (currentFilter == "entrants" && products.isNotEmpty()) {
             // Les produits reçus sont DÉJÀ les entrants filtrés depuis OverviewFragment
             // On les met directement dans _products sans passer par filterProducts
+            android.util.Log.d("ScamarkVM", "📥 Setting entrants products directly, count=${products.size}")
             _allProducts.value = emptyList() // Pas de produits "all"
             _products.value = products // Directement les entrants
             
