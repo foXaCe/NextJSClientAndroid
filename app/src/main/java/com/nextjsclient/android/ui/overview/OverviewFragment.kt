@@ -452,7 +452,7 @@ class OverviewFragment : Fragment() {
                 .scaleY(1f)
                 .translationY(0f)
                 .setDuration(400)
-                .setInterpolator(com.google.android.material.animation.AnimationUtils.FAST_OUT_SLOW_IN_INTERPOLATOR)
+                .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
                 .start()
         }
         
@@ -497,7 +497,7 @@ class OverviewFragment : Fragment() {
             ?.scaleY(0.9f)
             ?.translationY(30f)
             ?.setDuration(300)
-            ?.setInterpolator(com.google.android.material.animation.AnimationUtils.FAST_OUT_SLOW_IN_INTERPOLATOR)
+            ?.setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
             ?.withEndAction {
                 topScaCard.visibility = View.GONE
                 topScaCard.scaleX = 1f

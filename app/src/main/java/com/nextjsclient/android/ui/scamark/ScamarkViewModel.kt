@@ -361,9 +361,9 @@ class ScamarkViewModel : ViewModel() {
             // IMPORTANT: S'assurer que le loading est désactivé pour le cache
             _isLoading.value = false
             
-            // Assigner directement les données
-            _allProducts.value = cachedProducts
-            val stats = calculateStatsFromProducts(cachedProducts)
+            // Assigner directement les données (elvis operator pour satisfaire lint)
+            _allProducts.value = cachedProducts ?: emptyList()
+            val stats = calculateStatsFromProducts(cachedProducts ?: emptyList())
             _stats.value = stats
             
             // Charger S-1 en arrière-plan
