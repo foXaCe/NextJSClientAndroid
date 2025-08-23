@@ -156,7 +156,10 @@ class ScamarkViewModel : ViewModel() {
             
             try {
                 android.util.Log.d("ScamarkVM", "⏳ Starting to load weeks from repository...")
-                val weeks = repository.getAvailableWeeks(supplier)
+                // Utiliser Dispatchers.IO pour les opérations réseau/cache
+                val weeks = withContext(Dispatchers.IO) {
+                    repository.getAvailableWeeks(supplier)
+                }
                 
                 android.util.Log.d("ScamarkVM", "✅ Available weeks loaded in ${System.currentTimeMillis() - startTime}ms, count=${weeks.size}")
                 _availableWeeks.value = weeks
@@ -199,7 +202,7 @@ class ScamarkViewModel : ViewModel() {
         // Marquer les prochaines semaines comme "en chargement"
         markWeeksAsLoading()
         
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _isLoadingMoreWeeks.value = true
             val startTime = System.currentTimeMillis()
             try {
