@@ -62,14 +62,17 @@
                 android:id="@+id/previousYearButton"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:minWidth="0dp"
+                android:minWidth="48dp"
                 android:minHeight="0dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 app:icon="@drawable/ic_arrow_left"
                 app:iconSize="18dp"
                 app:iconGravity="textStart"
+                app:iconPadding="0dp"
                 android:contentDescription="Année précédente" />
 
             <TextView
@@ -88,14 +91,17 @@
                 android:id="@+id/nextYearButton"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:minWidth="0dp"
+                android:minWidth="48dp"
                 android:minHeight="0dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 app:icon="@drawable/ic_arrow_right"
                 app:iconSize="18dp"
                 app:iconGravity="textStart"
+                app:iconPadding="0dp"
                 android:contentDescription="Année suivante" />
 
         </LinearLayout>
