@@ -642,6 +642,7 @@ class MainActivity : AppCompatActivity() {
         biometricLockOverlay?.findViewById<View>(R.id.lockSubtitle)?.let { subtitle ->
             if (subtitle is android.widget.TextView) {
                 subtitle.text = "Erreur: $error\nAppuyez pour réessayer"
+                subtitle.visibility = android.view.View.VISIBLE
             }
         }
     }

@@ -4,99 +4,54 @@
     android:id="@+id/biometricLockOverlay"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/biometric_lock_background"
+    android:background="#FF000000"
     android:clickable="true"
     android:focusable="true"
     android:elevation="100dp">
 
+    <!-- Logo Anecoop centré -->
+    <ImageView
+        android:layout_width="200dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center"
+        android:src="@drawable/anecoop"
+        android:scaleType="centerInside" />
+
+    <!-- Bouton déverrouiller en bas -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="32dp">
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="48dp">
 
-        <!-- Lock Icon -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            app:cardCornerRadius="60dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:background="@drawable/gradient_accent">
-
-                <ImageView
-                    android:id="@+id/lockIcon"
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
-                    android:src="@drawable/ic_lock"
-                    app:tint="@color/white" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Title -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/app_locked"
-            android:textSize="24sp"
-            android:textColor="?attr/colorOnSurface"
-            android:textStyle="bold"
-            android:layout_marginTop="32dp" />
-
-        <!-- Subtitle -->
-        <TextView
-            android:id="@+id/lockSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/auth_required"
-            android:textSize="16sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginTop="8dp"
-            android:textAlignment="center" />
-
-        <!-- Biometric Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/unlockButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/unlock_button"
-            android:layout_marginTop="32dp"
-            style="@style/Widget.Material3.Button.TonalButton"
+            android:text="Déverrouiller"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#4CAF50"
+            style="@style/Widget.Material3.Button"
             app:icon="@drawable/ic_fingerprint"
-            app:iconGravity="start" />
+            app:iconTint="@android:color/white"
+            app:iconGravity="start"
+            app:cornerRadius="24dp" />
 
-        <!-- App Info -->
-        <LinearLayout
+        <!-- Message d'erreur (masqué par défaut) -->
+        <TextView
+            android:id="@+id/lockSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="48dp"
-            android:alpha="0.6">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_launcher_foreground"
-                android:layout_gravity="center_vertical" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/app_name"
-                android:textSize="14sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:layout_marginStart="8dp"
-                android:layout_gravity="center_vertical" />
-
-        </LinearLayout>
+            android:text=""
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="16dp"
+            android:textAlignment="center"
+            android:alpha="0.8"
+            android:visibility="gone" />
 
     </LinearLayout>
 
