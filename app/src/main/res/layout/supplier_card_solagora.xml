@@ -74,6 +74,16 @@
                         android:textColor="@android:color/white"
                         android:alpha="0.8"
                         android:visibility="gone" />
+                    
+                    <TextView
+                        android:id="@+id/weekDisplay"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="S47 - 18/11 au 24/11"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@android:color/white"
+                        android:alpha="0.9"
+                        android:layout_marginTop="2dp" />
 
                 </LinearLayout>
             </LinearLayout>
