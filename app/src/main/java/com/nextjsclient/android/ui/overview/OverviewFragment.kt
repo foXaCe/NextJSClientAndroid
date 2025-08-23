@@ -361,7 +361,28 @@ class OverviewFragment : Fragment() {
     }
     
     private fun setupButtons() {
-        // Le bouton Settings a été supprimé avec le bandeau vert
+        // Settings button
+        binding.settingsButton.setOnClickListener {
+            // Animation Material 3 simple
+            binding.settingsButton.animate()
+                .rotationBy(180f)
+                .scaleX(0.9f)
+                .scaleY(0.9f)
+                .setDuration(200)
+                .withEndAction {
+                    binding.settingsButton.animate()
+                        .rotationBy(0f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(150)
+                        .start()
+                    
+                    val intent = Intent(requireContext(), SettingsActivity::class.java)
+                    startActivity(intent)
+                }
+                .start()
+        }
+        
         // Setup trophy buttons
         setupTrophyButtons()
     }
