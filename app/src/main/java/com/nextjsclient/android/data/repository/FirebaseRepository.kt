@@ -124,7 +124,7 @@ class FirebaseRepository {
     // Scamark - Nouvelle architecture conforme au Next.js
     
     /**
-     * Récupère les semaines disponibles pour un fournisseur - LIMITÉ À 8 SEMAINES AU DÉMARRAGE
+     * Récupère les semaines disponibles pour un fournisseur - CHARGE 20 SEMAINES AU DÉMARRAGE
      */
     suspend fun getAvailableWeeks(supplier: String = "all"): List<AvailableWeek> {
         android.util.Log.d("FirebaseRepo", "⏱️ REPO_WEEKS_START: Début getAvailableWeeks pour '$supplier'")
@@ -154,10 +154,10 @@ class FirebaseRepository {
             val currentWeek = getCurrentISOWeek()
             android.util.Log.d("FirebaseRepo", "⏱️ REPO_INIT: Initialisation en ${System.currentTimeMillis() - initStart}ms - semaine courante $currentWeek")
             
-            // Chercher seulement 8 semaines autour de la semaine courante
+            // Chercher 20 semaines autour de la semaine courante pour avoir plus de données dès le départ
             val rangeStart = System.currentTimeMillis()
-            val startWeek = maxOf(1, currentWeek - 4)
-            val endWeek = minOf(52, currentWeek + 3)
+            val startWeek = maxOf(1, currentWeek - 15)
+            val endWeek = minOf(52, currentWeek + 4)
             val weekRange = startWeek..endWeek
             android.util.Log.d("FirebaseRepo", "⏱️ REPO_RANGE: Calcul range de semaines en ${System.currentTimeMillis() - rangeStart}ms - range: $startWeek..$endWeek")
             
@@ -281,19 +281,19 @@ class FirebaseRepository {
                 
                 android.util.Log.w("FirebaseRepo", "🔄 WHILE_LOOP_START - '$sup' batchStart=$batchStart, foundCount=$foundCount, shouldStopSearch=$shouldStopSearch")
                 
-                while (batchStart >= 1 && foundCount < 15 && !shouldStopSearch) {
+                while (batchStart >= 1 && foundCount < 30 && !shouldStopSearch) {
                     val batchEnd = maxOf(1, batchStart - batchSize + 1)
                     val batchStart_time = System.currentTimeMillis()
                     
                     android.util.Log.d("FirebaseRepo", "🎯 BATCH - '$sup' semaines $batchStart→$batchEnd (batch ${batchSize})")
-                    android.util.Log.w("FirebaseRepo", "🔄 BATCH_CONDITION - '$sup' batchStart=$batchStart >= 1? ${batchStart >= 1}, foundCount=$foundCount < 15? ${foundCount < 15}, !shouldStopSearch=$shouldStopSearch")
+                    android.util.Log.w("FirebaseRepo", "🔄 BATCH_CONDITION - '$sup' batchStart=$batchStart >= 1? ${batchStart >= 1}, foundCount=$foundCount < 30? ${foundCount < 30}, !shouldStopSearch=$shouldStopSearch")
                     
                     var batchFound = 0
                     var emptyWeeksInBatch = 0
                     
                     for (week in batchStart downTo batchEnd) {
-                        if (foundCount >= 15) {
-                            android.util.Log.d("FirebaseRepo", "⏹️ LIMIT_REACHED - '$sup' arrêt à 15 semaines")
+                        if (foundCount >= 30) {
+                            android.util.Log.d("FirebaseRepo", "⏹️ LIMIT_REACHED - '$sup' arrêt à 30 semaines")
                             break
                         }
                         
@@ -352,7 +352,7 @@ class FirebaseRepository {
                     batchStart = batchEnd - 1
                 }
                 
-                android.util.Log.w("FirebaseRepo", "🔄 WHILE_LOOP_EXIT - '$sup' SORTIE DE BOUCLE: batchStart=$batchStart >= 1? ${batchStart >= 1}, foundCount=$foundCount < 15? ${foundCount < 15}, shouldStopSearch=$shouldStopSearch")
+                android.util.Log.w("FirebaseRepo", "🔄 WHILE_LOOP_EXIT - '$sup' SORTIE DE BOUCLE: batchStart=$batchStart >= 1? ${batchStart >= 1}, foundCount=$foundCount < 30? ${foundCount < 30}, shouldStopSearch=$shouldStopSearch")
                 
                 val supplierTime = System.currentTimeMillis() - supplierStart
                 android.util.Log.d("FirebaseRepo", "🏪 SUPPLIER_DONE - '$sup': ${foundCount} semaines en ${supplierTime}ms")
