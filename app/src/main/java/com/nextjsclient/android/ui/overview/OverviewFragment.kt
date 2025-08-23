@@ -45,6 +45,10 @@ class OverviewFragment : Fragment() {
     private var preloadedAnecoopWeeks: List<com.nextjsclient.android.data.models.AvailableWeek> = emptyList()
     private var preloadedSolagoraWeeks: List<com.nextjsclient.android.data.models.AvailableWeek> = emptyList()
     
+    // État du top SCA
+    private var isShowingTopSca = false
+    private var topScaSupplier: String? = null
+    
     // BroadcastReceiver pour écouter les changements de préférences
     private val preferencesReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -134,9 +138,13 @@ class OverviewFragment : Fragment() {
         // Appliquer immédiatement la visibilité des cartes selon les préférences
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
         
         anecoopCard?.visibility = if (supplierPreferences.isAnecoopEnabled) View.VISIBLE else View.GONE
         solagoraCard?.visibility = if (supplierPreferences.isSolagoraEnabled) View.VISIBLE else View.GONE
+        
+        // Gérer la carte top SCA et les boutons trophée
+        updateTopScaVisibility()
         
         android.util.Log.d("OverviewFragment", "🎬 Initial card visibility - Anecoop: ${if (supplierPreferences.isAnecoopEnabled) "VISIBLE" else "GONE"}, Solagora: ${if (supplierPreferences.isSolagoraEnabled) "VISIBLE" else "GONE"}")
     }
@@ -155,6 +163,9 @@ class OverviewFragment : Fragment() {
         if (visibilityChanged) {
             anecoopCard?.visibility = newAnecoopVisibility
             solagoraCard?.visibility = newSolagoraVisibility
+            
+            // Mettre à jour le top SCA quand les préférences changent
+            updateTopScaVisibility()
             
             android.util.Log.d("OverviewFragment", "🔄 Card visibility changed on resume - recalculating stats")
             
@@ -235,10 +246,24 @@ class OverviewFragment : Fragment() {
                 android.util.Log.d("OverviewFragment", "   • Anecoop préchargé: ${preloadedAnecoopProducts.size} produits")
                 android.util.Log.d("OverviewFragment", "   • Solagora préchargé: ${preloadedSolagoraProducts.size} produits")
                 
+                // Debug: vérifier le contenu des produits préchargés
+                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedAnecoopProducts:")
+                preloadedAnecoopProducts.take(3).forEachIndexed { index, product ->
+                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
+                }
+                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedSolagoraProducts:")
+                preloadedSolagoraProducts.take(3).forEachIndexed { index, product ->
+                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
+                }
+                
                 // Mettre à jour les UI sur le thread principal
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
                         android.util.Log.d("OverviewFragment", "🔥 EXÉCUTION viewModel.setProducts sur UI thread")
+                        // Activer les boutons trophée maintenant que les données sont chargées
+                        enableTrophyButtons()
+                        // Auto-refresh du top SCA si un seul fournisseur est activé
+                        refreshTopScaIfNeeded()
                         // Mettre à jour les produits dans le ViewModel
                         viewModel.setProducts(currentProducts)
                         
@@ -282,6 +307,26 @@ class OverviewFragment : Fragment() {
                 val (previousYear, previousWeek) = getPreviousWeek(year, week)
                 previousWeekProducts = repository.getWeekDecisions(previousYear, previousWeek, "all")
                 
+                // Précharger les données des fournisseurs pour le top SCA
+                preloadedAnecoopProducts = repository.getWeekDecisions(year, week, "anecoop")
+                preloadedSolagoraProducts = repository.getWeekDecisions(year, week, "solagora")
+                
+                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedAnecoopProducts après chargement:")
+                preloadedAnecoopProducts.take(3).forEachIndexed { index, product ->
+                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
+                }
+                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedSolagoraProducts après chargement:")
+                preloadedSolagoraProducts.take(3).forEachIndexed { index, product ->
+                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
+                }
+                
+                // Activer les boutons trophée maintenant que les données sont chargées
+                activity?.runOnUiThread {
+                    enableTrophyButtons()
+                    // Auto-refresh du top SCA si un seul fournisseur est activé
+                    refreshTopScaIfNeeded()
+                }
+                
                 val loadTime = System.currentTimeMillis() - startTime
                 android.util.Log.d("OverviewFragment", "⚡ Données de la semaine $year-$week chargées en ${loadTime}ms")
                 android.util.Log.d("OverviewFragment", "   • Semaine $year-$week: ${weekProducts.size} produits")
@@ -318,17 +363,291 @@ class OverviewFragment : Fragment() {
     private fun setupButtons() {
         // Settings button
         binding.settingsButton.setOnClickListener {
-            android.util.Log.d("OverviewFragment", "⚙️ === NAVIGATION VERS SETTINGS (depuis OverviewFragment) ===")
+            // Animation Material 3 expressive
+            binding.settingsButton.animate()
+                .rotationBy(180f)
+                .scaleX(0.9f)
+                .scaleY(0.9f)
+                .setDuration(200)
+                .withEndAction {
+                    binding.settingsButton.animate()
+                        .rotationBy(0f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(200)
+                        .start()
+                }.start()
             
-            // Marquer comme navigation interne dans MainActivity
-            val mainActivity = activity as? com.nextjsclient.android.MainActivity
-            mainActivity?.markInternalNavigation()
-            android.util.Log.d("OverviewFragment", "   • Navigation interne marquée dans MainActivity")
-            
+            // Navigate to settings
             val intent = Intent(requireContext(), SettingsActivity::class.java)
             startActivity(intent)
         }
+        
+        // Setup trophy buttons
+        setupTrophyButtons()
     }
+    
+    private fun setupTrophyButtons() {
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // Désactiver les boutons trophée jusqu'au chargement des données
+        val anecoopTrophy = anecoopCard?.findViewById<View>(R.id.trophyButton)
+        val solagoraTrophy = solagoraCard?.findViewById<View>(R.id.trophyButton)
+        
+        anecoopTrophy?.apply {
+            isClickable = false
+            alpha = 0.5f
+            setOnClickListener {
+                if (isClickable) showTopScaForSupplier("anecoop")
+            }
+        }
+        
+        solagoraTrophy?.apply {
+            isClickable = false
+            alpha = 0.5f
+            setOnClickListener {
+                if (isClickable) showTopScaForSupplier("solagora")
+            }
+        }
+        
+        // Setup close button for top SCA card
+        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
+        topScaCard?.findViewById<View>(R.id.closeTopScaButton)?.setOnClickListener {
+            hideTopSca()
+        }
+    }
+    
+    
+    private fun enableTrophyButtons() {
+        android.util.Log.d("OverviewFragment", "🏆 Activation des boutons trophée après chargement des données")
+        
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        anecoopCard?.findViewById<View>(R.id.trophyButton)?.apply {
+            isClickable = true
+            alpha = 1.0f
+        }
+        
+        solagoraCard?.findViewById<View>(R.id.trophyButton)?.apply {
+            isClickable = true
+            alpha = 1.0f
+        }
+    }
+    
+    private fun refreshTopScaIfNeeded() {
+        val anecoopEnabled = supplierPreferences.isAnecoopEnabled
+        val solagoraEnabled = supplierPreferences.isSolagoraEnabled
+        val singleSupplier = (anecoopEnabled && !solagoraEnabled) || (!anecoopEnabled && solagoraEnabled)
+        
+        if (singleSupplier && isShowingTopSca && topScaSupplier != null) {
+            android.util.Log.d("OverviewFragment", "🔄 Refresh du top SCA pour $topScaSupplier après chargement des données")
+            loadTopScaData(topScaSupplier!!)
+        } else if (singleSupplier && !isShowingTopSca) {
+            android.util.Log.d("OverviewFragment", "🔄 Affichage automatique du top SCA après chargement des données")
+            val supplier = if (anecoopEnabled) "anecoop" else "solagora"
+            showTopScaForSupplier(supplier, autoShow = true)
+        }
+    }
+    
+    private fun updateTopScaVisibility() {
+        val anecoopEnabled = supplierPreferences.isAnecoopEnabled
+        val solagoraEnabled = supplierPreferences.isSolagoraEnabled
+        val bothEnabled = anecoopEnabled && solagoraEnabled
+        val singleSupplier = (anecoopEnabled && !solagoraEnabled) || (!anecoopEnabled && solagoraEnabled)
+        
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
+        
+        // Boutons trophée visibles seulement si les deux fournisseurs sont activés
+        anecoopCard?.findViewById<View>(R.id.trophyButton)?.visibility = if (bothEnabled) View.VISIBLE else View.GONE
+        solagoraCard?.findViewById<View>(R.id.trophyButton)?.visibility = if (bothEnabled) View.VISIBLE else View.GONE
+        
+        if (singleSupplier && !isShowingTopSca) {
+            // Un seul fournisseur activé -> afficher automatiquement le top SCA
+            val supplier = if (anecoopEnabled) "anecoop" else "solagora"
+            showTopScaForSupplier(supplier, autoShow = true)
+        } else if (bothEnabled && isShowingTopSca) {
+            // Les deux fournisseurs sont activés -> masquer le top SCA automatique
+            hideTopSca()
+        }
+    }
+    
+    private fun showTopScaForSupplier(supplier: String, autoShow: Boolean = false) {
+        android.util.Log.d("OverviewFragment", "🏆 showTopScaForSupplier appelé pour $supplier (autoShow: $autoShow)")
+        
+        isShowingTopSca = true
+        topScaSupplier = supplier
+        
+        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // Animation d'apparition
+        topScaCard?.apply {
+            visibility = View.VISIBLE
+            alpha = 0f
+            scaleY = 0.8f
+            animate()
+                .alpha(1f)
+                .scaleY(1f)
+                .setDuration(300)
+                .start()
+        }
+        
+        // Masquer/afficher le bouton fermer selon le mode
+        topScaCard?.findViewById<View>(R.id.closeTopScaButton)?.visibility = if (autoShow) View.GONE else View.VISIBLE
+        
+        if (!autoShow) {
+            // Mode manuel : masquer l'autre fournisseur
+            if (supplier == "anecoop") {
+                solagoraCard?.animate()?.alpha(0f)?.setDuration(200)?.withEndAction {
+                    solagoraCard.visibility = View.GONE
+                }?.start()
+            } else {
+                anecoopCard?.animate()?.alpha(0f)?.setDuration(200)?.withEndAction {
+                    anecoopCard.visibility = View.GONE
+                }?.start()
+            }
+        }
+        
+        // Charger et afficher les données du top SCA
+        loadTopScaData(supplier)
+    }
+    
+    private fun hideTopSca() {
+        isShowingTopSca = false
+        topScaSupplier = null
+        
+        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // Animation de disparition
+        topScaCard?.animate()
+            ?.alpha(0f)
+            ?.scaleY(0.8f)
+            ?.setDuration(200)
+            ?.withEndAction {
+                topScaCard.visibility = View.GONE
+            }?.start()
+        
+        // Réafficher les cartes fournisseurs
+        if (supplierPreferences.isAnecoopEnabled) {
+            anecoopCard?.apply {
+                visibility = View.VISIBLE
+                alpha = 0f
+                animate().alpha(1f).setDuration(300).start()
+            }
+        }
+        
+        if (supplierPreferences.isSolagoraEnabled) {
+            solagoraCard?.apply {
+                visibility = View.VISIBLE
+                alpha = 0f
+                animate().alpha(1f).setDuration(300).start()
+            }
+        }
+    }
+    
+    private fun loadTopScaData(supplier: String) {
+        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
+        
+        // Mettre à jour le nom du fournisseur
+        topScaCard?.findViewById<TextView>(R.id.topScaSupplierName)?.text = supplier.uppercase()
+        
+        // Obtenir les produits du fournisseur pour la semaine courante
+        val products = when (supplier) {
+            "anecoop" -> preloadedAnecoopProducts
+            "solagora" -> preloadedSolagoraProducts
+            else -> emptyList()
+        }
+        
+        android.util.Log.d("OverviewFragment", "🏆 Top SCA pour $supplier: ${products.size} produits disponibles")
+        
+        // Debug: afficher tous les produits et leurs SCA
+        products.forEachIndexed { index, product ->
+            android.util.Log.d("OverviewFragment", "   Produit $index: ${product.productName} - SCA: ${product.totalScas} - Supplier: ${product.supplier}")
+        }
+        
+        // Calculer le top 3 des SCA
+        val productsWithSca = products.filter { it.totalScas > 0 }
+        android.util.Log.d("OverviewFragment", "🔍 Produits avec SCA > 0: ${productsWithSca.size}")
+        
+        val topProducts = productsWithSca
+            .sortedByDescending { it.totalScas }
+            .take(3)
+        
+        android.util.Log.d("OverviewFragment", "🏆 Top 3 SCA final: ${topProducts.size} produits")
+        topProducts.forEachIndexed { index, product ->
+            android.util.Log.d("OverviewFragment", "   TOP ${index + 1}: ${product.productName} (${product.totalScas} SCA)")
+        }
+        
+        // Debug: vérifier si le problème vient de l'affichage
+        if (topProducts.isEmpty()) {
+            android.util.Log.w("OverviewFragment", "⚠️ AUCUN PRODUIT dans le top SCA!")
+            android.util.Log.w("OverviewFragment", "   - Total produits: ${products.size}")
+            android.util.Log.w("OverviewFragment", "   - Produits avec SCA > 0: ${productsWithSca.size}")
+            android.util.Log.w("OverviewFragment", "   - Supplier filter: $supplier")
+        }
+        
+        // Mettre à jour l'affichage
+        updateTopScaDisplay(topProducts, topScaCard)
+    }
+    
+    private fun updateTopScaDisplay(products: List<com.nextjsclient.android.data.models.ScamarkProduct>, topScaCard: View?) {
+        android.util.Log.d("OverviewFragment", "🎯 updateTopScaDisplay appelé avec ${products.size} produits")
+        
+        topScaCard?.let { card ->
+            android.util.Log.d("OverviewFragment", "✅ TopScaCard trouvé, mise à jour de l'affichage")
+            
+            // Top 1
+            if (products.isNotEmpty()) {
+                val product1 = products[0]
+                android.util.Log.d("OverviewFragment", "🥇 TOP 1: ${product1.productName} avec ${product1.totalScas} SCA")
+                
+                val nameView = card.findViewById<TextView>(R.id.topSca1Name)
+                val detailsView = card.findViewById<TextView>(R.id.topSca1Details)
+                val scaView = card.findViewById<TextView>(R.id.topSca1Sca)
+                val containerView = card.findViewById<View>(R.id.topSca1)
+                
+                android.util.Log.d("OverviewFragment", "🔍 Vues trouvées - Name: $nameView, Details: $detailsView, SCA: $scaView, Container: $containerView")
+                
+                nameView?.text = product1.productName.split(" ").take(3).joinToString(" ")
+                detailsView?.text = "${product1.supplier}"
+                scaView?.text = "${product1.totalScas} SCA"
+                containerView?.visibility = View.VISIBLE
+            } else {
+                android.util.Log.w("OverviewFragment", "❌ Aucun produit pour TOP 1")
+                card.findViewById<View>(R.id.topSca1)?.visibility = View.GONE
+            }
+            
+            // Top 2
+            if (products.size > 1) {
+                val product2 = products[1]
+                card.findViewById<TextView>(R.id.topSca2Name)?.text = product2.productName.split(" ").take(3).joinToString(" ")
+                card.findViewById<TextView>(R.id.topSca2Details)?.text = "${product2.supplier}"
+                card.findViewById<TextView>(R.id.topSca2Sca)?.text = "${product2.totalScas} SCA"
+                card.findViewById<View>(R.id.topSca2)?.visibility = View.VISIBLE
+            } else {
+                card.findViewById<View>(R.id.topSca2)?.visibility = View.GONE
+            }
+            
+            // Top 3
+            if (products.size > 2) {
+                val product3 = products[2]
+                card.findViewById<TextView>(R.id.topSca3Name)?.text = product3.productName.split(" ").take(3).joinToString(" ")
+                card.findViewById<TextView>(R.id.topSca3Details)?.text = "${product3.supplier}"
+                card.findViewById<TextView>(R.id.topSca3Sca)?.text = "${product3.totalScas} SCA"
+                card.findViewById<View>(R.id.topSca3)?.visibility = View.VISIBLE
+            } else {
+                card.findViewById<View>(R.id.topSca3)?.visibility = View.GONE
+            }
+        }
+    }
+    
     
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.apply {
@@ -341,6 +660,12 @@ class OverviewFragment : Fragment() {
             
             // Action de refresh
             setOnRefreshListener {
+                android.util.Log.d("OverviewFragment", "🔄 Pull-to-refresh triggered")
+                android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh state BEFORE: $isRefreshing")
+                // Activer le loader immédiatement
+                isRefreshing = true
+                android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh state AFTER: $isRefreshing")
+                android.util.Log.d("OverviewFragment", "🔄 Calling viewModel.refresh()")
                 viewModel.refresh()
             }
         }
@@ -395,7 +720,10 @@ class OverviewFragment : Fragment() {
         }
         
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            android.util.Log.d("OverviewFragment", "🔄 Observer isLoading triggered: $isLoading")
+            android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh current state: ${binding.swipeRefresh.isRefreshing}")
             binding.swipeRefresh.isRefreshing = isLoading
+            android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh NEW state: ${binding.swipeRefresh.isRefreshing}")
             binding.loadingOverlay.visibility = View.GONE // Ne plus utiliser l'overlay de chargement
         }
         
@@ -595,6 +923,11 @@ class OverviewFragment : Fragment() {
         return 1 + ((firstThursday - calendar.timeInMillis) / (7 * 24 * 60 * 60 * 1000)).toInt()
     }
     
+    
+    fun toggleSearchMode() {
+        // TODO: Implémenter la recherche sur l'aperçu si nécessaire
+        android.util.Log.d("OverviewFragment", "🔍 Recherche sur l'aperçu pas encore implémentée")
+    }
     
     private fun navigateToSupplier(supplier: String) {
         android.util.Log.d("OverviewFragment", "🔄 Navigation vers $supplier avec données préchargées")
@@ -948,6 +1281,15 @@ class OverviewFragment : Fragment() {
      */
     fun switchSupplier(supplier: String) {
         viewModel.selectSupplier(supplier)
+    }
+    
+    /**
+     * Affiche la liste des semaines pour un fournisseur (appelé depuis MainActivity)
+     */
+    fun showWeekListForSupplier(supplier: String) {
+        android.util.Log.d("OverviewFragment", "📅 Affichage liste des semaines pour $supplier")
+        // TODO: Implémenter l'affichage d'une liste des semaines disponibles pour ce fournisseur
+        // Cette fonction remplace la fonctionnalité du bouton historique du sélecteur de semaine
     }
     
     

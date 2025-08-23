@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="8dp"
     android:layout_marginVertical="4dp"
+    android:layout_marginHorizontal="8dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:strokeWidth="1dp"
     app:strokeColor="?attr/colorOutlineVariant"
-    app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+    android:backgroundTint="?attr/colorSurface"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,51 +22,51 @@
         android:padding="20dp"
         android:gravity="center_vertical">
 
-        <!-- Week Info -->
+        <!-- Icône calendrier -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_calendar"
+            app:tint="?attr/colorPrimary"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Contenu principal -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Titre: Semaine XX -->
             <TextView
-                android:id="@+id/weekNumberText"
+                android:id="@+id/weekTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/week_label"
+                android:text="Semaine 45"
                 android:textAppearance="?attr/textAppearanceBodyLarge"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface" />
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
 
+            <!-- Sous-titre: Année -->
             <TextView
-                android:id="@+id/weekDatesText"
+                android:id="@+id/weekYear"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="06/11 - 12/11/2024"
+                android:text="2024"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginTop="2dp" />
 
         </LinearLayout>
 
-        <!-- Selection Indicator -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/selectionIndicator"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="?attr/colorPrimary">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_check"
-                app:tint="?attr/colorOnPrimary" />
-
-        </com.google.android.material.card.MaterialCardView>
+        <!-- Indicateur sélection actuelle -->
+        <ImageView
+            android:id="@+id/selectedIndicator"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check_circle"
+            app:tint="?attr/colorPrimary"
+            android:visibility="gone" />
 
     </LinearLayout>
 

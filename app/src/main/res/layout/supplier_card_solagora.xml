@@ -78,18 +78,29 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Menu d'actions -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/supplierMenuButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+            <!-- Trophy button (visible when both suppliers enabled) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/trophyButton"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                style="@style/Widget.Material3.Button.IconButton"
-                app:icon="@drawable/ic_more_vert"
-                app:iconTint="@android:color/white"
-                android:backgroundTint="@color/hero_overlay"
-                android:visibility="gone" />
+                app:cardCornerRadius="22dp"
+                app:cardBackgroundColor="@android:color/black"
+                app:cardElevation="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_trophy"
+                    app:tint="@color/sca_gold" />
+
+            </com.google.android.material.card.MaterialCardView>
 
         </RelativeLayout>
 

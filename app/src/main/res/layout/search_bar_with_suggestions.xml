@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/searchContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:visibility="gone">
+
+    <!-- Barre de recherche -->
+    <com.google.android.material.card.MaterialCardView 
+        android:id="@+id/searchBarCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="3dp"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:background="?attr/colorSurfaceContainerHigh">
+
+            <!-- Back/Close button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/searchBackButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                style="@style/Widget.Material3.Button.IconButton"
+                app:icon="@drawable/ic_arrow_left"
+                app:iconTint="?attr/colorOnSurface"
+                app:iconSize="24dp"
+                android:contentDescription="Fermer la recherche" />
+
+            <!-- Search input -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/searchInputLayout"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                app:boxBackgroundMode="none"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/searchInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Rechercher produits ou SCA..."
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:background="@android:color/transparent" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Clear button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/searchClearButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                style="@style/Widget.Material3.Button.IconButton"
+                app:icon="@drawable/ic_close"
+                app:iconTint="?attr/colorOnSurfaceVariant"
+                app:iconSize="20dp"
+                android:visibility="gone"
+                android:contentDescription="Effacer la recherche" />
+
+            <!-- Search/Loading indicator -->
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/searchActionButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    app:icon="@drawable/ic_search"
+                    app:iconTint="?attr/colorPrimary"
+                    app:iconSize="24dp"
+                    android:contentDescription="Lancer la recherche" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/searchProgress"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    app:indicatorSize="24dp"
+                    app:trackThickness="2dp"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Liste des suggestions -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/suggestionsCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="4dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp"
+        android:visibility="gone">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/suggestionsList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="300dp"
+            android:paddingVertical="4dp"
+            android:clipToPadding="false" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

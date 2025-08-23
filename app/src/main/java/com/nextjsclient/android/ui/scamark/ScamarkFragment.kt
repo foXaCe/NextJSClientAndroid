@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -22,6 +23,7 @@ class ScamarkFragment : Fragment() {
     
     private val viewModel: ScamarkViewModel by activityViewModels()
     private lateinit var productsAdapter: ScamarkProductAdapter
+    private lateinit var suggestionsAdapter: SearchSuggestionsAdapter
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -69,6 +71,7 @@ class ScamarkFragment : Fragment() {
         
         setupRecyclerView()
         setupWeekSpinner()
+        setupSearchSuggestions()
         observeViewModel()
         setupSwipeRefresh()
         setupFab()
@@ -124,257 +127,377 @@ class ScamarkFragment : Fragment() {
             selector.setOnWeekChangeListener { week, year ->
                 viewModel.selectWeek(year, week)
             }
+            
+            // Set listener for week list dialog
+            selector.setOnWeekListRequestedListener {
+                showWeekListDialog()
+            }
+            
+            // Set listener for week history (when clicking on "Semaine XX")
+            selector.setOnWeekHistoryRequestedListener {
+                showWeekHistoryDialog()
+            }
         }
         
         // Observe week changes from ViewModel to update selector
         viewModel.selectedWeek.observe(viewLifecycleOwner) { week ->
-            viewModel.selectedYear.observe(viewLifecycleOwner) { year ->
-                if (week != null && year != null) {
-                    weekSelector?.setWeek(week, year)
-                }
+            val year = viewModel.selectedYear.value
+            if (week != null && year != null) {
+                weekSelector?.setWeek(week, year)
+            }
+        }
+        
+        viewModel.selectedYear.observe(viewLifecycleOwner) { year ->
+            val week = viewModel.selectedWeek.value
+            if (week != null && year != null) {
+                weekSelector?.setWeek(week, year)
             }
         }
     }
     
+    
+    private fun navigateToPreviousWeek() {
+        val currentWeek = viewModel.selectedWeek.value ?: return
+        val currentYear = viewModel.selectedYear.value ?: return
+        
+        if (currentWeek > 1) {
+            viewModel.selectWeek(currentYear, currentWeek - 1)
+        } else {
+            viewModel.selectWeek(currentYear - 1, 52) // Go to last week of previous year
+        }
+    }
+    
+    private fun navigateToNextWeek() {
+        val currentWeek = viewModel.selectedWeek.value ?: return
+        val currentYear = viewModel.selectedYear.value ?: return
+        
+        if (currentWeek < 52) {
+            viewModel.selectWeek(currentYear, currentWeek + 1)
+        } else {
+            viewModel.selectWeek(currentYear + 1, 1) // Go to first week of next year
+        }
+    }
+    
+    private fun navigateToCurrentWeek() {
+        val calendar = java.util.Calendar.getInstance()
+        val currentYear = calendar.get(java.util.Calendar.YEAR)
+        val currentWeek = calendar.get(java.util.Calendar.WEEK_OF_YEAR)
+        viewModel.selectWeek(currentYear, currentWeek)
+    }
     
     private fun showWeekListDialog() {
-        val availableWeeks = viewModel.availableWeeks.value ?: return
-        val currentWeek = viewModel.selectedWeek.value ?: 0
-        val currentYear = viewModel.selectedYear.value ?: 0
-        
-        // Créer un BottomSheetDialog Material 3
-        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_week_selector, null)
-        bottomSheetDialog.setContentView(view)
-        
-        // Configurer le RecyclerView
-        val recyclerView = view.findViewById<RecyclerView>(R.id.weeksRecyclerView)
-        val loadMoreButton = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.loadMoreWeeksButton)
-        
-        val adapter = WeekSelectorAdapter(availableWeeks.map { 
-            com.nextjsclient.android.data.models.WeekInfo(it.year, it.week, it.supplier) 
-        }, currentWeek, currentYear) { selectedWeek ->
-            viewModel.selectWeek(selectedWeek.year, selectedWeek.week)
-            bottomSheetDialog.dismiss()
-        }
-        
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        recyclerView.adapter = adapter
-        
-        // Configurer le bouton "Charger plus"
-        setupLoadMoreButton(loadMoreButton, adapter, bottomSheetDialog)
-        
-        bottomSheetDialog.show()
+        showMaterial3WeekPicker()
     }
     
-    private fun setupLoadMoreButton(
-        loadMoreButton: com.google.android.material.button.MaterialButton,
-        adapter: WeekSelectorAdapter,
-        bottomSheetDialog: com.google.android.material.bottomsheet.BottomSheetDialog
-    ) {
-        // Observer les états du ViewModel
-        viewModel.canLoadMoreWeeks.observe(viewLifecycleOwner) { canLoadMore ->
-            loadMoreButton.visibility = if (canLoadMore) View.VISIBLE else View.GONE
+    private fun showWeekHistoryDialog() {
+        showMaterial3WeekPicker()
+    }
+    
+    private fun showMaterial3WeekPicker() {
+        val dialog = com.nextjsclient.android.ui.components.WeekPickerDialog(
+            requireContext(),
+            viewModel,
+            viewLifecycleOwner
+        ) { selectedWeek, selectedYear ->
+            android.util.Log.d("ScamarkFragment", "✅ Semaine sélectionnée: $selectedWeek de l'année $selectedYear")
+            viewModel.selectWeek(selectedYear, selectedWeek)
+        }
+        dialog.show()
+    }
+    
+    private fun showOldWeekHistoryDialog() {
+        // Obtenir les semaines disponibles depuis le ViewModel
+        val availableWeeks = viewModel.availableWeeks.value ?: emptyList()
+        
+        if (availableWeeks.isEmpty()) {
+            android.util.Log.d("ScamarkFragment", "🔍 Aucune semaine disponible")
+            return
         }
         
-        viewModel.isLoadingMoreWeeks.observe(viewLifecycleOwner) { isLoading ->
-            loadMoreButton.isEnabled = !isLoading
-            loadMoreButton.text = if (isLoading) getString(R.string.loading) else getString(R.string.load_more)
-        }
+        // Créer un dialogue avec la liste des semaines
+        val weekNames = availableWeeks.map { week ->
+            "Semaine ${week.week} - ${week.year}"
+        }.toTypedArray()
         
-        viewModel.availableWeeks.observe(viewLifecycleOwner) { weeks ->
-            // Mettre à jour l'adaptateur avec les nouvelles semaines
-            val weekInfos = weeks.map { 
-                com.nextjsclient.android.data.models.WeekInfo(it.year, it.week, it.supplier) 
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Choisir une semaine")
+            .setItems(weekNames) { _, which ->
+                val selectedWeek = availableWeeks[which]
+                android.util.Log.d("ScamarkFragment", "🔍 Semaine sélectionnée: ${selectedWeek.week}/${selectedWeek.year}")
+                viewModel.selectWeek(selectedWeek.year, selectedWeek.week)
             }
-            adapter.updateWeeks(weekInfos)
-        }
-        
-        // Action du bouton
-        loadMoreButton.setOnClickListener {
-            android.util.Log.d("ScamarkFragment", "🔘 Bouton 'Charger plus' cliqué")
-            viewModel.loadMoreWeeks()
-        }
-        
-        // Nettoyer les observers quand le dialog se ferme
-        bottomSheetDialog.setOnDismissListener {
-            viewModel.canLoadMoreWeeks.removeObservers(viewLifecycleOwner)
-            viewModel.isLoadingMoreWeeks.removeObservers(viewLifecycleOwner)
-            viewModel.availableWeeks.removeObservers(viewLifecycleOwner)
-        }
+            .setNegativeButton("Annuler", null)
+            .show()
     }
     
     private fun observeViewModel() {
         viewModel.products.observe(viewLifecycleOwner) { products ->
             productsAdapter.submitList(products)
-            updateEmptyViewState(products.isEmpty(), viewModel.isLoading.value ?: false)
         }
         
-        // Observer le filtre pour mettre à jour l'adaptateur et l'interface
-        viewModel.productFilter.observe(viewLifecycleOwner) { filter ->
-            // Mettre à jour les flags selon le filtre
-            productsAdapter.isShowingSortants = (filter == "sortants")
-            productsAdapter.isShowingEntrants = (filter == "entrants")
-            // Forcer la mise à jour de la liste pour appliquer les couleurs
-            productsAdapter.notifyDataSetChanged()
+        // Observer les suggestions de recherche
+        viewModel.searchSuggestions.observe(viewLifecycleOwner) { suggestions ->
+            android.util.Log.d("ScamarkFragment", "🔍 Observer suggestions triggered: ${suggestions.size} suggestions reçues")
+            suggestionsAdapter.submitList(suggestions)
             
-            // Masquer/afficher le sélecteur de semaine selon le filtre
-            updateWeekSelectorVisibility(filter)
-        }
-        
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            // Utiliser seulement le SwipeRefreshLayout pour le chargement
-            binding.swipeRefresh.isRefreshing = isLoading
-            // Le ProgressBar reste masqué pendant le chargement normal
-            binding.progressBar.visibility = View.GONE
-            // Mettre à jour l'état de la vue vide
-            updateEmptyViewState(viewModel.products.value?.isEmpty() ?: true, isLoading)
-        }
-        
-        viewModel.error.observe(viewLifecycleOwner) { error ->
-            error?.let {
-                Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
-                viewModel.clearError()
+            // Afficher/masquer la carte des suggestions
+            val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
+            val suggestionsCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.suggestionsCard)
+            
+            android.util.Log.d("ScamarkFragment", "🔍 searchContainer: ${searchContainer != null}, suggestionsCard: ${suggestionsCard != null}")
+            
+            if (suggestions.isNotEmpty()) {
+                android.util.Log.d("ScamarkFragment", "🔍 Affichage des suggestions")
+                suggestionsCard?.visibility = View.VISIBLE
+            } else {
+                android.util.Log.d("ScamarkFragment", "🔍 Masquage des suggestions")
+                suggestionsCard?.visibility = View.GONE
             }
-        }
-        
-        // Week display is now handled in setupModernWeekSelector()
-    }
-    
-    private fun updateEmptyViewState(isEmpty: Boolean, isLoading: Boolean) {
-        if (!isEmpty) {
-            // Il y a des produits, masquer la vue vide
-            binding.emptyView.visibility = View.GONE
-        } else if (isLoading) {
-            // Chargement en cours
-            binding.emptyView.visibility = View.VISIBLE
-            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.apply {
-                text = "Produits en chargement..."
-                visibility = View.VISIBLE
-            }
-            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.apply {
-                text = getString(R.string.please_wait)
-                visibility = View.VISIBLE
-            }
-            binding.emptyView.findViewById<android.widget.ProgressBar>(R.id.emptyProgressBar)?.visibility = View.VISIBLE
-            binding.emptyView.findViewById<android.widget.ImageView>(R.id.emptyIcon)?.visibility = View.GONE
-        } else {
-            // Pas de chargement et liste vide = afficher seulement l'image Anecoop
-            binding.emptyView.visibility = View.VISIBLE
-            binding.emptyView.findViewById<TextView>(R.id.emptyText)?.visibility = View.GONE
-            binding.emptyView.findViewById<TextView>(R.id.emptySubtext)?.visibility = View.GONE
-            binding.emptyView.findViewById<android.widget.ProgressBar>(R.id.emptyProgressBar)?.visibility = View.GONE
-            binding.emptyView.findViewById<android.widget.ImageView>(R.id.emptyIcon)?.visibility = View.VISIBLE
         }
     }
     
     private fun setupSwipeRefresh() {
-        binding.swipeRefresh.apply {
-            // Configurer les couleurs du loader
-            setColorSchemeResources(
-                R.color.md_theme_light_primary,
-                R.color.md_theme_light_secondary,
-                R.color.md_theme_light_tertiary
-            )
-            
-            // Augmenter la distance de déclenchement pour éviter les activations accidentelles
-            setDistanceToTriggerSync(300)
-            
-            // Ne permettre le refresh que si on est en haut de la liste
-            setOnChildScrollUpCallback { _, _ ->
-                val layoutManager = binding.recyclerView.layoutManager as? LinearLayoutManager
-                val firstVisiblePosition = layoutManager?.findFirstVisibleItemPosition() ?: 0
-                firstVisiblePosition > 0
-            }
-            
-            setOnRefreshListener {
-                viewModel.refresh(activity)
+        val swipeRefresh = binding.root.findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(R.id.swipeRefresh)
+        
+        // Observer le chargement UNE SEULE FOIS au setup
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            android.util.Log.d("ScamarkFragment", "🔄 Observer isLoading triggered: $isLoading")
+            android.util.Log.d("ScamarkFragment", "🔄 SwipeRefresh current state: ${swipeRefresh?.isRefreshing}")
+            if (!isLoading) {
+                android.util.Log.d("ScamarkFragment", "🔄 Setting swipeRefresh.isRefreshing = false")
+                swipeRefresh?.isRefreshing = false
+            } else {
+                android.util.Log.d("ScamarkFragment", "🔄 Loading is true, swipeRefresh should be spinning")
             }
         }
+        
+        swipeRefresh?.setOnRefreshListener {
+            android.util.Log.d("ScamarkFragment", "🔄 Rafraîchissement déclenché")
+            android.util.Log.d("ScamarkFragment", "🔄 SwipeRefresh state BEFORE setting: ${swipeRefresh.isRefreshing}")
+            
+            // Activer le loader immédiatement
+            swipeRefresh.isRefreshing = true
+            android.util.Log.d("ScamarkFragment", "🔄 SwipeRefresh state AFTER setting: ${swipeRefresh.isRefreshing}")
+            
+            // Fermer la barre de recherche si elle est ouverte
+            val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
+            if (searchContainer?.visibility == View.VISIBLE) {
+                android.util.Log.d("ScamarkFragment", "🔄 Fermeture de la barre de recherche")
+                val weekSelector = binding.weekSelector
+                val searchBarCard = searchContainer.findViewById<com.google.android.material.card.MaterialCardView>(R.id.searchBarCard)
+                val searchInput = searchBarCard?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
+                closeSearchMode(weekSelector, searchContainer, searchInput)
+            }
+            
+            // Utiliser refresh() qui force le rechargement même si c'est le même fournisseur
+            android.util.Log.d("ScamarkFragment", "🔄 Calling viewModel.refresh()")
+            viewModel.refresh()
+        }
+        
+        // Configurer les couleurs Material 3
+        swipeRefresh?.setColorSchemeResources(
+            com.google.android.material.R.color.m3_sys_color_dynamic_light_primary,
+            com.google.android.material.R.color.m3_sys_color_dynamic_light_secondary,
+            com.google.android.material.R.color.m3_sys_color_dynamic_light_tertiary
+        )
     }
     
-    private fun setupFab() {
-        binding.fab.setOnClickListener {
-            // Show add product dialog
-            showAddProductDialog()
+    private fun setupSearchSuggestions() {
+        // Initialiser l'adapter des suggestions
+        suggestionsAdapter = SearchSuggestionsAdapter { suggestion ->
+            // Quand on clique sur une suggestion
+            viewModel.applySuggestion(suggestion)
+            
+            // Fermer le clavier
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchContainer)
+            val searchInput = searchContainer?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
+            imm?.hideSoftInputFromWindow(searchInput?.windowToken, 0)
+            
+            // Mettre à jour le texte de recherche
+            searchInput?.setText(suggestion.text)
         }
+        
+        // Configurer la RecyclerView des suggestions
+        val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
+        val suggestionsList = searchContainer?.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.suggestionsList)
+        suggestionsList?.apply {
+            adapter = suggestionsAdapter
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+        }
+    }
+
+    private fun setupFab() {
+        // TODO: Implémenter le FAB si nécessaire
     }
     
     private fun showProductDetail(product: com.nextjsclient.android.data.models.ScamarkProduct) {
-        // Navigate to product detail screen with selected week/year
-        val selectedWeek = viewModel.selectedWeek.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.WEEK_OF_YEAR)
-        val selectedYear = viewModel.selectedYear.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-        
-        // Marquer comme navigation interne pour éviter la re-authentification biométrique
-        (activity as? com.nextjsclient.android.MainActivity)?.markInternalNavigation()
-        
-        val intent = com.nextjsclient.android.ProductDetailActivity.createIntent(
-            requireContext(), 
-            product, 
-            selectedYear, 
-            selectedWeek
-        )
+        val intent = android.content.Intent(requireContext(), com.nextjsclient.android.ProductDetailActivity::class.java).apply {
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_PRODUCT_NAME, product.productName)
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_SUPPLIER, viewModel.selectedSupplier.value)
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_PRICE_RETENU, product.prixRetenu)
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_PRICE_OFFERT, product.prixOffert)
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_IS_PROMO, product.isPromo)
+            
+            // Utiliser les infos de articleInfo si disponible
+            product.articleInfo?.let { article ->
+                putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_PRODUCT_CODE, article.codeProduit)
+                putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_EAN, article.ean ?: article.gencode)
+                putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_CATEGORY, article.categorie ?: article.category)
+                putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_BRAND, article.marque)
+                putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_ORIGIN, article.origine)
+            }
+            
+            // Infos des clients depuis les décisions
+            val clientsNames = product.decisions.map { it.nomClient }
+            val clientsTypes = product.decisions.map { decision -> 
+                decision.clientInfo?.typeCaisse ?: "standard"
+            }
+            val clientsTimes = product.decisions.map { decision -> 
+                decision.clientInfo?.heureDepart ?: "Non défini"
+            }
+            
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_CLIENTS_COUNT, product.decisions.size)
+            putStringArrayListExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_CLIENTS_NAMES, ArrayList(clientsNames))
+            putStringArrayListExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_CLIENTS_TYPES, ArrayList(clientsTypes))
+            putStringArrayListExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_CLIENTS_TIMES, ArrayList(clientsTimes))
+            
+            // Ces infos ne sont pas directement disponibles dans le modèle actuel
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_CONSECUTIVE_WEEKS, 0)
+            putExtra(com.nextjsclient.android.ProductDetailActivity.EXTRA_TOTAL_REFERENCES, product.totalScas)
+        }
         startActivity(intent)
     }
     
-    private fun showEditDialog(_product: com.nextjsclient.android.data.models.ScamarkProduct) {
-        // Show edit dialog
-        // You can implement an edit dialog fragment
+    private fun showEditDialog(product: com.nextjsclient.android.data.models.ScamarkProduct) {
+        // TODO: Afficher le dialogue d'édition
     }
     
-    private fun showAddProductDialog() {
-        // Show add product dialog
-        // You can implement an add dialog fragment
-    }
-    
-    /**
-     * Switch to a specific supplier (called from MainActivity)
-     */
-    fun switchSupplier(supplier: String) {
-        // Store in arguments for future reference
-        if (arguments == null) {
-            arguments = Bundle()
-        }
-        arguments?.putString("supplier", supplier)
+    fun toggleSearchMode() {
+        android.util.Log.d("ScamarkFragment", "🔍 Basculement du mode recherche")
         
-        viewModel.selectSupplier(supplier)
-        // Appliquer la couleur du fournisseur au sélecteur de semaine
-        applySupplierThemeToWeekSelector(supplier)
-    }
-    
-    private fun applySupplierThemeToWeekSelector(supplier: String) {
-        // Vérifier que le binding existe (le fragment est créé)
-        if (_binding == null) return
+        val weekSelector = binding.weekSelector
         
-        // Le nouveau Material3WeekSelector gère automatiquement les couleurs via le thème
-        // Pas besoin de modification manuelle des couleurs
-    }
-    
-    /**
-     * Met à jour la visibilité du sélecteur de semaine selon le filtre actif
-     */
-    private fun updateWeekSelectorVisibility(filter: String) {
-        val weekSelector = binding.root.findViewById<com.nextjsclient.android.ui.components.Material3WeekSelector>(R.id.weekSelector)
-        val filterMessage = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(R.id.filterMessage)
+        // L'include pointe maintenant vers le nouveau layout avec suggestions (LinearLayout)
+        val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
+        val searchBarCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.searchBarCard)
+        val searchInput = searchBarCard?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
+        val searchBackButton = searchBarCard?.findViewById<View>(R.id.searchBackButton)
+        val searchClearButton = searchBarCard?.findViewById<View>(R.id.searchClearButton)
+        val searchActionButton = searchBarCard?.findViewById<View>(R.id.searchActionButton)
         
-        if (filter != "all") {
-            // Masquer le sélecteur de semaine et afficher le message
-            weekSelector?.visibility = View.GONE
-            filterMessage?.visibility = View.VISIBLE
-            
-            // Mettre à jour le texte du message selon le filtre
-            val messageText = filterMessage?.findViewById<android.widget.TextView>(R.id.filterMessageText)
-            when (filter) {
-                "entrants" -> messageText?.text = getString(R.string.filter_incoming_message)
-                "sortants" -> messageText?.text = getString(R.string.filter_outgoing_message)
-                "promo" -> messageText?.text = getString(R.string.filter_promo_message)
-                else -> messageText?.text = getString(R.string.filter_active_message)
-            }
+        android.util.Log.d("ScamarkFragment", "🔍 searchContainer trouvé: ${searchContainer != null}, visible: ${searchContainer?.visibility}")
+        
+        if (searchContainer?.visibility == View.VISIBLE) {
+            // Fermer la recherche
+            closeSearchMode(weekSelector, searchContainer, searchInput)
         } else {
-            // Afficher le sélecteur de semaine et masquer le message
-            weekSelector?.visibility = View.VISIBLE
-            filterMessage?.visibility = View.GONE
+            // Ouvrir la recherche
+            openSearchMode(weekSelector, searchContainer, searchInput, searchBackButton, searchClearButton, searchActionButton)
         }
+    }
+    
+    private fun openSearchMode(
+        weekSelector: View?,
+        searchContainer: LinearLayout?,
+        searchInput: com.google.android.material.textfield.TextInputEditText?,
+        searchBackButton: View?,
+        searchClearButton: View?,
+        searchActionButton: View?
+    ) {
+        // Animation de disparition du sélecteur de semaine
+        weekSelector?.animate()
+            ?.alpha(0f)
+            ?.setDuration(200)
+            ?.withEndAction {
+                weekSelector.visibility = View.GONE
+                
+                // Animation d'apparition du conteneur de recherche
+                searchContainer?.apply {
+                    visibility = View.VISIBLE
+                    alpha = 0f
+                    translationY = -20f
+                    animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setDuration(300)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .withEndAction {
+                            // Focus sur le champ de recherche et ouvrir le clavier
+                            searchInput?.requestFocus()
+                            val imm = context?.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                            imm?.showSoftInput(searchInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                        }
+                        .start()
+                }
+            }
+            ?.start()
+        
+        // Setup des listeners
+        searchBackButton?.setOnClickListener {
+            toggleSearchMode()
+        }
+        
+        searchClearButton?.setOnClickListener {
+            searchInput?.setText("")
+            searchClearButton.visibility = View.GONE
+        }
+        
+        searchInput?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                android.util.Log.d("ScamarkFragment", "🔍 Texte changé: '$s'")
+                searchClearButton?.visibility = if (s?.isNotEmpty() == true) View.VISIBLE else View.GONE
+                // Recherche en temps réel pendant la frappe
+                viewModel.searchProducts(s?.toString())
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        
+        searchActionButton?.setOnClickListener {
+            performSearch(searchInput?.text?.toString())
+        }
+        
+        searchInput?.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                performSearch(searchInput.text?.toString())
+                true
+            } else false
+        }
+    }
+    
+    private fun closeSearchMode(
+        weekSelector: View?,
+        searchContainer: LinearLayout?,
+        searchInput: com.google.android.material.textfield.TextInputEditText?
+    ) {
+        // Fermer le clavier
+        val imm = context?.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+        imm?.hideSoftInputFromWindow(searchInput?.windowToken, 0)
+        
+        // Animation de disparition du conteneur de recherche
+        searchContainer?.animate()
+            ?.alpha(0f)
+            ?.translationY(-20f)
+            ?.setDuration(200)
+            ?.withEndAction {
+                searchContainer.visibility = View.GONE
+                searchInput?.setText("")
+                
+                // Animation d'apparition du sélecteur de semaine
+                weekSelector?.apply {
+                    visibility = View.VISIBLE
+                    alpha = 0f
+                    animate()
+                        .alpha(1f)
+                        .setDuration(300)
+                        .start()
+                }
+            }
+            ?.start()
+            
+        // Réinitialiser la recherche
+        performSearch(null)
     }
     
     /**
@@ -383,9 +506,7 @@ class ScamarkFragment : Fragment() {
     fun performSearch(query: String?) {
         viewModel.searchProducts(query)
     }
-    
-    
-    
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

@@ -182,4 +182,13 @@
     
     <!-- Test update system -->
     <string name="test_update">Test update system v1</string>
+    
+    <!-- Week selector -->
+    <string name="week_selector_current">Actuelle</string>
+    <string name="week_selector_history">Historique</string>
+    <string name="week_format">SEMAINE %d</string>
+    
+    <!-- Overview expressive -->
+    <string name="week_progress_label">Progression de la semaine</string>
+    
 </resources>

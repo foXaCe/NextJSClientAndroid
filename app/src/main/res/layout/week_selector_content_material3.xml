@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Main Week Display with Gradient Background -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:background="@drawable/gradient_week_header"
+        android:paddingTop="20dp"
+        android:paddingBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingHorizontal="16dp">
+
+            <!-- Date Range et Année sur la même ligne -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Date Range - À gauche -->
+                <TextView
+                    android:id="@+id/dateRangeDisplay"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="6 - 12 Novembre"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:alpha="0.8" />
+
+                <!-- Year Display - À droite -->
+                <TextView
+                    android:id="@+id/yearDisplay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2024"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:alpha="0.7" />
+
+            </LinearLayout>
+
+
+            <!-- Week Number avec flèches rappochées -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <!-- Previous Week - Plus petit et proche -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/previousWeekButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    app:fabSize="mini"
+                    app:elevation="2dp"
+                    app:backgroundTint="?attr/colorSurface"
+                    app:tint="?attr/colorOnSurface"
+                    android:src="@drawable/ic_arrow_left"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+                <!-- Week Number - Clickable Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/weekNumberDisplay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SEMAINE 45"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.15"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:backgroundTint="?attr/colorPrimaryContainer"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="10dp"
+                    app:cornerRadius="20dp"
+                    app:strokeWidth="2dp"
+                    app:strokeColor="?attr/colorPrimary"
+                    app:rippleColor="?attr/colorOnPrimaryContainer"
+                    app:icon="@drawable/ic_arrow_drop_down"
+                    app:iconGravity="end"
+                    app:iconTint="?attr/colorOnPrimaryContainer"
+                    app:iconSize="20dp"
+                    android:elevation="4dp"
+                    android:contentDescription="Sélectionner une semaine" />
+
+                <!-- Next Week - Plus petit et proche -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/nextWeekButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    app:fabSize="mini"
+                    app:elevation="2dp"
+                    app:backgroundTint="?attr/colorSurface"
+                    app:tint="?attr/colorOnSurface"
+                    android:src="@drawable/ic_arrow_right"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+
+
+    <!-- Expandable Week Grid (Hidden by default) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/weekGridRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"
+        android:nestedScrollingEnabled="false" />
+
+</LinearLayout>

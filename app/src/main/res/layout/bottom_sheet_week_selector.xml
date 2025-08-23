@@ -4,52 +4,65 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:background="?attr/colorSurface"
+    android:paddingTop="8dp">
 
-    <!-- Header -->
+    <!-- Handle Bar Material 3 -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="?attr/colorOnSurfaceVariant"
+        android:alpha="0.4"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Header avec titre -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="24dp">
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="16dp">
 
+        <!-- Titre principal -->
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/select_week"
+            android:text="Sélectionner une semaine"
             android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="?attr/colorOnSurface"
             android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface" />
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
 
-        <!-- Handle indicator -->
-        <View
-            android:layout_width="32dp"
-            android:layout_height="4dp"
-            android:background="@drawable/bottom_sheet_handle"
-            android:layout_gravity="center" />
+        <!-- Sous-titre -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Choisissez une semaine disponible"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:gravity="center" />
 
     </LinearLayout>
 
-    <!-- Weeks RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/weeksRecyclerView"
+    <!-- Séparateur -->
+    <View
         android:layout_width="match_parent"
-        android:layout_height="350dp"
-        android:clipToPadding="false"
-        android:scrollbars="vertical" />
+        android:layout_height="1dp"
+        android:background="?attr/colorOutlineVariant"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="8dp" />
 
-    <!-- Load More Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/loadMoreWeeksButton"
+    <!-- Liste des semaines avec RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/weekRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/load_more"
-        android:textAllCaps="false"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        app:icon="@drawable/ic_expand_more_24"
-        app:iconGravity="textEnd" />
+        android:maxHeight="400dp"
+        android:nestedScrollingEnabled="true"
+        android:paddingHorizontal="8dp"
+        android:paddingBottom="24dp"
+        android:clipToPadding="false" />
 
 </LinearLayout>

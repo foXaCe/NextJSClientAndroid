@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="?attr/colorSurface"
+    android:layout_margin="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Header avec titre et fermer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Sélectionner une semaine"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/closeButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:padding="0dp"
+                style="@style/Widget.Material3.Button.IconButton"
+                app:icon="@drawable/ic_close"
+                app:iconGravity="textStart"
+                app:iconSize="20dp"
+                app:iconTint="?attr/colorOnSurfaceVariant"
+                android:backgroundTint="@android:color/transparent"
+                app:rippleColor="?attr/colorOnSurface" />
+
+        </LinearLayout>
+
+        <!-- Navigation rapide année courante -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/previousYearButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                app:icon="@drawable/ic_arrow_left"
+                app:iconSize="18dp"
+                app:iconGravity="textStart"
+                android:contentDescription="Année précédente" />
+
+            <TextView
+                android:id="@+id/currentYearDisplay"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="2024"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginHorizontal="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nextYearButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                app:icon="@drawable/ic_arrow_right"
+                app:iconSize="18dp"
+                app:iconGravity="textStart"
+                android:contentDescription="Année suivante" />
+
+        </LinearLayout>
+
+
+        <!-- Grille des semaines -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/weeksRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:nestedScrollingEnabled="false" />
+
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
