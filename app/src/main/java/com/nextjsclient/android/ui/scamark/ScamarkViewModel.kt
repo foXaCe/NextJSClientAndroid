@@ -53,8 +53,6 @@ class ScamarkViewModel : ViewModel() {
     private val _canLoadMoreWeeks = MutableLiveData<Boolean>()
     val canLoadMoreWeeks: LiveData<Boolean> = _canLoadMoreWeeks
     
-    // Tracker la plus ancienne semaine chargée pour continuer à rebours
-    private var oldestWeekLoaded: Int? = null
     
     // Produits de la semaine précédente pour comparaison entrants/sortants
     private var previousWeekProducts: List<ScamarkProduct> = emptyList()
@@ -77,6 +75,20 @@ class ScamarkViewModel : ViewModel() {
     
     private val _productFilter = MutableLiveData<String>()
     val productFilter: LiveData<String> = _productFilter
+    
+    // Indicateur pour savoir si on est en mode recherche client SCA
+    private val _isClientSearchMode = MutableLiveData<Boolean>(false)
+    val isClientSearchMode: LiveData<Boolean> = _isClientSearchMode
+    
+    // Suggestions de recherche
+    private val _searchSuggestions = MutableLiveData<List<SearchSuggestion>>(emptyList())
+    val searchSuggestions: LiveData<List<SearchSuggestion>> = _searchSuggestions
+    
+    // Variables pour gérer le chargement progressif des semaines
+    private var oldestWeekLoaded: Int? = null
+    private var oldestYearLoaded: Int? = null
+    private var loadedWeeksPerPage = 12 // Nombre de semaines à charger par page
+    private val loadingWeeksSet = mutableSetOf<String>() // "year-week" format
     
     init {
         // Initialiser avec la semaine courante
@@ -120,12 +132,15 @@ class ScamarkViewModel : ViewModel() {
                 
                 val processStart = System.currentTimeMillis()
                 _availableWeeks.value = weeks
+                clearLoadingWeeks() // Nettoyer les semaines en chargement après mise à jour
                 android.util.Log.d("ScamarkViewModel", "⏱️ WEEKS_DATA_SET: Données assignées en ${System.currentTimeMillis() - processStart}ms")
                 
-                // Tracker la plus ancienne semaine chargée
+                // Tracker la plus ancienne semaine chargée (prendre en compte l'année)
                 val trackStart = System.currentTimeMillis()
-                oldestWeekLoaded = weeks.minByOrNull { it.week }?.week
-                android.util.Log.d("ScamarkViewModel", "⏱️ WEEKS_TRACK: Tracking oldest week en ${System.currentTimeMillis() - trackStart}ms -> $oldestWeekLoaded")
+                val oldestWeek = weeks.minByOrNull { it.year * 100 + it.week }
+                oldestWeekLoaded = oldestWeek?.week
+                oldestYearLoaded = oldestWeek?.year
+                android.util.Log.d("ScamarkViewModel", "⏱️ WEEKS_TRACK: Tracking oldest week en ${System.currentTimeMillis() - trackStart}ms -> semaine $oldestWeekLoaded de l'année $oldestYearLoaded")
                 
                 // Vérifier s'il peut y avoir plus de semaines
                 val canLoadStart = System.currentTimeMillis()
@@ -164,15 +179,41 @@ class ScamarkViewModel : ViewModel() {
         val supplier = _selectedSupplier.value ?: "all"
         val currentWeeks = _availableWeeks.value ?: emptyList()
         
-        android.util.Log.d("ScamarkViewModel", "🚀 loadMoreWeeks appelé - supplier: $supplier, semaines actuelles: ${currentWeeks.size}, plus ancienne: $oldestWeekLoaded")
+        android.util.Log.d("ScamarkViewModel", "🚀 loadMoreWeeks appelé - supplier: '$supplier', semaines actuelles: ${currentWeeks.size}, plus ancienne: semaine $oldestWeekLoaded de $oldestYearLoaded")
+        android.util.Log.d("ScamarkViewModel", "🚀 FOURNISSEUR_CHECK: supplier='$supplier' (length=${supplier.length})")
+        
+        // Marquer les prochaines semaines comme "en chargement"
+        markWeeksAsLoading()
         
         viewModelScope.launch {
             _isLoadingMoreWeeks.value = true
             try {
-                android.util.Log.d("ScamarkViewModel", "📞 Appel repository.getExtendedAvailableWeeks...")
+                android.util.Log.d("ScamarkViewModel", "📞 Appel repository.getExtendedAvailableWeeksFromWeek pour '$supplier'...")
                 
-                // Étendre la recherche vers des semaines plus anciennes à partir de la vraie plus ancienne
-                val moreWeeks = repository.getExtendedAvailableWeeksFromWeek(supplier, oldestWeekLoaded ?: 1)
+                // Calculer la semaine de départ pour l'extension en tenant compte de l'année
+                val startWeek = oldestWeekLoaded ?: 1
+                val startYear = oldestYearLoaded ?: Calendar.getInstance().get(Calendar.YEAR)
+                
+                android.util.Log.d("ScamarkViewModel", "🔍 RECHERCHE_PARAMS: supplier='$supplier', startWeek=$startWeek, startYear=$startYear")
+                
+                // Étendre la recherche vers des semaines plus anciennes
+                val repoStart = System.currentTimeMillis()
+                val moreWeeks = repository.getExtendedAvailableWeeksFromWeek(supplier, startWeek, startYear)
+                val repoEnd = System.currentTimeMillis()
+                
+                android.util.Log.d("ScamarkViewModel", "📦 REPO_RESULT: supplier='$supplier' → ${moreWeeks.size} semaines trouvées en ${repoEnd - repoStart}ms")
+                
+                if (moreWeeks.isNotEmpty()) {
+                    val firstWeek = moreWeeks.first()
+                    val lastWeek = moreWeeks.last()
+                    android.util.Log.d("ScamarkViewModel", "📦 RANGE_DETAIL: première=${lastWeek.week}/${lastWeek.year}, dernière=${firstWeek.week}/${firstWeek.year}")
+                    
+                    // Grouper par fournisseur pour diagnostiquer
+                    val bySupplier = moreWeeks.groupBy { it.supplier }
+                    bySupplier.forEach { (sup, weeks) ->
+                        android.util.Log.d("ScamarkViewModel", "📦 SUPPLIER_BREAKDOWN: '$sup' → ${weeks.size} semaines")
+                    }
+                }
                 
                 android.util.Log.d("ScamarkViewModel", "📦 Reçu ${moreWeeks.size} nouvelles semaines du repository")
                 
@@ -182,20 +223,43 @@ class ScamarkViewModel : ViewModel() {
                         .thenByDescending { it.week }
                         .thenBy { it.supplier })
                 
-                // Mettre à jour la plus ancienne semaine chargée
-                oldestWeekLoaded = allWeeks.minByOrNull { it.week }?.week
+                // Mettre à jour la plus ancienne semaine chargée SEULEMENT si on a vraiment trouvé de nouvelles semaines
+                if (moreWeeks.isNotEmpty()) {
+                    val actualOldestFromNew = moreWeeks.minByOrNull { it.year * 100 + it.week }
+                    if (actualOldestFromNew != null) {
+                        // Vérifier qu'on a bien progressé vers une semaine plus ancienne
+                        val currentOldestScore = (oldestYearLoaded ?: 2024) * 100 + (oldestWeekLoaded ?: 40)
+                        val newOldestScore = actualOldestFromNew.year * 100 + actualOldestFromNew.week
+                        
+                        if (newOldestScore < currentOldestScore) {
+                            oldestWeekLoaded = actualOldestFromNew.week
+                            oldestYearLoaded = actualOldestFromNew.year
+                            android.util.Log.d("ScamarkViewModel", "🔄 TRACKING_UPDATE: oldestWeekLoaded mis à jour → semaine ${actualOldestFromNew.week}/${actualOldestFromNew.year}")
+                        } else {
+                            android.util.Log.w("ScamarkViewModel", "⚠️ TRACKING_STUCK: Pas de progression! Resté à semaine $oldestWeekLoaded/$oldestYearLoaded")
+                        }
+                    }
+                }
                 
-                android.util.Log.d("ScamarkViewModel", "🔗 Total après fusion: ${allWeeks.size} semaines (avant: ${currentWeeks.size}, nouvelles: ${moreWeeks.size}, nouvelle plus ancienne: $oldestWeekLoaded)")
+                android.util.Log.d("ScamarkViewModel", "🔗 Total après fusion: ${allWeeks.size} semaines (avant: ${currentWeeks.size}, nouvelles: ${moreWeeks.size}, nouvelle plus ancienne: semaine $oldestWeekLoaded de $oldestYearLoaded)")
                 
                 _availableWeeks.value = allWeeks
                 
-                // Vérifier s'il peut y avoir encore plus de semaines
-                updateCanLoadMoreWeeks(allWeeks)
+                // Si on n'a trouvé AUCUNE nouvelle semaine, arrêter le chargement automatique
+                if (moreWeeks.isEmpty()) {
+                    android.util.Log.w("ScamarkViewModel", "🛑 STOP_AUTO_LOADING - Aucune nouvelle semaine trouvée, arrêt du chargement automatique")
+                    _canLoadMoreWeeks.value = false
+                } else {
+                    // Vérifier s'il peut y avoir encore plus de semaines seulement si on en a trouvé
+                    updateCanLoadMoreWeeks(allWeeks)
+                }
                 
             } catch (e: Exception) {
                 android.util.Log.e("ScamarkViewModel", "🚨 Erreur loadMoreWeeks: ${e.message}")
                 _error.value = "Erreur lors du chargement de plus de semaines: ${e.message}"
             } finally {
+                // Nettoyer les semaines en chargement
+                clearLoadingWeeks()
                 _isLoadingMoreWeeks.value = false
                 android.util.Log.d("ScamarkViewModel", "🏁 loadMoreWeeks terminé")
             }
@@ -208,9 +272,30 @@ class ScamarkViewModel : ViewModel() {
     private fun updateCanLoadMoreWeeks(weeks: List<AvailableWeek>) {
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
         val oldestYear = weeks.minByOrNull { it.year }?.year ?: currentYear
+        val newestYear = weeks.maxByOrNull { it.year }?.year ?: currentYear
         
-        // Permettre le chargement de plus si on n'a pas encore atteint 2 ans en arrière
-        _canLoadMoreWeeks.value = (currentYear - oldestYear) < 2 && weeks.size < 100
+        // Diagnostiquer par fournisseur
+        val bySupplier = weeks.groupBy { it.supplier }
+        val currentSupplier = _selectedSupplier.value ?: "all"
+        
+        android.util.Log.d("ScamarkViewModel", "📅 updateCanLoadMoreWeeks - currentSupplier: '$currentSupplier'")
+        android.util.Log.d("ScamarkViewModel", "📅 updateCanLoadMoreWeeks - currentYear: $currentYear, oldestYear: $oldestYear, newestYear: $newestYear, total weeks: ${weeks.size}")
+        
+        bySupplier.forEach { (supplier, supplierWeeks) ->
+            android.util.Log.d("ScamarkViewModel", "📅 SUPPLIER_WEEKS: '$supplier' → ${supplierWeeks.size} semaines")
+        }
+        
+        // Permettre le chargement de plus si on n'a pas encore atteint 5 ans en arrière (augmenté de 3 à 5)
+        // Ou si on a moins de 200 semaines au total
+        val yearRange = currentYear - oldestYear
+        val canLoadMore = yearRange < 5 && weeks.size < 200
+        
+        android.util.Log.d("ScamarkViewModel", "📅 CAN_LOAD_MORE_CALC: yearRange=$yearRange, totalSize=${weeks.size}")
+        android.util.Log.d("ScamarkViewModel", "📅 canLoadMore: $canLoadMore (yearRange: $yearRange < 5, size: ${weeks.size} < 200)")
+        android.util.Log.d("ScamarkViewModel", "📅 Condition 1 (yearRange < 5): ${yearRange < 5}")
+        android.util.Log.d("ScamarkViewModel", "📅 Condition 2 (size < 200): ${weeks.size < 200}")
+        
+        _canLoadMoreWeeks.value = canLoadMore
     }
     
     /**
@@ -229,7 +314,9 @@ class ScamarkViewModel : ViewModel() {
         
         loadWeekDataJob = viewModelScope.launch {
             val loadingStart = System.currentTimeMillis()
+            android.util.Log.d("ScamarkViewModel", "🔄 BEFORE setting isLoading=true, current value: ${_isLoading.value}")
             _isLoading.value = true
+            android.util.Log.d("ScamarkViewModel", "🔄 AFTER setting isLoading=true, new value: ${_isLoading.value}")
             android.util.Log.d("ScamarkViewModel", "⏱️ WEEK_LOADING_STATE: État loading activé en ${System.currentTimeMillis() - loadingStart}ms")
             
             try {
@@ -273,7 +360,9 @@ class ScamarkViewModel : ViewModel() {
                 _error.value = "Erreur lors du chargement: ${e.message}"
             } finally {
                 val finallyStart = System.currentTimeMillis()
+                android.util.Log.d("ScamarkViewModel", "🔄 FINALLY: BEFORE setting isLoading=false, current value: ${_isLoading.value}")
                 _isLoading.value = false
+                android.util.Log.d("ScamarkViewModel", "🔄 FINALLY: AFTER setting isLoading=false, new value: ${_isLoading.value}")
                 android.util.Log.d("ScamarkViewModel", "⏱️ WEEK_LOADING_OFF: État loading désactivé en ${System.currentTimeMillis() - finallyStart}ms")
                 
                 val endTime = System.currentTimeMillis()
@@ -313,6 +402,10 @@ class ScamarkViewModel : ViewModel() {
             val oldSupplier = _selectedSupplier.value
             android.util.Log.d("ScamarkViewModel", "🔄 Changement de fournisseur: '$oldSupplier' -> '$supplier'")
             
+            // IMPORTANT: Nettoyer le cache spécifique au nouveau fournisseur
+            FirebaseRepository.clearSupplierCache(supplier)
+            android.util.Log.d("ScamarkViewModel", "🧹 Cache spécifique au fournisseur '$supplier' nettoyé")
+            
             // IMPORTANT: Nettoyer les données de la semaine précédente lors du changement de fournisseur
             // pour éviter que les produits du nouveau fournisseur apparaissent en vert (entrants)
             previousWeekProducts = emptyList()
@@ -345,10 +438,146 @@ class ScamarkViewModel : ViewModel() {
     }
     
     /**
-     * Effectue une recherche de produits
+     * Effectue une recherche de produits et génère des suggestions
      */
     fun searchProducts(query: String?) {
+        android.util.Log.d("ScamarkViewModel", "🔍 searchProducts appelé avec: '$query'")
         _searchQuery.value = query ?: ""
+        
+        // Générer les suggestions si la requête n'est pas vide
+        if (!query.isNullOrEmpty() && query.length >= 2) {
+            android.util.Log.d("ScamarkViewModel", "🔍 Génération suggestions pour requête valide")
+            generateSearchSuggestions(query)
+        } else {
+            android.util.Log.d("ScamarkViewModel", "🔍 Requête trop courte, effacement suggestions")
+            _searchSuggestions.value = emptyList()
+        }
+        
+        // Toujours filtrer les produits pour montrer les résultats en temps réel
+        filterProducts()
+    }
+    
+    /**
+     * Génère des suggestions de recherche basées sur la requête
+     */
+    private fun generateSearchSuggestions(query: String) {
+        android.util.Log.d("ScamarkViewModel", "🔍 Génération suggestions pour: '$query'")
+        val suggestions = mutableListOf<SearchSuggestion>()
+        val queryLower = query.lowercase()
+        val allProducts = _allProducts.value ?: emptyList()
+        android.util.Log.d("ScamarkViewModel", "🔍 Nombre de produits disponibles: ${allProducts.size}")
+        
+        // Collecter les clients SCA uniques qui correspondent
+        val matchingClients = mutableMapOf<String, Int>()
+        val matchingBrands = mutableMapOf<String, Int>()
+        val matchingCategories = mutableMapOf<String, Int>()
+        val matchingProducts = mutableSetOf<String>()
+        
+        for (product in allProducts) {
+            // Chercher dans les clients SCA
+            for (decision in product.decisions) {
+                val clientName = decision.nomClient
+                val clientNameLower = clientName.lowercase()
+                if (clientNameLower.contains(queryLower)) {
+                    matchingClients[clientName] = matchingClients.getOrDefault(clientName, 0) + 1
+                }
+            }
+            
+            // Chercher dans les marques
+            product.articleInfo?.marque?.let { marque ->
+                if (marque.lowercase().contains(queryLower)) {
+                    matchingBrands[marque] = matchingBrands.getOrDefault(marque, 0) + 1
+                }
+            }
+            
+            // Chercher dans les catégories
+            product.articleInfo?.categorie?.let { categorie ->
+                if (categorie.lowercase().contains(queryLower)) {
+                    matchingCategories[categorie] = matchingCategories.getOrDefault(categorie, 0) + 1
+                }
+            }
+            
+            // Chercher dans les noms de produits
+            if (product.productName.lowercase().contains(queryLower)) {
+                matchingProducts.add(product.productName)
+            }
+        }
+        
+        // Ajouter les suggestions de clients SCA (priorité haute)
+        matchingClients.entries
+            .sortedByDescending { it.value }
+            .take(3)
+            .forEach { (clientName, count) ->
+                suggestions.add(
+                    SearchSuggestion(
+                        text = clientName,
+                        type = SuggestionType.CLIENT_SCA,
+                        count = count,
+                        matchedPart = query
+                    )
+                )
+            }
+        
+        // Ajouter les suggestions de marques
+        matchingBrands.entries
+            .sortedByDescending { it.value }
+            .take(2)
+            .forEach { (brand, count) ->
+                suggestions.add(
+                    SearchSuggestion(
+                        text = brand,
+                        type = SuggestionType.BRAND,
+                        count = count,
+                        matchedPart = query
+                    )
+                )
+            }
+        
+        // Ajouter les suggestions de produits
+        matchingProducts
+            .take(3)
+            .forEach { productName ->
+                suggestions.add(
+                    SearchSuggestion(
+                        text = productName,
+                        type = SuggestionType.PRODUCT,
+                        matchedPart = query
+                    )
+                )
+            }
+        
+        // Limiter à 8 suggestions maximum
+        val finalSuggestions = suggestions.take(8)
+        android.util.Log.d("ScamarkViewModel", "🔍 Suggestions générées: ${finalSuggestions.size}")
+        finalSuggestions.forEach { suggestion ->
+            android.util.Log.d("ScamarkViewModel", "🔍 Suggestion: ${suggestion.text} (${suggestion.type}, count: ${suggestion.count})")
+        }
+        _searchSuggestions.value = finalSuggestions
+    }
+    
+    /**
+     * Applique une suggestion de recherche
+     */
+    fun applySuggestion(suggestion: SearchSuggestion) {
+        android.util.Log.d("ScamarkViewModel", "🔍 Application suggestion: ${suggestion.text} (${suggestion.type})")
+        
+        val searchText = when (suggestion.type) {
+            SuggestionType.CLIENT_SCA -> {
+                // Pour un client SCA, on garde le nom original (pas en minuscules)
+                suggestion.text
+            }
+            SuggestionType.PRODUCT, SuggestionType.BRAND, SuggestionType.CATEGORY -> {
+                // Pour les autres, on met le texte complet
+                suggestion.text
+            }
+        }
+        
+        _searchQuery.value = searchText
+        
+        // Effacer les suggestions après sélection
+        _searchSuggestions.value = emptyList()
+        
+        // Filtrer les produits avec le nouveau texte de recherche
         filterProducts()
     }
     
@@ -370,28 +599,102 @@ class ScamarkViewModel : ViewModel() {
             else -> filtered
         }
         
-        // Appliquer la recherche textuelle
+        // Appliquer la recherche textuelle avec recherche partielle par mots
         if (query.isNotEmpty()) {
-            filtered = filtered.filter { product ->
-                // Recherche dans le nom du produit
-                product.productName.lowercase().contains(query) ||
-                // Recherche dans les infos article
-                product.articleInfo?.let { article ->
-                    article.nom.lowercase().contains(query) ||
-                    article.marque?.lowercase()?.contains(query) == true ||
-                    article.origine?.lowercase()?.contains(query) == true ||
-                    article.categorie?.lowercase()?.contains(query) == true ||
-                    article.codeProduit.lowercase().contains(query) ||
-                    article.ean?.lowercase()?.contains(query) == true
-                } == true ||
-                // Recherche dans les clients SCA
-                product.decisions.any { decision ->
-                    decision.codeClient.lowercase().contains(query) ||
-                    decision.nomClient.lowercase().contains(query) ||
-                    decision.clientInfo?.nom?.lowercase()?.contains(query) == true ||
-                    decision.clientInfo?.nomClient?.lowercase()?.contains(query) == true
+            // Séparer la requête en mots individuels
+            val searchTerms = query.split(" ").filter { it.isNotEmpty() }
+            
+            // D'abord, vérifier si c'est une recherche de client SCA
+            // (un seul terme qui correspond à un nom de client)
+            var isClientSearch = false
+            val matchingClients = mutableSetOf<String>()
+            
+            if (searchTerms.size == 1 && searchTerms[0].length >= 2) {
+                val term = searchTerms[0]
+                // Parcourir tous les produits pour voir si le terme correspond à un client
+                for (product in filtered) {
+                    for (decision in product.decisions) {
+                        val nomClientLower = decision.nomClient.lowercase()
+                        val codeClientLower = decision.codeClient.lowercase()
+                        
+                        // Recherche plus souple : contient le terme n'importe où dans le nom
+                        if (nomClientLower.contains(term) || 
+                            codeClientLower.contains(term)) {
+                            isClientSearch = true
+                            matchingClients.add(decision.nomClient)
+                        }
+                    }
                 }
             }
+            
+            // Mettre à jour l'indicateur de mode recherche client
+            _isClientSearchMode.value = isClientSearch
+            
+            filtered = if (isClientSearch) {
+                // Si c'est une recherche de client, ne montrer que les produits de ces clients
+                val term = searchTerms[0]
+                
+                // Filtrer les produits qui ont au moins une décision du client recherché
+                val filteredProducts = filtered.filter { product ->
+                    product.decisions.any { decision ->
+                        val nomClientLower = decision.nomClient.lowercase()
+                        val codeClientLower = decision.codeClient.lowercase()
+                        
+                        nomClientLower.contains(term) ||
+                        codeClientLower.contains(term)
+                    }
+                }
+                
+                // Créer une nouvelle liste de produits avec uniquement les décisions du client recherché
+                filteredProducts.map { product ->
+                    val filteredDecisions = product.decisions.filter { decision ->
+                        val nomClientLower = decision.nomClient.lowercase()
+                        val codeClientLower = decision.codeClient.lowercase()
+                        
+                        nomClientLower.contains(term) ||
+                        codeClientLower.contains(term)
+                    }
+                    
+                    // Créer une copie du produit avec seulement les décisions filtrées
+                    product.copy(
+                        decisions = filteredDecisions,
+                        totalScas = filteredDecisions.size
+                    )
+                }
+            } else {
+                // Sinon, recherche normale dans tous les champs
+                filtered.filter { product ->
+                    searchTerms.all { term ->
+                        val productNameLower = product.productName.lowercase()
+                        val articleInfo = product.articleInfo
+                        
+                        // Recherche dans le nom du produit (avec support des mots partiels)
+                        productNameLower.contains(term) ||
+                        productNameLower.split(" ").any { word -> word.startsWith(term) } ||
+                        // Recherche dans les infos article
+                        articleInfo?.let { article ->
+                            val nomLower = article.nom.lowercase()
+                            val marqueLower = article.marque?.lowercase() ?: ""
+                            val origineLower = article.origine?.lowercase() ?: ""
+                            val categorieLower = article.categorie?.lowercase() ?: ""
+                            val codeProduitLower = article.codeProduit.lowercase()
+                            val eanLower = article.ean?.lowercase() ?: ""
+                            
+                            nomLower.contains(term) ||
+                            nomLower.split(" ").any { word -> word.startsWith(term) } ||
+                            marqueLower.contains(term) ||
+                            marqueLower.split(" ").any { word -> word.startsWith(term) } ||
+                            origineLower.contains(term) ||
+                            categorieLower.contains(term) ||
+                            codeProduitLower.contains(term) ||
+                            eanLower.contains(term)
+                        } == true
+                    }
+                }
+            }
+        } else {
+            // Si la recherche est vide, réinitialiser le mode recherche client
+            _isClientSearchMode.value = false
         }
         
         _products.value = filtered
@@ -536,7 +839,7 @@ class ScamarkViewModel : ViewModel() {
     /**
      * Calcule la semaine ISO courante
      */
-    private fun getCurrentISOWeek(): Int {
+    fun getCurrentISOWeek(): Int {
         val calendar = Calendar.getInstance()
         val date = calendar.time
         
@@ -563,10 +866,11 @@ class ScamarkViewModel : ViewModel() {
     }
     
     /**
-     * Force le rechargement des données
+     * Force le rechargement des données avec activité optionnelle
      */
     fun refresh(activity: android.app.Activity? = null) {
         android.util.Log.d("ScamarkViewModel", "🔄 REFRESH: Réinitialisation complète")
+        android.util.Log.d("ScamarkViewModel", "🔄 Current isLoading state: ${_isLoading.value}")
         
         // Nettoyer le cache MainActivity pour éviter la persistance des filtres
         clearMainActivityCache(activity)
@@ -574,15 +878,204 @@ class ScamarkViewModel : ViewModel() {
         // Réinitialiser le filtre à "all" pour afficher tous les produits
         _productFilter.value = "all"
         
+        // Réinitialiser la recherche
+        _searchQuery.value = ""
+        _isClientSearchMode.value = false
+        
         // Nettoyer les produits sortants et entrants préchargés s'il y en a
         preloadedSortants = null
         preloadedEntrants = null
         
+        // Revenir à la semaine actuelle
+        val calendar = Calendar.getInstance()
+        val currentYear = calendar.get(Calendar.YEAR)
+        val currentWeek = getCurrentISOWeek()
+        _selectedYear.value = currentYear
+        _selectedWeek.value = currentWeek
+        android.util.Log.d("ScamarkViewModel", "🔄 Retour à la semaine actuelle: $currentWeek de $currentYear")
+        
         // Recharger les données de la semaine actuelle
-        loadAvailableWeeks()
+        val supplier = _selectedSupplier.value ?: "all"
+        android.util.Log.d("ScamarkViewModel", "🔄 Calling loadAvailableWeeks($supplier)")
+        loadAvailableWeeks(supplier)
+        android.util.Log.d("ScamarkViewModel", "🔄 Calling loadWeekData()")
         loadWeekData()
         
         android.util.Log.d("ScamarkViewModel", "✅ REFRESH: Cache nettoyé, filtre réinitialisé, rechargement de tous les produits")
+    }
+    
+    /**
+     * Force le rechargement des données (sans paramètre, pour OverviewFragment)
+     */
+    fun refresh() {
+        android.util.Log.d("ScamarkViewModel", "🔄 refresh() called without parameters")
+        refresh(null)
+    }
+    
+    /**
+     * Génère une grille de semaines pour le sélecteur Material 3
+     */
+    fun generateWeekGridItems(currentDisplayYear: Int): List<com.nextjsclient.android.ui.components.WeekItem> {
+        val availableWeeksList = _availableWeeks.value ?: emptyList()
+        val currentSupplier = _selectedSupplier.value ?: "all"
+        val selectedYear = _selectedYear.value ?: currentDisplayYear
+        val selectedWeek = _selectedWeek.value ?: 1
+        
+        val calendar = Calendar.getInstance()
+        val currentYear = calendar.get(Calendar.YEAR)
+        val currentWeek = getCurrentISOWeek()
+        
+        val weekItems = mutableListOf<com.nextjsclient.android.ui.components.WeekItem>()
+        
+        android.util.Log.d("ScamarkViewModel", "🗓️ generateWeekGridItems pour année $currentDisplayYear, fournisseur '$currentSupplier'")
+        android.util.Log.d("ScamarkViewModel", "🗓️ availableWeeksList total: ${availableWeeksList.size} semaines")
+        
+        // Filtrer par fournisseur ET par année
+        val supplierFilteredWeeks = if (currentSupplier == "all") {
+            availableWeeksList.filter { it.year == currentDisplayYear }
+        } else {
+            availableWeeksList.filter { it.year == currentDisplayYear && it.supplier == currentSupplier }
+        }
+        
+        android.util.Log.d("ScamarkViewModel", "🗓️ Semaines disponibles pour $currentDisplayYear + '$currentSupplier': ${supplierFilteredWeeks.map { "${it.week}(${it.supplier})" }}")
+        android.util.Log.d("ScamarkViewModel", "🗓️ Sélectionné: semaine $selectedWeek année $selectedYear")
+        
+        // Nettoyer les semaines en chargement pour éviter les loaders infinis
+        clearLoadingWeeks()
+        
+        // Générer les semaines de l'année demandée - utiliser getActualMaximum
+        val maxWeekInYear = Calendar.getInstance().apply {
+            set(Calendar.YEAR, currentDisplayYear)
+            set(Calendar.WEEK_OF_YEAR, 1)
+        }.getActualMaximum(Calendar.WEEK_OF_YEAR)
+        
+        // Limiter aux semaines passées, courante et suivante (s+1)
+        val finalMaxWeek = if (currentDisplayYear == currentYear) {
+            minOf(maxWeekInYear, currentWeek + 1)
+        } else if (currentDisplayYear > currentYear) {
+            // Années futures : aucune semaine
+            0
+        } else {
+            // Années passées : toutes les semaines
+            maxWeekInYear
+        }
+        
+        android.util.Log.d("ScamarkViewModel", "🗓️ Max semaines dans l'année $currentDisplayYear: $maxWeekInYear → limité à $finalMaxWeek")
+        
+        for (week in 1..finalMaxWeek) {
+            // Vérifier la disponibilité selon le fournisseur sélectionné
+            val hasData = supplierFilteredWeeks.any { it.week == week }
+            val isCurrentWeek = (currentDisplayYear == currentYear && week == currentWeek)
+            val isSelected = (currentDisplayYear == selectedYear && week == selectedWeek)
+            
+            if (hasData) {
+                android.util.Log.d("ScamarkViewModel", "🗓️ Semaine $week/$currentDisplayYear → hasData=true")
+            }
+            
+            val weekItem = com.nextjsclient.android.ui.components.WeekItem(
+                year = currentDisplayYear,
+                week = week,
+                isCurrentWeek = isCurrentWeek,
+                isSelected = isSelected,
+                hasData = hasData,
+                isLoading = isWeekLoading(currentDisplayYear, week)
+            )
+            
+            android.util.Log.d("ScamarkViewModel", "📅 Créé WeekItem semaine $week: hasData=$hasData")
+            weekItems.add(weekItem)
+        }
+        
+        android.util.Log.d("ScamarkViewModel", "🗓️ Généré ${weekItems.size} items (${weekItems.count { it.hasData }} avec données)")
+        
+        return weekItems
+    }
+    
+    /**
+     * Vérification rapide de disponibilité d'une semaine spécifique
+     */
+    fun quickCheckWeekAvailability(week: Int, year: Int) {
+        val supplier = _selectedSupplier.value ?: "all"
+        android.util.Log.d("ScamarkViewModel", "🔍 QUICK_CHECK_START - Vérification semaine $week/$year pour '$supplier'")
+        
+        viewModelScope.launch {
+            try {
+                // Vérifier directement cette semaine spécifique
+                val isAvailable = repository.checkWeekAvailability(supplier, week, year)
+                
+                if (isAvailable) {
+                    android.util.Log.d("ScamarkViewModel", "✅ QUICK_CHECK_SUCCESS - Semaine $week/$year disponible!")
+                    
+                    // Ajouter cette semaine aux disponibles
+                    val currentWeeks = _availableWeeks.value?.toMutableList() ?: mutableListOf()
+                    if (currentWeeks.none { it.week == week && it.year == year && it.supplier == supplier }) {
+                        currentWeeks.add(AvailableWeek(year, week, supplier))
+                        _availableWeeks.value = currentWeeks.sortedWith(
+                            compareByDescending<AvailableWeek> { it.year }
+                                .thenByDescending { it.week }
+                                .thenBy { it.supplier }
+                        )
+                        clearLoadingWeeks() // Nettoyer les semaines en chargement après mise à jour
+                        android.util.Log.d("ScamarkViewModel", "➕ QUICK_CHECK_ADDED - Semaine ajoutée aux disponibles")
+                    }
+                } else {
+                    android.util.Log.d("ScamarkViewModel", "❌ QUICK_CHECK_EMPTY - Semaine $week/$year toujours non disponible")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ScamarkViewModel", "🚨 QUICK_CHECK_ERROR - ${e.message}")
+            }
+        }
+    }
+    
+    /**
+     * Met à jour l'année affichée dans le sélecteur
+     */
+    private val _displayYear = MutableLiveData<Int>()
+    val displayYear: LiveData<Int> = _displayYear
+    
+    fun setDisplayYear(year: Int) {
+        _displayYear.value = year
+    }
+    
+    fun getCurrentDisplayYear(): Int {
+        return _displayYear.value ?: Calendar.getInstance().get(Calendar.YEAR)
+    }
+    
+    /**
+     * Marque les semaines comme en chargement pour l'affichage du loader
+     */
+    private fun markWeeksAsLoading() {
+        val startYear = oldestYearLoaded ?: Calendar.getInstance().get(Calendar.YEAR)
+        val startWeek = oldestWeekLoaded ?: 1
+        
+        // Marquer environ 15 semaines précédentes comme "en chargement"
+        var year = startYear
+        var week = startWeek - 1
+        
+        repeat(15) {
+            if (week < 1) {
+                year--
+                week = 52 // Approximation
+            }
+            loadingWeeksSet.add("$year-$week")
+            week--
+        }
+        
+        android.util.Log.d("ScamarkViewModel", "⏳ Marqué ${loadingWeeksSet.size} semaines comme en chargement")
+    }
+    
+    /**
+     * Nettoie les semaines en chargement
+     */
+    private fun clearLoadingWeeks() {
+        loadingWeeksSet.clear()
+        android.util.Log.d("ScamarkViewModel", "✅ Nettoyé les semaines en chargement")
+    }
+    
+    /**
+     * Vérifie si une semaine est en cours de chargement
+     */
+    private fun isWeekLoading(year: Int, week: Int): Boolean {
+        return loadingWeeksSet.contains("$year-$week")
     }
     
     /**

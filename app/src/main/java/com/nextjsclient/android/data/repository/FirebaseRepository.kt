@@ -22,7 +22,7 @@ class FirebaseRepository {
     private val auth: FirebaseAuth = Firebase.auth
     private val firestore: FirebaseFirestore = Firebase.firestore
     
-    // Cache pour la semaine actuelle et les semaines disponibles
+    // Cache pour la semaine actuelle et les semaines disponibles - SÉPARÉ PAR FOURNISSEUR
     companion object {
         private data class CacheEntry(
             val data: List<ScamarkProduct>,
@@ -46,9 +46,10 @@ class FirebaseRepository {
             val supplier: String
         )
         
-        private val weekCache = mutableMapOf<String, CacheEntry>()
-        private val weeksCache = mutableMapOf<String, WeeksCacheEntry>()
-        private val statsCache = mutableMapOf<String, StatsEntry>()
+        // Cache séparé par fournisseur avec clés distinctes
+        private val weekCache = mutableMapOf<String, CacheEntry>() // "$year-$week-$supplier"
+        private val weeksCache = mutableMapOf<String, WeeksCacheEntry>() // "weeks-$supplier"
+        private val statsCache = mutableMapOf<String, StatsEntry>() // "$year-$week-$supplier"
         private val articlesCache = mutableMapOf<String, Pair<Map<String, Article>, Long>>()
         private val clientsCache = mutableMapOf<String, Pair<Map<String, ClientInfo>, Long>>()
         
@@ -64,6 +65,22 @@ class FirebaseRepository {
             statsCache.clear()
             articlesCache.clear()
             clientsCache.clear()
+        }
+        
+        fun clearSupplierCache(supplier: String) {
+            android.util.Log.d("FirebaseRepo", "🧹 Nettoyage cache pour fournisseur '$supplier'")
+            
+            // Nettoyer les entrées spécifiques au fournisseur
+            val weekKeysToRemove = weekCache.keys.filter { it.endsWith("-$supplier") }
+            weekKeysToRemove.forEach { weekCache.remove(it) }
+            
+            val weeksKeyToRemove = "weeks-$supplier"
+            weeksCache.remove(weeksKeyToRemove)
+            
+            val statsKeysToRemove = statsCache.keys.filter { it.endsWith("-$supplier") }
+            statsKeysToRemove.forEach { statsCache.remove(it) }
+            
+            android.util.Log.d("FirebaseRepo", "🧹 Supprimé: ${weekKeysToRemove.size} weeks, 1 weeksList, ${statsKeysToRemove.size} stats pour '$supplier'")
         }
         
         fun getCacheInfo(): String {
@@ -229,144 +246,177 @@ class FirebaseRepository {
     }
     
     /**
-     * Récupère plus de semaines disponibles - À REBOURS DEPUIS LA DERNIÈRE SEMAINE CHARGÉE
+     * Récupère plus de semaines à partir d'une semaine donnée - CONTINUE À REBOURS
      */
-    suspend fun getExtendedAvailableWeeks(supplier: String = "all", currentCount: Int): List<AvailableWeek> {
-        android.util.Log.d("FirebaseRepo", "🔍 loadMoreWeeks DÉBUT - supplier: $supplier, currentCount: $currentCount")
+    suspend fun getExtendedAvailableWeeksFromWeek(supplier: String = "all", fromWeek: Int, fromYear: Int? = null): List<AvailableWeek> {
+        val globalStart = System.currentTimeMillis()
+        val startYear = fromYear ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        
+        android.util.Log.d("FirebaseRepo", "🚀 SEARCH_START - supplier:'$supplier', fromWeek:$fromWeek, startYear:$startYear")
+        
+        // VALIDATION: Chercher SEULEMENT dans l'année courante
+        if (startYear != java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) {
+            android.util.Log.w("FirebaseRepo", "⚠️ SEARCH_BLOCKED - Année $startYear différente de l'année courante, arrêt")
+            return emptyList()
+        }
         
         val availableWeeks = mutableListOf<AvailableWeek>()
         val suppliers = if (supplier == "all") listOf("anecoop", "solagora") else listOf(supplier)
         
+        android.util.Log.d("FirebaseRepo", "📋 SUPPLIERS - ${suppliers.joinToString { "'$it'" }} (${suppliers.size} total)")
+        
+        // Calculer la semaine de départ
+        val searchWeek = maxOf(1, fromWeek - 1)
+        android.util.Log.d("FirebaseRepo", "📍 SEARCH_RANGE - De semaine $searchWeek vers semaine 1 (année $startYear SEULEMENT)")
+        
         try {
-            val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-            val currentWeek = getCurrentISOWeek()
-            
-            // Commencer la recherche à rebours AVANT la zone déjà chargée
-            // Les 8 semaines initiales vont de (currentWeek - 4) à (currentWeek + 3)
-            // Donc on commence à (currentWeek - 5) et on va à rebours
-            val startWeek = maxOf(1, currentWeek - 5)
-            
-            android.util.Log.d("FirebaseRepo", "🎯 Recherche à rebours depuis semaine $startWeek (semaine courante: $currentWeek, zone initiale: ${currentWeek-4} à ${currentWeek+3})")
-            
             for (sup in suppliers) {
-                android.util.Log.d("FirebaseRepo", "🏪 Traitement fournisseur: $sup")
+                val supplierStart = System.currentTimeMillis()
+                android.util.Log.d("FirebaseRepo", "🏪 SUPPLIER_START - '$sup' depuis semaine $searchWeek")
                 
-                try {
-                    var foundCount = 0
+                var foundCount = 0
+                var batchStart = searchWeek
+                val batchSize = 6 // Batch plus large pour réduire les appels
+                var shouldStopSearch = false
+                
+                android.util.Log.w("FirebaseRepo", "🔄 WHILE_LOOP_START - '$sup' batchStart=$batchStart, foundCount=$foundCount, shouldStopSearch=$shouldStopSearch")
+                
+                while (batchStart >= 1 && foundCount < 15 && !shouldStopSearch) {
+                    val batchEnd = maxOf(1, batchStart - batchSize + 1)
+                    val batchStart_time = System.currentTimeMillis()
                     
-                    // Chercher à rebours depuis startWeek jusqu'à la semaine 1
-                    for (week in startWeek downTo 1) {
+                    android.util.Log.d("FirebaseRepo", "🎯 BATCH - '$sup' semaines $batchStart→$batchEnd (batch ${batchSize})")
+                    android.util.Log.w("FirebaseRepo", "🔄 BATCH_CONDITION - '$sup' batchStart=$batchStart >= 1? ${batchStart >= 1}, foundCount=$foundCount < 15? ${foundCount < 15}, !shouldStopSearch=$shouldStopSearch")
+                    
+                    var batchFound = 0
+                    var emptyWeeksInBatch = 0
+                    
+                    for (week in batchStart downTo batchEnd) {
+                        if (foundCount >= 15) {
+                            android.util.Log.d("FirebaseRepo", "⏹️ LIMIT_REACHED - '$sup' arrêt à 15 semaines")
+                            break
+                        }
+                        
                         val weekStr = week.toString().padStart(2, '0')
-                        val collectionPath = "decisions_$sup/$currentYear/$weekStr"
+                        val collectionPath = "decisions_$sup/$startYear/$weekStr"
                         
                         try {
+                            val queryStart = System.currentTimeMillis()
                             val snapshot = firestore.collection(collectionPath)
                                 .limit(1)
                                 .get()
                                 .await()
+                            val queryTime = System.currentTimeMillis() - queryStart
                             
                             if (!snapshot.isEmpty) {
-                                availableWeeks.add(AvailableWeek(currentYear, week, sup))
+                                availableWeeks.add(AvailableWeek(startYear, week, sup))
                                 foundCount++
-                                android.util.Log.d("FirebaseRepo", "✅ Trouvé semaine $week pour $sup")
+                                batchFound++
+                                android.util.Log.v("FirebaseRepo", "✅ FOUND - '$sup' W$week (${queryTime}ms, ${snapshot.size()}docs)")
+                            } else {
+                                emptyWeeksInBatch++
+                                android.util.Log.v("FirebaseRepo", "⚪ EMPTY - '$sup' W$week (${queryTime}ms)")
+                                
+                                // ARRÊT IMMÉDIAT: Si on n'a trouvé aucune donnée et qu'on trouve une semaine vide,
+                                // arrêter immédiatement car les semaines précédentes seront probablement vides aussi
+                                if (foundCount == 0 && emptyWeeksInBatch >= 1) {
+                                    android.util.Log.w("FirebaseRepo", "🛑 STOP_SEARCH - '$sup' arrêt immédiat après $emptyWeeksInBatch semaine vide")
+                                    shouldStopSearch = true
+                                    break
+                                }
                             }
                         } catch (e: Exception) {
-                            // Collection n'existe pas, continuer sans log
-                        }
-                        
-                        // Limiter à 10 semaines supplémentaires par fournisseur pour éviter trop de chargement
-                        if (foundCount >= 10) {
-                            android.util.Log.d("FirebaseRepo", "⏹️ Limite de 10 semaines atteinte pour $sup")
-                            break
+                            android.util.Log.e("FirebaseRepo", "❌ QUERY_ERROR - '$sup' W$week: ${e.message}")
                         }
                     }
                     
-                    android.util.Log.d("FirebaseRepo", "📊 Fournisseur $sup: $foundCount semaines trouvées à rebours")
+                    val batchTime = System.currentTimeMillis() - batchStart_time
+                    android.util.Log.d("FirebaseRepo", "✅ BATCH_DONE - '$sup' W$batchStart→$batchEnd: ${batchFound}/${batchSize} trouvées (${batchTime}ms)")
                     
-                } catch (e: Exception) {
-                    android.util.Log.e("FirebaseRepo", "🚨 Erreur fournisseur $sup: ${e.message}")
+                    android.util.Log.w("FirebaseRepo", "🔄 STOP_CHECK - '$sup' batchFound=$batchFound, foundCount=$foundCount, emptyWeeksInBatch=$emptyWeeksInBatch")
+                    
+                    // Si aucune semaine trouvée dans ce batch et qu'on avait déjà des données, arrêter
+                    if (batchFound == 0 && foundCount > 0) {
+                        android.util.Log.w("FirebaseRepo", "🛑 STOP_SEARCH_1 - '$sup' batch vide après avoir trouvé des données (batchFound=$batchFound, foundCount=$foundCount)")
+                        shouldStopSearch = true
+                    }
+                    
+                    // Si plus de 3 semaines vides consécutives dans ce batch, arrêter aussi
+                    if (emptyWeeksInBatch >= 3) {
+                        android.util.Log.w("FirebaseRepo", "🛑 STOP_SEARCH_2 - '$sup' trop de semaines vides consécutives ($emptyWeeksInBatch >= 3)")
+                        shouldStopSearch = true
+                    }
+                    
+                    android.util.Log.w("FirebaseRepo", "🔄 AFTER_STOP_CHECK - '$sup' shouldStopSearch=$shouldStopSearch, next batchStart will be ${batchEnd - 1}")
+                    
+                    batchStart = batchEnd - 1
                 }
+                
+                android.util.Log.w("FirebaseRepo", "🔄 WHILE_LOOP_EXIT - '$sup' SORTIE DE BOUCLE: batchStart=$batchStart >= 1? ${batchStart >= 1}, foundCount=$foundCount < 15? ${foundCount < 15}, shouldStopSearch=$shouldStopSearch")
+                
+                val supplierTime = System.currentTimeMillis() - supplierStart
+                android.util.Log.d("FirebaseRepo", "🏪 SUPPLIER_DONE - '$sup': ${foundCount} semaines en ${supplierTime}ms")
             }
         } catch (e: Exception) {
-            android.util.Log.e("FirebaseRepo", "🚨 Erreur générale loadMoreWeeks: ${e.message}")
+            android.util.Log.e("FirebaseRepo", "🚨 SEARCH_ERROR - ${e.message}")
+            return emptyList()
         }
         
-        val sortedWeeks = availableWeeks.sortedWith(compareByDescending<AvailableWeek> { it.year }
-            .thenByDescending { it.week }
-            .thenBy { it.supplier })
-            
-        android.util.Log.d("FirebaseRepo", "🏁 loadMoreWeeks FIN - ${sortedWeeks.size} nouvelles semaines trouvées")
+        // Tri final
+        val sortStart = System.currentTimeMillis()
+        val sortedWeeks = availableWeeks.sortedWith(
+            compareByDescending<AvailableWeek> { it.year }
+                .thenByDescending { it.week }
+                .thenBy { it.supplier }
+        )
+        val sortTime = System.currentTimeMillis() - sortStart
+        
+        val globalTime = System.currentTimeMillis() - globalStart
+        android.util.Log.d("FirebaseRepo", "🏁 SEARCH_COMPLETE - ${sortedWeeks.size} semaines trouvées en ${globalTime}ms (tri: ${sortTime}ms)")
+        
+        // Log détaillé des résultats
+        sortedWeeks.forEach { week ->
+            android.util.Log.v("FirebaseRepo", "📅 RESULT - ${week.supplier} W${week.week}/${week.year}")
+        }
         
         return sortedWeeks
     }
     
     /**
-     * Récupère plus de semaines à partir d'une semaine donnée - CONTINUE À REBOURS
+     * Vérification rapide de disponibilité d'une semaine spécifique
      */
-    suspend fun getExtendedAvailableWeeksFromWeek(supplier: String = "all", fromWeek: Int): List<AvailableWeek> {
-        android.util.Log.d("FirebaseRepo", "🔍 loadMoreWeeksFromWeek DÉBUT - supplier: $supplier, fromWeek: $fromWeek")
-        
-        val availableWeeks = mutableListOf<AvailableWeek>()
-        val suppliers = if (supplier == "all") listOf("anecoop", "solagora") else listOf(supplier)
+    suspend fun checkWeekAvailability(supplier: String, week: Int, year: Int): Boolean {
+        android.util.Log.d("FirebaseRepo", "🔍 CHECK_WEEK - Vérification '$supplier' W$week/$year")
         
         try {
-            val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-            
-            // Commencer à rebours depuis fromWeek - 1
-            val startWeek = maxOf(1, fromWeek - 1)
-            
-            android.util.Log.d("FirebaseRepo", "🎯 Recherche à rebours depuis semaine $startWeek (fromWeek: $fromWeek)")
+            val suppliers = if (supplier == "all") listOf("anecoop", "solagora") else listOf(supplier)
             
             for (sup in suppliers) {
-                android.util.Log.d("FirebaseRepo", "🏪 Traitement fournisseur: $sup")
+                val weekStr = week.toString().padStart(2, '0')
+                val collectionPath = "decisions_$sup/$year/$weekStr"
                 
-                try {
-                    var foundCount = 0
-                    
-                    // Chercher à rebours depuis startWeek jusqu'à la semaine 1
-                    for (week in startWeek downTo 1) {
-                        val weekStr = week.toString().padStart(2, '0')
-                        val collectionPath = "decisions_$sup/$currentYear/$weekStr"
-                        
-                        try {
-                            val snapshot = firestore.collection(collectionPath)
-                                .limit(1)
-                                .get()
-                                .await()
-                            
-                            if (!snapshot.isEmpty) {
-                                availableWeeks.add(AvailableWeek(currentYear, week, sup))
-                                foundCount++
-                                android.util.Log.d("FirebaseRepo", "✅ Trouvé semaine $week pour $sup")
-                            }
-                        } catch (e: Exception) {
-                            // Collection n'existe pas, continuer sans log
-                        }
-                        
-                        // Limiter à 10 semaines supplémentaires par fournisseur
-                        if (foundCount >= 10) {
-                            android.util.Log.d("FirebaseRepo", "⏹️ Limite de 10 semaines atteinte pour $sup")
-                            break
-                        }
-                    }
-                    
-                    android.util.Log.d("FirebaseRepo", "📊 Fournisseur $sup: $foundCount semaines trouvées à rebours")
-                    
-                } catch (e: Exception) {
-                    android.util.Log.e("FirebaseRepo", "🚨 Erreur fournisseur $sup: ${e.message}")
+                val queryStart = System.currentTimeMillis()
+                val snapshot = firestore.collection(collectionPath)
+                    .limit(1)
+                    .get()
+                    .await()
+                val queryTime = System.currentTimeMillis() - queryStart
+                
+                if (!snapshot.isEmpty) {
+                    android.util.Log.d("FirebaseRepo", "✅ CHECK_WEEK_FOUND - '$sup' W$week/$year disponible (${queryTime}ms)")
+                    return true
+                } else {
+                    android.util.Log.d("FirebaseRepo", "⚪ CHECK_WEEK_EMPTY - '$sup' W$week/$year vide (${queryTime}ms)")
                 }
             }
-        } catch (e: Exception) {
-            android.util.Log.e("FirebaseRepo", "🚨 Erreur générale loadMoreWeeksFromWeek: ${e.message}")
-        }
-        
-        val sortedWeeks = availableWeeks.sortedWith(compareByDescending<AvailableWeek> { it.year }
-            .thenByDescending { it.week }
-            .thenBy { it.supplier })
             
-        android.util.Log.d("FirebaseRepo", "🏁 loadMoreWeeksFromWeek FIN - ${sortedWeeks.size} nouvelles semaines trouvées")
-        
-        return sortedWeeks
+            android.util.Log.d("FirebaseRepo", "❌ CHECK_WEEK_NOT_FOUND - Aucune donnée trouvée pour W$week/$year")
+            return false
+            
+        } catch (e: Exception) {
+            android.util.Log.e("FirebaseRepo", "🚨 CHECK_WEEK_ERROR - ${e.message}")
+            return false
+        }
     }
     
     
