@@ -124,7 +124,7 @@ class FirebaseRepository {
     // Scamark - Nouvelle architecture conforme au Next.js
     
     /**
-     * Récupère les semaines disponibles pour un fournisseur - CHARGE TOUTE L'ANNÉE JUSQU'À LA SEMAINE COURANTE
+     * Récupère les semaines disponibles pour un fournisseur - CHARGE TOUTE L'ANNÉE JUSQU'À S+1 (semaine suivante)
      */
     suspend fun getAvailableWeeks(supplier: String = "all"): List<AvailableWeek> {
         android.util.Log.d("FirebaseRepo", "⏱️ REPO_WEEKS_START: Début getAvailableWeeks pour '$supplier'")
@@ -154,10 +154,10 @@ class FirebaseRepository {
             val currentWeek = getCurrentISOWeek()
             android.util.Log.d("FirebaseRepo", "⏱️ REPO_INIT: Initialisation en ${System.currentTimeMillis() - initStart}ms - semaine courante $currentWeek")
             
-            // Chercher TOUTE l'année à rebours depuis la semaine courante
+            // Chercher TOUTE l'année jusqu'à S+1 (semaine suivante parfois disponible)
             val rangeStart = System.currentTimeMillis()
             val startWeek = 1
-            val endWeek = currentWeek  // Seulement jusqu'à la semaine courante (pas de futur)
+            val endWeek = minOf(52, currentWeek + 1)  // Inclure S+1 car parfois dispo en avance
             val weekRange = startWeek..endWeek
             android.util.Log.d("FirebaseRepo", "⏱️ REPO_RANGE: Calcul range de semaines en ${System.currentTimeMillis() - rangeStart}ms - range: $startWeek..$endWeek")
             
