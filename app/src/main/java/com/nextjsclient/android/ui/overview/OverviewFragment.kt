@@ -361,28 +361,7 @@ class OverviewFragment : Fragment() {
     }
     
     private fun setupButtons() {
-        // Settings button
-        binding.settingsButton.setOnClickListener {
-            // Animation Material 3 expressive
-            binding.settingsButton.animate()
-                .rotationBy(180f)
-                .scaleX(0.9f)
-                .scaleY(0.9f)
-                .setDuration(200)
-                .withEndAction {
-                    binding.settingsButton.animate()
-                        .rotationBy(0f)
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(200)
-                        .start()
-                }.start()
-            
-            // Navigate to settings
-            val intent = Intent(requireContext(), SettingsActivity::class.java)
-            startActivity(intent)
-        }
-        
+        // Le bouton Settings a été supprimé avec le bandeau vert
         // Setup trophy buttons
         setupTrophyButtons()
     }
