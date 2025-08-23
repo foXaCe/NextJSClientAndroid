@@ -54,7 +54,6 @@ class OverviewFragment : Fragment() {
     private val preferencesReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == SupplierPreferences.ACTION_SUPPLIER_PREFERENCES_CHANGED) {
-                android.util.Log.d("OverviewFragment", "📡 Received preferences changed broadcast - refreshing cards")
                 // Recalculer et afficher les stats avec les nouvelles préférences
                 viewModel.products.value?.let { products ->
                     calculateAndDisplayStats(products)
@@ -76,8 +75,6 @@ class OverviewFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        android.util.Log.d("OverviewFragment", "🚀 OverviewFragment.onViewCreated() DÉBUT")
-        
         // Initialiser les préférences fournisseurs
         supplierPreferences = SupplierPreferences(requireContext())
         
@@ -87,6 +84,9 @@ class OverviewFragment : Fragment() {
         // Initialiser la visibilité des cartes selon les préférences
         initializeCardVisibility()
         
+        // Mettre à jour l'affichage du numéro de semaine
+        updateWeekNumberDisplay()
+        
         setupButtons()
         setupSwipeRefresh()
         observeViewModel()
@@ -95,25 +95,17 @@ class OverviewFragment : Fragment() {
         val selectedYear = viewModel.selectedYear.value
         val selectedWeek = viewModel.selectedWeek.value
         
-        android.util.Log.d("OverviewFragment", "🔍 État du ViewModel au démarrage:")
-        android.util.Log.d("OverviewFragment", "   • selectedYear: $selectedYear")
-        android.util.Log.d("OverviewFragment", "   • selectedWeek: $selectedWeek")
-        
         if (selectedYear != null && selectedWeek != null) {
             // PRIORITÉ: Utiliser la semaine déjà sélectionnée dans le ViewModel
-            android.util.Log.d("OverviewFragment", "📅 ✅ Utilisation de la semaine déjà sélectionnée: $selectedYear-$selectedWeek")
             loadDataForWeek(selectedYear, selectedWeek)
         } else {
             // Fallback seulement si aucune semaine n'est vraiment sélectionnée
             val calendar = java.util.Calendar.getInstance()
             val currentYear = calendar.get(java.util.Calendar.YEAR)
             val currentWeek = getCurrentISOWeek()
-            android.util.Log.d("OverviewFragment", "📅 ⚠️ FALLBACK: Aucune semaine sélectionnée, initialisation avec la semaine actuelle: $currentYear-$currentWeek")
             viewModel.selectWeek(currentYear, currentWeek)
             loadDataForWeek(currentYear, currentWeek)
         }
-        
-        android.util.Log.d("OverviewFragment", "✅ OverviewFragment.onViewCreated() FIN")
     }
     
     override fun onResume() {
@@ -121,7 +113,6 @@ class OverviewFragment : Fragment() {
         // Enregistrer le BroadcastReceiver pour écouter les changements de préférences
         val filter = IntentFilter(SupplierPreferences.ACTION_SUPPLIER_PREFERENCES_CHANGED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(preferencesReceiver, filter)
-        android.util.Log.d("OverviewFragment", "📡 BroadcastReceiver registered for preferences changes")
         
         // Mettre à jour la visibilité des cartes au cas où les préférences auraient changé
         // pendant que le fragment était en pause (ex: dans les paramètres)
@@ -132,14 +123,12 @@ class OverviewFragment : Fragment() {
         super.onPause()
         // Désenregistrer le BroadcastReceiver
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(preferencesReceiver)
-        android.util.Log.d("OverviewFragment", "📡 BroadcastReceiver unregistered")
     }
     
     private fun initializeCardVisibility() {
         // Appliquer immédiatement la visibilité des cartes selon les préférences
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
-        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
         
         anecoopCard?.visibility = if (supplierPreferences.isAnecoopEnabled) View.VISIBLE else View.GONE
         solagoraCard?.visibility = if (supplierPreferences.isSolagoraEnabled) View.VISIBLE else View.GONE
@@ -147,7 +136,6 @@ class OverviewFragment : Fragment() {
         // Gérer la carte top SCA et les boutons trophée
         updateTopScaVisibility()
         
-        android.util.Log.d("OverviewFragment", "🎬 Initial card visibility - Anecoop: ${if (supplierPreferences.isAnecoopEnabled) "VISIBLE" else "GONE"}, Solagora: ${if (supplierPreferences.isSolagoraEnabled) "VISIBLE" else "GONE"}")
     }
     
     private fun updateCardVisibilityOnResume() {
@@ -168,19 +156,14 @@ class OverviewFragment : Fragment() {
             // Mettre à jour le top SCA quand les préférences changent
             updateTopScaVisibility()
             
-            android.util.Log.d("OverviewFragment", "🔄 Card visibility changed on resume - recalculating stats")
-            
             // Recalculer et afficher les stats avec les nouvelles préférences
             viewModel.products.value?.let { products ->
                 calculateAndDisplayStats(products)
             }
-        } else {
-            android.util.Log.d("OverviewFragment", "✅ Card visibility unchanged on resume")
         }
     }
     
     private fun loadInitialData() {
-        android.util.Log.d("OverviewFragment", "📊 loadInitialData() DÉBUT")
         
         // Utiliser la semaine sélectionnée dans le ViewModel
         val selectedYear = viewModel.selectedYear.value
@@ -196,22 +179,18 @@ class OverviewFragment : Fragment() {
             Pair(currentYear, currentWeek)
         }
         
-        android.util.Log.d("OverviewFragment", "📅 Chargement des données pour: $targetYear-$targetWeek")
         
         viewModel.viewModelScope.launch {
             try {
-                val startTime = System.currentTimeMillis()
                 val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
                 
                 // Charger les données en parallèle avec coroutines
                 val currentProductsDeferred = async {
-                    android.util.Log.d("OverviewFragment", "🔄 Chargement semaine sélectionnée: $targetYear-$targetWeek")
                     repository.getWeekDecisions(targetYear, targetWeek, "all")
                 }
                 
                 val (previousYear, previousWeek) = getPreviousWeek(targetYear, targetWeek)
                 val previousProductsDeferred = async {
-                    android.util.Log.d("OverviewFragment", "🔄 Chargement semaine précédente: $previousYear-$previousWeek")
                     repository.getWeekDecisions(previousYear, previousWeek, "all")
                 }
                 
@@ -240,27 +219,10 @@ class OverviewFragment : Fragment() {
                 preloadedAnecoopWeeks = weeksAnecoopDeferred.await()
                 preloadedSolagoraWeeks = weeksSolagoraDeferred.await()
                 
-                val loadTime = System.currentTimeMillis() - startTime
-                android.util.Log.d("OverviewFragment", "⚡ Chargement parallèle terminé en ${loadTime}ms")
-                android.util.Log.d("OverviewFragment", "   • Semaine courante: ${currentProducts.size} produits")
-                android.util.Log.d("OverviewFragment", "   • Semaine précédente: ${previousWeekProducts.size} produits")
-                android.util.Log.d("OverviewFragment", "   • Anecoop préchargé: ${preloadedAnecoopProducts.size} produits")
-                android.util.Log.d("OverviewFragment", "   • Solagora préchargé: ${preloadedSolagoraProducts.size} produits")
-                
-                // Debug: vérifier le contenu des produits préchargés
-                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedAnecoopProducts:")
-                preloadedAnecoopProducts.take(3).forEachIndexed { index, product ->
-                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
-                }
-                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedSolagoraProducts:")
-                preloadedSolagoraProducts.take(3).forEachIndexed { index, product ->
-                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
-                }
                 
                 // Mettre à jour les UI sur le thread principal
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
-                        android.util.Log.d("OverviewFragment", "🔥 EXÉCUTION viewModel.setProducts sur UI thread")
                         // Activer les boutons trophée maintenant que les données sont chargées
                         enableTrophyButtons()
                         // Auto-refresh du top SCA si un seul fournisseur est activé
@@ -269,13 +231,11 @@ class OverviewFragment : Fragment() {
                         viewModel.setProducts(currentProducts)
                         
                         // Maintenant que previousWeekProducts est chargé, recalculer les stats correctement
-                        android.util.Log.d("OverviewFragment", "🔄 Recalcul des stats avec données de semaine précédente")
                         calculateAndDisplayStats(currentProducts)
                     }
                 }
                 
             } catch (e: Exception) {
-                android.util.Log.e("OverviewFragment", "❌ Erreur loadInitialData: ${e.message}", e)
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
                         com.google.android.material.snackbar.Snackbar.make(
@@ -293,12 +253,9 @@ class OverviewFragment : Fragment() {
      * Charge les données pour une semaine spécifique (utilisé quand on vient d'une page fournisseur)
      */
     private fun loadDataForWeek(year: Int, week: Int) {
-        val timestamp = System.currentTimeMillis()
-        android.util.Log.d("OverviewFragment", "📊 APPEL loadDataForWeek() pour $year-$week - Time: $timestamp")
         
         viewModel.viewModelScope.launch {
             try {
-                val startTime = System.currentTimeMillis()
                 val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
                 
                 // Charger les données de la semaine demandée
@@ -312,14 +269,6 @@ class OverviewFragment : Fragment() {
                 preloadedAnecoopProducts = repository.getWeekDecisions(year, week, "anecoop")
                 preloadedSolagoraProducts = repository.getWeekDecisions(year, week, "solagora")
                 
-                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedAnecoopProducts après chargement:")
-                preloadedAnecoopProducts.take(3).forEachIndexed { index, product ->
-                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
-                }
-                android.util.Log.d("OverviewFragment", "🔍 DEBUG preloadedSolagoraProducts après chargement:")
-                preloadedSolagoraProducts.take(3).forEachIndexed { index, product ->
-                    android.util.Log.d("OverviewFragment", "   [$index] ${product.productName} - SCA: ${product.totalScas}")
-                }
                 
                 // Activer les boutons trophée maintenant que les données sont chargées
                 activity?.runOnUiThread {
@@ -328,26 +277,18 @@ class OverviewFragment : Fragment() {
                     refreshTopScaIfNeeded()
                 }
                 
-                val loadTime = System.currentTimeMillis() - startTime
-                android.util.Log.d("OverviewFragment", "⚡ Données de la semaine $year-$week chargées en ${loadTime}ms")
-                android.util.Log.d("OverviewFragment", "   • Semaine $year-$week: ${weekProducts.size} produits")
-                android.util.Log.d("OverviewFragment", "   • Semaine précédente: ${previousWeekProducts.size} produits")
                 
                 // Mettre à jour l'UI
-                android.util.Log.d("OverviewFragment", "📤 APPEL viewModel.setProducts avec ${weekProducts.size} produits")
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
-                        android.util.Log.d("OverviewFragment", "🔥 EXÉCUTION viewModel.setProducts sur UI thread")
                         viewModel.setProducts(weekProducts)
                         
                         // Maintenant que previousWeekProducts est chargé, recalculer les stats correctement
-                        android.util.Log.d("OverviewFragment", "🔄 Recalcul des stats avec données de semaine précédente")
                         calculateAndDisplayStats(weekProducts)
                     }
                 }
                 
             } catch (e: Exception) {
-                android.util.Log.e("OverviewFragment", "❌ Erreur loadDataForWeek: ${e.message}", e)
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
                         com.google.android.material.snackbar.Snackbar.make(
@@ -393,6 +334,7 @@ class OverviewFragment : Fragment() {
     private fun setupTrophyButtons() {
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
         
         // Désactiver les boutons trophée jusqu'au chargement des données
         val anecoopTrophy = anecoopCard?.findViewById<View>(R.id.trophyButton)
@@ -402,7 +344,14 @@ class OverviewFragment : Fragment() {
             isClickable = false
             alpha = 0.5f
             setOnClickListener {
-                if (isClickable) showTopScaForSupplier("anecoop")
+                if (isClickable) {
+                    // Toggle : si le top SCA est déjà visible pour ce fournisseur, le fermer
+                    if (isShowingTopSca && topScaSupplier == "anecoop") {
+                        hideTopSca()
+                    } else {
+                        showTopScaForSupplier("anecoop")
+                    }
+                }
             }
         }
         
@@ -410,12 +359,18 @@ class OverviewFragment : Fragment() {
             isClickable = false
             alpha = 0.5f
             setOnClickListener {
-                if (isClickable) showTopScaForSupplier("solagora")
+                if (isClickable) {
+                    // Toggle : si le top SCA est déjà visible pour ce fournisseur, le fermer
+                    if (isShowingTopSca && topScaSupplier == "solagora") {
+                        hideTopSca()
+                    } else {
+                        showTopScaForSupplier("solagora")
+                    }
+                }
             }
         }
         
         // Setup close button for top SCA card
-        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
         topScaCard?.findViewById<View>(R.id.closeTopScaButton)?.setOnClickListener {
             hideTopSca()
         }
@@ -423,7 +378,6 @@ class OverviewFragment : Fragment() {
     
     
     private fun enableTrophyButtons() {
-        android.util.Log.d("OverviewFragment", "🏆 Activation des boutons trophée après chargement des données")
         
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
@@ -445,10 +399,8 @@ class OverviewFragment : Fragment() {
         val singleSupplier = (anecoopEnabled && !solagoraEnabled) || (!anecoopEnabled && solagoraEnabled)
         
         if (singleSupplier && isShowingTopSca && topScaSupplier != null) {
-            android.util.Log.d("OverviewFragment", "🔄 Refresh du top SCA pour $topScaSupplier après chargement des données")
             loadTopScaData(topScaSupplier!!)
         } else if (singleSupplier && !isShowingTopSca) {
-            android.util.Log.d("OverviewFragment", "🔄 Affichage automatique du top SCA après chargement des données")
             val supplier = if (anecoopEnabled) "anecoop" else "solagora"
             showTopScaForSupplier(supplier, autoShow = true)
         }
@@ -462,7 +414,6 @@ class OverviewFragment : Fragment() {
         
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
-        val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
         
         // Boutons trophée visibles seulement si les deux fournisseurs sont activés
         anecoopCard?.findViewById<View>(R.id.trophyButton)?.visibility = if (bothEnabled) View.VISIBLE else View.GONE
@@ -479,7 +430,6 @@ class OverviewFragment : Fragment() {
     }
     
     private fun showTopScaForSupplier(supplier: String, autoShow: Boolean = false) {
-        android.util.Log.d("OverviewFragment", "🏆 showTopScaForSupplier appelé pour $supplier (autoShow: $autoShow)")
         
         isShowingTopSca = true
         topScaSupplier = supplier
@@ -487,21 +437,33 @@ class OverviewFragment : Fragment() {
         val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        val settingsButton = binding.root.findViewById<View>(R.id.settingsButton)
         
-        // Animation d'apparition
+        // Animation d'apparition Material 3 expressive
         topScaCard?.apply {
             visibility = View.VISIBLE
             alpha = 0f
-            scaleY = 0.8f
+            scaleX = 0.9f
+            scaleY = 0.9f
+            translationY = 50f
             animate()
                 .alpha(1f)
+                .scaleX(1f)
                 .scaleY(1f)
-                .setDuration(300)
+                .translationY(0f)
+                .setDuration(400)
+                .setInterpolator(com.google.android.material.animation.AnimationUtils.FAST_OUT_SLOW_IN_INTERPOLATOR)
                 .start()
         }
         
         // Masquer/afficher le bouton fermer selon le mode
         topScaCard?.findViewById<View>(R.id.closeTopScaButton)?.visibility = if (autoShow) View.GONE else View.VISIBLE
+        
+        // S'assurer que le bouton paramètres reste visible et au-dessus
+        settingsButton?.apply {
+            bringToFront()
+            elevation = 12f // Plus élevé que la carte (8dp)
+        }
         
         if (!autoShow) {
             // Mode manuel : masquer l'autre fournisseur
@@ -528,13 +490,19 @@ class OverviewFragment : Fragment() {
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
         
-        // Animation de disparition
+        // Animation de disparition Material 3 expressive
         topScaCard?.animate()
             ?.alpha(0f)
-            ?.scaleY(0.8f)
-            ?.setDuration(200)
+            ?.scaleX(0.9f)
+            ?.scaleY(0.9f)
+            ?.translationY(30f)
+            ?.setDuration(300)
+            ?.setInterpolator(com.google.android.material.animation.AnimationUtils.FAST_OUT_SLOW_IN_INTERPOLATOR)
             ?.withEndAction {
                 topScaCard.visibility = View.GONE
+                topScaCard.scaleX = 1f
+                topScaCard.scaleY = 1f
+                topScaCard.translationY = 0f
             }?.start()
         
         // Réafficher les cartes fournisseurs
@@ -568,32 +536,19 @@ class OverviewFragment : Fragment() {
             else -> emptyList()
         }
         
-        android.util.Log.d("OverviewFragment", "🏆 Top SCA pour $supplier: ${products.size} produits disponibles")
         
         // Debug: afficher tous les produits et leurs SCA
-        products.forEachIndexed { index, product ->
-            android.util.Log.d("OverviewFragment", "   Produit $index: ${product.productName} - SCA: ${product.totalScas} - Supplier: ${product.supplier}")
-        }
         
         // Calculer le top 3 des SCA
         val productsWithSca = products.filter { it.totalScas > 0 }
-        android.util.Log.d("OverviewFragment", "🔍 Produits avec SCA > 0: ${productsWithSca.size}")
         
         val topProducts = productsWithSca
             .sortedByDescending { it.totalScas }
             .take(3)
         
-        android.util.Log.d("OverviewFragment", "🏆 Top 3 SCA final: ${topProducts.size} produits")
-        topProducts.forEachIndexed { index, product ->
-            android.util.Log.d("OverviewFragment", "   TOP ${index + 1}: ${product.productName} (${product.totalScas} SCA)")
-        }
         
         // Debug: vérifier si le problème vient de l'affichage
         if (topProducts.isEmpty()) {
-            android.util.Log.w("OverviewFragment", "⚠️ AUCUN PRODUIT dans le top SCA!")
-            android.util.Log.w("OverviewFragment", "   - Total produits: ${products.size}")
-            android.util.Log.w("OverviewFragment", "   - Produits avec SCA > 0: ${productsWithSca.size}")
-            android.util.Log.w("OverviewFragment", "   - Supplier filter: $supplier")
         }
         
         // Mettre à jour l'affichage
@@ -601,29 +556,24 @@ class OverviewFragment : Fragment() {
     }
     
     private fun updateTopScaDisplay(products: List<com.nextjsclient.android.data.models.ScamarkProduct>, topScaCard: View?) {
-        android.util.Log.d("OverviewFragment", "🎯 updateTopScaDisplay appelé avec ${products.size} produits")
         
         topScaCard?.let { card ->
-            android.util.Log.d("OverviewFragment", "✅ TopScaCard trouvé, mise à jour de l'affichage")
             
             // Top 1
             if (products.isNotEmpty()) {
                 val product1 = products[0]
-                android.util.Log.d("OverviewFragment", "🥇 TOP 1: ${product1.productName} avec ${product1.totalScas} SCA")
                 
                 val nameView = card.findViewById<TextView>(R.id.topSca1Name)
                 val detailsView = card.findViewById<TextView>(R.id.topSca1Details)
                 val scaView = card.findViewById<TextView>(R.id.topSca1Sca)
                 val containerView = card.findViewById<View>(R.id.topSca1)
                 
-                android.util.Log.d("OverviewFragment", "🔍 Vues trouvées - Name: $nameView, Details: $detailsView, SCA: $scaView, Container: $containerView")
                 
                 nameView?.text = product1.productName.split(" ").take(3).joinToString(" ")
                 detailsView?.text = "${product1.supplier}"
                 scaView?.text = "${product1.totalScas} SCA"
                 containerView?.visibility = View.VISIBLE
             } else {
-                android.util.Log.w("OverviewFragment", "❌ Aucun produit pour TOP 1")
                 card.findViewById<View>(R.id.topSca1)?.visibility = View.GONE
             }
             
@@ -663,40 +613,74 @@ class OverviewFragment : Fragment() {
             
             // Action de refresh
             setOnRefreshListener {
-                android.util.Log.d("OverviewFragment", "🔄 Pull-to-refresh triggered")
-                android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh state BEFORE: $isRefreshing")
                 // Activer le loader immédiatement
                 isRefreshing = true
-                android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh state AFTER: $isRefreshing")
-                android.util.Log.d("OverviewFragment", "🔄 Calling viewModel.refresh()")
                 viewModel.refresh()
             }
         }
     }
     
+    private fun updateWeekNumberDisplay() {
+        val weekNumber = viewModel.selectedWeek.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.WEEK_OF_YEAR)
+        val year = viewModel.selectedYear.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        
+        // Mettre à jour le numéro de semaine
+        binding.root.findViewById<TextView>(R.id.weekNumberHeader)?.text = "Semaine $weekNumber"
+        
+        // Calculer et afficher la plage de dates
+        val calendar = java.util.Calendar.getInstance()
+        calendar.set(java.util.Calendar.YEAR, year)
+        calendar.set(java.util.Calendar.WEEK_OF_YEAR, weekNumber)
+        calendar.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+        
+        val startDate = calendar.time
+        calendar.add(java.util.Calendar.DAY_OF_WEEK, 6)
+        val endDate = calendar.time
+        
+        // Formats pour éviter la répétition de l'année
+        val dateFormatWithYear = java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale.FRANCE)
+        val dateFormatWithoutYear = java.text.SimpleDateFormat("d MMMM", java.util.Locale.FRANCE)
+        
+        val startCalendar = java.util.Calendar.getInstance().apply { time = startDate }
+        val endCalendar = java.util.Calendar.getInstance().apply { time = endDate }
+        
+        val dateRangeText = if (startCalendar.get(java.util.Calendar.YEAR) == endCalendar.get(java.util.Calendar.YEAR)) {
+            // Même année et même mois : "19 au 25 août 2025"
+            if (startCalendar.get(java.util.Calendar.MONTH) == endCalendar.get(java.util.Calendar.MONTH)) {
+                val dayOnlyFormat = java.text.SimpleDateFormat("d", java.util.Locale.FRANCE)
+                val startDay = dayOnlyFormat.format(startDate)
+                val endStr = dateFormatWithYear.format(endDate)
+                "$startDay au $endStr"
+            } else {
+                // Même année mais mois différents : "28 décembre au 3 janvier 2025"
+                val startStr = dateFormatWithoutYear.format(startDate)
+                val endStr = dateFormatWithYear.format(endDate)
+                "$startStr au $endStr"
+            }
+        } else {
+            // Années différentes : "28 décembre 2024 au 3 janvier 2025"
+            val startStr = dateFormatWithYear.format(startDate)
+            val endStr = dateFormatWithYear.format(endDate)
+            "$startStr au $endStr"
+        }
+        
+        binding.root.findViewById<TextView>(R.id.weekDateRange)?.text = dateRangeText
+    }
+    
     private fun observeViewModel() {
-        android.util.Log.d("OverviewFragment", "🔧 SETUP observer viewModel.products")
         
         var lastProcessedProducts: List<com.nextjsclient.android.data.models.ScamarkProduct>? = null
         
         viewModel.products.observe(viewLifecycleOwner) { products ->
-            val timestamp = System.currentTimeMillis()
             
-            android.util.Log.d("OverviewFragment", "📊 OBSERVER DÉCLENCHÉ - Timestamp: $timestamp")
-            android.util.Log.d("OverviewFragment", "📊 Products observés: ${products.size} produits totaux")
             
             // Vérifier si c'est exactement la même liste que la dernière fois
             if (products == lastProcessedProducts) {
-                android.util.Log.d("OverviewFragment", "⏭️ IGNORÉ - Liste identique à la précédente")
                 return@observe
             }
             
-            android.util.Log.d("OverviewFragment", "🔥 NOUVELLE LISTE - Traitement requis")
             lastProcessedProducts = products
             
-            products.groupBy { it.supplier.lowercase() }.forEach { (supplier, prods) ->
-                android.util.Log.d("OverviewFragment", "   • $supplier: ${prods.size} produits")
-            }
             
             // Calculer et afficher les stats en une seule fois
             calculateAndDisplayStats(products)
@@ -709,13 +693,12 @@ class OverviewFragment : Fragment() {
                 if (week != null && year != null) {
                     // Toujours mettre à jour l'affichage
                     updateWeekDisplay(year, week)
+                    updateWeekNumberDisplay()
                     
                     if (!isInitialLoad) {
                         // Charger les données seulement si ce n'est pas le chargement initial
-                        android.util.Log.d("OverviewFragment", "📅 Changement de semaine détecté: $year-$week")
                         loadDataForWeek(year, week)
                     } else {
-                        android.util.Log.d("OverviewFragment", "📅 Semaine initiale détectée: $year-$week")
                         isInitialLoad = false
                     }
                 }
@@ -723,10 +706,7 @@ class OverviewFragment : Fragment() {
         }
         
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            android.util.Log.d("OverviewFragment", "🔄 Observer isLoading triggered: $isLoading")
-            android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh current state: ${binding.swipeRefresh.isRefreshing}")
             binding.swipeRefresh.isRefreshing = isLoading
-            android.util.Log.d("OverviewFragment", "🔄 SwipeRefresh NEW state: ${binding.swipeRefresh.isRefreshing}")
             binding.loadingOverlay.visibility = View.GONE // Ne plus utiliser l'overlay de chargement
         }
         
@@ -740,11 +720,6 @@ class OverviewFragment : Fragment() {
     
     
     private fun calculateAndDisplayStats(products: List<com.nextjsclient.android.data.models.ScamarkProduct>) {
-        val startTime = System.currentTimeMillis()
-        val stackTrace = Thread.currentThread().stackTrace.take(6).joinToString("\n") { "  $it" }
-        
-        android.util.Log.d("OverviewFragment", "🔄 DÉBUT calculateAndDisplayStats pour ${products.size} produits - Time: $startTime")
-        android.util.Log.d("OverviewFragment", "🔄 Appelé depuis:\n$stackTrace")
         
         // Appliquer le filtre fournisseur selon les préférences
         val filteredProducts = products.filter { product ->
@@ -756,14 +731,11 @@ class OverviewFragment : Fragment() {
             }
         }
         
-        android.util.Log.d("OverviewFragment", "🎯 FILTRE FOURNISSEUR: ${products.size} -> ${filteredProducts.size} produits")
-        android.util.Log.d("OverviewFragment", "🎯 Anecoop=${supplierPreferences.isAnecoopEnabled}, Solagora=${supplierPreferences.isSolagoraEnabled}")
         
         // Séparer par fournisseur (après filtrage)
         val anecoopProducts = filteredProducts.filter { it.supplier.lowercase() == "anecoop" }
         val solagoraProducts = filteredProducts.filter { it.supplier.lowercase() == "solagora" }
         
-        android.util.Log.d("OverviewFragment", "📊 Répartition: Anecoop=${anecoopProducts.size}, Solagora=${solagoraProducts.size}")
         
         // Appliquer le même filtre à la semaine précédente
         val filteredPreviousProducts = previousWeekProducts.filter { product ->
@@ -779,25 +751,17 @@ class OverviewFragment : Fragment() {
         val previousAnecoopProducts = filteredPreviousProducts.filter { it.supplier.lowercase() == "anecoop" }
         val previousSolagoraProducts = filteredPreviousProducts.filter { it.supplier.lowercase() == "solagora" }
         
-        android.util.Log.d("OverviewFragment", "📊 Semaine précédente: Anecoop=${previousAnecoopProducts.size}, Solagora=${previousSolagoraProducts.size}")
         
         // Calculer les stats
-        android.util.Log.d("OverviewFragment", "🧮 Calcul stats Anecoop...")
         val anecoopStats = calculateStatsForProducts(anecoopProducts, previousAnecoopProducts)
         
-        android.util.Log.d("OverviewFragment", "🧮 Calcul stats Solagora...")
         val solagoraStats = calculateStatsForProducts(solagoraProducts, previousSolagoraProducts)
         
-        android.util.Log.d("OverviewFragment", "✅ Stats calculées - Anecoop: $anecoopStats")
-        android.util.Log.d("OverviewFragment", "✅ Stats calculées - Solagora: $solagoraStats")
         
         // Mettre à jour les dashboards simultanément
-        android.util.Log.d("OverviewFragment", "🎨 DÉBUT animations dashboards")
         updateSupplierDashboard("anecoop", anecoopStats)
         updateSupplierDashboard("solagora", solagoraStats)
         
-        val endTime = System.currentTimeMillis()
-        android.util.Log.d("OverviewFragment", "✅ FIN calculateAndDisplayStats - Durée: ${endTime - startTime}ms")
     }
     
     private fun calculateStatsForProducts(
@@ -828,7 +792,6 @@ class OverviewFragment : Fragment() {
         previousProducts: List<com.nextjsclient.android.data.models.ScamarkProduct>
     ): Pair<Int, Int> {
         if (previousProducts.isEmpty()) {
-            android.util.Log.d("OverviewFragment", "📊 Pas de données de semaine précédente, retour 0,0")
             return Pair(0, 0)
         }
         
@@ -836,8 +799,6 @@ class OverviewFragment : Fragment() {
         val currentProductCodes = currentProducts.map { it.productName }.toSet()
         val previousProductCodes = previousProducts.map { it.productName }.toSet()
         
-        android.util.Log.d("OverviewFragment", "📋 Semaine actuelle: ${currentProductCodes.size} produits uniques")
-        android.util.Log.d("OverviewFragment", "📋 Semaine précédente: ${previousProductCodes.size} produits uniques")
         
         // Produits entrants: présents cette semaine mais pas la semaine dernière
         val newProducts = currentProductCodes.subtract(previousProductCodes)
@@ -847,31 +808,10 @@ class OverviewFragment : Fragment() {
         val removedProducts = previousProductCodes.subtract(currentProductCodes)
         val productsOut = removedProducts.size
         
-        if (productsIn > 0) {
-            android.util.Log.d("OverviewFragment", "➕ ${productsIn} produits ENTRANTS:")
-            newProducts.take(3).forEach { product ->
-                android.util.Log.d("OverviewFragment", "   • $product")
-            }
-        }
-        
-        if (productsOut > 0) {
-            android.util.Log.d("OverviewFragment", "➖ ${productsOut} produits SORTANTS:")
-            removedProducts.take(3).forEach { product ->
-                android.util.Log.d("OverviewFragment", "   • $product")
-            }
-        }
         
         return Pair(productsIn, productsOut)
     }
     
-    /**
-     * Charge les données de la semaine précédente pour calcul des entrants/sortants
-     * NOTE: Cette méthode n'est plus utilisée car le chargement est fait en parallèle dans loadInitialData()
-     */
-    private fun loadPreviousWeekData(_currentYear: Int, _currentWeek: Int) {
-        // Méthode conservée pour compatibilité mais ne fait plus rien
-        return
-    }
     
     /**
      * Calcule la semaine précédente (gère le passage d'année)
@@ -884,26 +824,13 @@ class OverviewFragment : Fragment() {
         }
     }
     
-    /**
-     * Précharge les données des deux fournisseurs pour la semaine sélectionnée
-     * NOTE: Cette méthode n'est plus utilisée car le chargement est fait en parallèle dans loadInitialData()
-     */
-    private fun preloadSupplierData(_year: Int, _week: Int) {
-        // Méthode conservée pour compatibilité mais ne fait plus rien
-        return
-    }
     
     private fun updateSupplierDashboard(supplier: String, stats: ScamarkStats) {
-        val timestamp = System.currentTimeMillis()
-        android.util.Log.d("OverviewFragment", "🎨 DÉBUT updateSupplierDashboard $supplier - Time: $timestamp")
-        android.util.Log.d("OverviewFragment", "🎨 Stats pour $supplier: $stats")
         
         // Déléguer à ModernOverviewHelper pour la nouvelle UI moderne
         val isAnecoop = supplier.lowercase() == "anecoop"
         modernHelper.updateSupplierCard(supplier, stats, isAnecoop)
         
-        val endTimestamp = System.currentTimeMillis()
-        android.util.Log.d("OverviewFragment", "✅ FIN updateSupplierDashboard $supplier - Time: $endTimestamp")
     }
     
     
@@ -929,32 +856,19 @@ class OverviewFragment : Fragment() {
     
     fun toggleSearchMode() {
         // TODO: Implémenter la recherche sur l'aperçu si nécessaire
-        android.util.Log.d("OverviewFragment", "🔍 Recherche sur l'aperçu pas encore implémentée")
     }
     
     private fun navigateToSupplier(supplier: String) {
-        android.util.Log.d("OverviewFragment", "🔄 Navigation vers $supplier avec données préchargées")
-        
-        // Obtenir les données préchargées pour ce fournisseur
-        val preloadedProducts = when (supplier) {
-            "anecoop" -> preloadedAnecoopProducts
-            "solagora" -> preloadedSolagoraProducts
-            else -> emptyList()
-        }
-        
-        val preloadedWeeks = when (supplier) {
-            "anecoop" -> preloadedAnecoopWeeks
-            "solagora" -> preloadedSolagoraWeeks
-            else -> emptyList()
-        }
-        
-        android.util.Log.d("OverviewFragment", "📦 Données disponibles: ${preloadedProducts.size} produits, ${preloadedWeeks.size} semaines")
-        
-        // Stocker les données préchargées dans un cache global accessible par MainActivity
         val mainActivity = activity as? com.nextjsclient.android.MainActivity
         mainActivity?.let { activity ->
-            // Passer les données préchargées à l'activité
-            activity.setPreloadedData(supplier, preloadedProducts, preloadedWeeks)
+            // Obtenir la semaine et l'année sélectionnées
+            val selectedYear = viewModel.selectedYear.value
+            val selectedWeek = viewModel.selectedWeek.value
+            
+            // Passer les informations de semaine/année à MainActivity pour transmission au fragment
+            if (selectedYear != null && selectedWeek != null) {
+                activity.setSelectedWeekForNavigation(selectedYear, selectedWeek)
+            }
             
             // Naviguer vers le fournisseur
             val bottomNav = activity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(com.nextjsclient.android.R.id.bottom_navigation)
@@ -967,43 +881,23 @@ class OverviewFragment : Fragment() {
     }
     
     private fun navigateToSupplierWithFilter(supplier: String, filter: String) {
-        android.util.Log.d("OverviewFragment", "🔄 Navigation vers $supplier avec filtre: $filter")
-        
-        // Obtenir les données préchargées pour ce fournisseur
-        val preloadedProducts = when (supplier) {
-            "anecoop" -> preloadedAnecoopProducts
-            "solagora" -> preloadedSolagoraProducts
-            else -> emptyList()
-        }
-        
-        val preloadedWeeks = when (supplier) {
-            "anecoop" -> preloadedAnecoopWeeks
-            "solagora" -> preloadedSolagoraWeeks
-            else -> emptyList()
-        }
-        
-        android.util.Log.d("OverviewFragment", "📊 Données disponibles pour $supplier: ${preloadedProducts.size} produits, ${preloadedWeeks.size} semaines")
-        
-        // Debug: afficher les premiers produits et leurs fournisseurs
-        preloadedProducts.take(5).forEach { product ->
-            android.util.Log.d("OverviewFragment", "   🔍 Produit préchargé: '${product.productName}' - Fournisseur: '${product.supplier}'")
-        }
-        
-        // Stocker les données préchargées dans un cache global accessible par MainActivity
         val mainActivity = activity as? com.nextjsclient.android.MainActivity
         mainActivity?.let { activity ->
-            // Si pas de données préchargées, ne pas mettre en cache - mais stocker le filtre quand même
-            if (preloadedProducts.isNotEmpty()) {
-                android.util.Log.d("OverviewFragment", "✅ Utilisation des données préchargées")
-                activity.setPreloadedDataWithFilter(supplier, preloadedProducts, preloadedWeeks, filter)
-            } else {
-                android.util.Log.d("OverviewFragment", "⚠️ Pas de données préchargées - stockage du filtre seulement")
-                // Stocker seulement le filtre, pas de données vides
-                activity.setFilterOnly(supplier, filter)
+            // Obtenir la semaine et l'année sélectionnées
+            val selectedYear = viewModel.selectedYear.value
+            val selectedWeek = viewModel.selectedWeek.value
+            
+            // Stocker seulement le filtre et laisser ScamarkFragment charger les bonnes données pour la semaine sélectionnée
+            activity.setFilterOnly(supplier, filter)
+            
+            // Naviguer vers le fournisseur avec les informations de semaine/année
+            val bottomNav = activity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(com.nextjsclient.android.R.id.bottom_navigation)
+            
+            // IMPORTANT: Passer les informations de semaine/année à MainActivity pour transmission au fragment
+            if (selectedYear != null && selectedWeek != null) {
+                activity.setSelectedWeekForNavigation(selectedYear, selectedWeek)
             }
             
-            // Naviguer vers le fournisseur
-            val bottomNav = activity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(com.nextjsclient.android.R.id.bottom_navigation)
             bottomNav?.selectedItemId = when (supplier) {
                 "anecoop" -> com.nextjsclient.android.R.id.navigation_anecoop
                 "solagora" -> com.nextjsclient.android.R.id.navigation_solagora
@@ -1013,9 +907,6 @@ class OverviewFragment : Fragment() {
     }
     
     private fun navigateToSupplierWithEntrantsFilter(supplier: String, filter: String) {
-        android.util.Log.d("OverviewFragment", "🟢🟢🟢 DÉBUT navigateToSupplierWithEntrantsFilter")
-        android.util.Log.d("OverviewFragment", "   • Supplier: $supplier")
-        android.util.Log.d("OverviewFragment", "   • Filter: $filter")
         
         // Pour les produits entrants, on doit identifier ceux qui sont nouveaux cette semaine
         val currentSupplierProducts = when (supplier) {
@@ -1034,13 +925,6 @@ class OverviewFragment : Fragment() {
             !previousProductNames.contains(it.productName)
         }
         
-        android.util.Log.d("OverviewFragment", "📦 Calcul des entrants pour $supplier:")
-        android.util.Log.d("OverviewFragment", "   • Produits semaine actuelle: ${currentSupplierProducts.size}")
-        android.util.Log.d("OverviewFragment", "   • Produits semaine précédente: ${previousWeekSupplierProducts.size}")
-        android.util.Log.d("OverviewFragment", "   • VRAIS ENTRANTS: ${entrantProducts.size}")
-        entrantProducts.take(3).forEach { product ->
-            android.util.Log.d("OverviewFragment", "   • Entrant: ${product.productName}")
-        }
         
         val preloadedWeeks = when (supplier) {
             "anecoop" -> preloadedAnecoopWeeks
@@ -1048,20 +932,14 @@ class OverviewFragment : Fragment() {
             else -> emptyList()
         }
         
-        android.util.Log.d("OverviewFragment", "📅 Semaines disponibles: ${preloadedWeeks.size}")
         
         // Stocker les données dans un cache global accessible par MainActivity
         val mainActivity = activity as? com.nextjsclient.android.MainActivity
         if (mainActivity != null) {
-            android.util.Log.d("OverviewFragment", "✅ MainActivity trouvée, appel de setPreloadedDataWithFilter")
-            android.util.Log.d("OverviewFragment", "   • supplier: $supplier")
-            android.util.Log.d("OverviewFragment", "   • ENTRANTS À PASSER: ${entrantProducts.size}")
-            android.util.Log.d("OverviewFragment", "   • filter: $filter")
             
             // Passer SEULEMENT les vrais produits entrants avec le filtre "entrants"
             mainActivity.setPreloadedDataWithFilter(supplier, entrantProducts, preloadedWeeks, filter)
             
-            android.util.Log.d("OverviewFragment", "🚀 Navigation vers le fournisseur $supplier")
             // Naviguer vers le fournisseur
             val bottomNav = mainActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(com.nextjsclient.android.R.id.bottom_navigation)
             bottomNav?.selectedItemId = when (supplier) {
@@ -1070,17 +948,11 @@ class OverviewFragment : Fragment() {
                 else -> com.nextjsclient.android.R.id.navigation_anecoop
             }
         } else {
-            android.util.Log.e("OverviewFragment", "❌ MainActivity null!")
         }
         
-        android.util.Log.d("OverviewFragment", "🟢🟢🟢 FIN navigateToSupplierWithEntrantsFilter")
     }
     
     private fun navigateToSupplierWithPreviousWeekFilter(supplier: String, filter: String) {
-        android.util.Log.d("OverviewFragment", "🔴🔴🔴 DÉBUT navigateToSupplierWithPreviousWeekFilter")
-        android.util.Log.d("OverviewFragment", "   • Supplier: $supplier")
-        android.util.Log.d("OverviewFragment", "   • Filter: $filter")
-        android.util.Log.d("OverviewFragment", "   • previousWeekProducts total: ${previousWeekProducts.size}")
         
         // Pour les produits sortants, on doit identifier ceux qui étaient là la semaine dernière mais plus maintenant
         val previousWeekSupplierProducts = previousWeekProducts.filter { 
@@ -1100,13 +972,6 @@ class OverviewFragment : Fragment() {
             !currentProductNames.contains(it.productName)
         }
         
-        android.util.Log.d("OverviewFragment", "📦 Calcul des sortants pour $supplier:")
-        android.util.Log.d("OverviewFragment", "   • Produits semaine précédente: ${previousWeekSupplierProducts.size}")
-        android.util.Log.d("OverviewFragment", "   • Produits semaine actuelle: ${currentSupplierProducts.size}")
-        android.util.Log.d("OverviewFragment", "   • VRAIS SORTANTS: ${sortantProducts.size}")
-        sortantProducts.take(3).forEach { product ->
-            android.util.Log.d("OverviewFragment", "   • Sortant: ${product.productName}")
-        }
         
         val preloadedWeeks = when (supplier) {
             "anecoop" -> preloadedAnecoopWeeks
@@ -1114,20 +979,14 @@ class OverviewFragment : Fragment() {
             else -> emptyList()
         }
         
-        android.util.Log.d("OverviewFragment", "📅 Semaines disponibles: ${preloadedWeeks.size}")
         
         // Stocker les données dans un cache global accessible par MainActivity
         val mainActivity = activity as? com.nextjsclient.android.MainActivity
         if (mainActivity != null) {
-            android.util.Log.d("OverviewFragment", "✅ MainActivity trouvée, appel de setPreloadedDataWithFilter")
-            android.util.Log.d("OverviewFragment", "   • supplier: $supplier")
-            android.util.Log.d("OverviewFragment", "   • SORTANTS À PASSER: ${sortantProducts.size}")
-            android.util.Log.d("OverviewFragment", "   • filter: $filter")
             
             // Passer SEULEMENT les vrais produits sortants avec le filtre "sortants"
             mainActivity.setPreloadedDataWithFilter(supplier, sortantProducts, preloadedWeeks, filter)
             
-            android.util.Log.d("OverviewFragment", "🚀 Navigation vers le fournisseur $supplier")
             // Naviguer vers le fournisseur
             val bottomNav = mainActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(com.nextjsclient.android.R.id.bottom_navigation)
             bottomNav?.selectedItemId = when (supplier) {
@@ -1136,44 +995,31 @@ class OverviewFragment : Fragment() {
                 else -> com.nextjsclient.android.R.id.navigation_anecoop
             }
         } else {
-            android.util.Log.e("OverviewFragment", "❌ MainActivity null!")
         }
         
-        android.util.Log.d("OverviewFragment", "🔴🔴🔴 FIN navigateToSupplierWithPreviousWeekFilter")
     }
     
     /**
      * Navigation vers un fournisseur avec filtre promotions
      */
     private fun navigateToSupplierWithPromoFilter(supplier: String, filter: String) {
-        android.util.Log.d("OverviewFragment", "🔥🔥🔥 DÉBUT navigateToSupplierWithPromoFilter")
-        android.util.Log.d("OverviewFragment", "   • Supplier: $supplier")
-        android.util.Log.d("OverviewFragment", "   • Filter: $filter")
         
-        android.util.Log.d("OverviewFragment", "🔍 État des données préchargées:")
-        android.util.Log.d("OverviewFragment", "   • preloadedAnecoopProducts: ${preloadedAnecoopProducts.size} produits")
-        android.util.Log.d("OverviewFragment", "   • preloadedSolagoraProducts: ${preloadedSolagoraProducts.size} produits")
         
         // Produits actuels du fournisseur
         val currentSupplierProducts = when (supplier) {
             "anecoop" -> {
-                android.util.Log.d("OverviewFragment", "📦 Sélection des produits Anecoop: ${preloadedAnecoopProducts.size}")
                 preloadedAnecoopProducts
             }
             "solagora" -> {
-                android.util.Log.d("OverviewFragment", "📦 Sélection des produits Solagora: ${preloadedSolagoraProducts.size}")
                 preloadedSolagoraProducts
             }
             else -> {
-                android.util.Log.d("OverviewFragment", "❌ Supplier non reconnu: $supplier")
                 emptyList()
             }
         }
         
         // Vérifier que nous avons des données à traiter
         if (currentSupplierProducts.isEmpty()) {
-            android.util.Log.e("OverviewFragment", "❌ ERREUR: Aucun produit trouvé pour $supplier!")
-            android.util.Log.e("OverviewFragment", "❌ Les données ne sont peut-être pas encore chargées, utilisation de la méthode normale")
             // Si pas de données préchargées, utiliser la méthode normale qui charge les données
             navigateToSupplierWithFilter(supplier, filter)
             return
@@ -1182,12 +1028,6 @@ class OverviewFragment : Fragment() {
         // Filtrer seulement les produits en promotion
         val promoProducts = currentSupplierProducts.filter { it.isPromo }
         
-        android.util.Log.d("OverviewFragment", "📦 Calcul des promotions pour $supplier:")
-        android.util.Log.d("OverviewFragment", "   • Produits totaux: ${currentSupplierProducts.size}")
-        android.util.Log.d("OverviewFragment", "   • PROMOTIONS: ${promoProducts.size}")
-        promoProducts.take(3).forEach { product ->
-            android.util.Log.d("OverviewFragment", "   • Promo: ${product.productName}")
-        }
         
         val preloadedWeeks = when (supplier) {
             "anecoop" -> preloadedAnecoopWeeks
@@ -1195,20 +1035,14 @@ class OverviewFragment : Fragment() {
             else -> emptyList()
         }
         
-        android.util.Log.d("OverviewFragment", "📅 Semaines disponibles: ${preloadedWeeks.size}")
         
         // Stocker les données dans un cache global accessible par MainActivity
         val mainActivity = activity as? com.nextjsclient.android.MainActivity
         if (mainActivity != null) {
-            android.util.Log.d("OverviewFragment", "✅ MainActivity trouvée, appel de setPreloadedDataWithFilter")
-            android.util.Log.d("OverviewFragment", "   • supplier: $supplier")
-            android.util.Log.d("OverviewFragment", "   • PROMOTIONS À PASSER: ${promoProducts.size}")
-            android.util.Log.d("OverviewFragment", "   • filter: $filter")
             
             // Passer SEULEMENT les vrais produits en promotion avec le filtre "promo"
             mainActivity.setPreloadedDataWithFilter(supplier, promoProducts, preloadedWeeks, filter)
             
-            android.util.Log.d("OverviewFragment", "🚀 Navigation vers le fournisseur $supplier")
             // Naviguer vers le fournisseur
             val bottomNav = mainActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(com.nextjsclient.android.R.id.bottom_navigation)
             bottomNav?.selectedItemId = when (supplier) {
@@ -1217,10 +1051,8 @@ class OverviewFragment : Fragment() {
                 else -> com.nextjsclient.android.R.id.navigation_anecoop
             }
         } else {
-            android.util.Log.e("OverviewFragment", "❌ MainActivity null!")
         }
         
-        android.util.Log.d("OverviewFragment", "🔥🔥🔥 FIN navigateToSupplierWithPromoFilter")
     }
     
     /**
@@ -1289,8 +1121,7 @@ class OverviewFragment : Fragment() {
     /**
      * Affiche la liste des semaines pour un fournisseur (appelé depuis MainActivity)
      */
-    fun showWeekListForSupplier(supplier: String) {
-        android.util.Log.d("OverviewFragment", "📅 Affichage liste des semaines pour $supplier")
+    fun showWeekListForSupplier(@Suppress("UNUSED_PARAMETER") supplier: String) {
         // TODO: Implémenter l'affichage d'une liste des semaines disponibles pour ce fournisseur
         // Cette fonction remplace la fonctionnalité du bouton historique du sélecteur de semaine
     }

@@ -13,6 +13,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import com.nextjsclient.android.MainActivity
 import com.nextjsclient.android.R
 import com.nextjsclient.android.databinding.FragmentScamarkBinding
 
@@ -37,47 +38,69 @@ class ScamarkFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        android.util.Log.d("ScamarkFragment", "🚀 onViewCreated DÉBUT")
-        val startTime = System.currentTimeMillis()
+        android.util.Log.d("ScamarkFragment", "🔄 onViewCreated - Starting fragment initialization")
         
         // Read supplier parameter from arguments
         val supplierFromArgs = arguments?.getString("supplier")
-        android.util.Log.d("ScamarkFragment", "📦 Arguments reçus: supplier = '$supplierFromArgs'")
-        android.util.Log.d("ScamarkFragment", "📊 ViewModel supplier actuel: '${viewModel.selectedSupplier.value}'")
+        android.util.Log.d("ScamarkFragment", "🏷 Supplier from args: $supplierFromArgs")
         
         if (supplierFromArgs != null) {
-            android.util.Log.d("ScamarkFragment", "🔄 Chargement normal pour $supplierFromArgs avec ViewModel isolé")
+            // Vérifier si on vient de l'aperçu avec une semaine spécifique
+            val mainActivity = (activity as? MainActivity)
+            val navigationWeekInfo = mainActivity?.getSelectedWeekForNavigation()
             
-            // IMPORTANT: Toujours forcer le rechargement même si c'est le même fournisseur
-            // car on peut venir de l'aperçu avec des données mixtes
-            if (viewModel.selectedSupplier.value == supplierFromArgs) {
-                android.util.Log.d("ScamarkFragment", "🔄 FORCER rechargement pour $supplierFromArgs (même supplier mais venant d'aperçu)")
-                // Nettoyer seulement les données mixtes sans affecter previousWeekProducts
-                viewModel.forceReloadSupplierData(supplierFromArgs)
-            } else {
+            if (navigationWeekInfo != null) {
+                // Navigation depuis l'aperçu avec une semaine spécifique
+                val (year, week) = navigationWeekInfo
+                android.util.Log.d("ScamarkFragment", "📍 Navigation from overview: year=$year, week=$week")
                 viewModel.selectSupplier(supplierFromArgs)
+                viewModel.selectWeek(year, week)
+                // Nettoyer les informations de navigation après utilisation
+                mainActivity.clearPreloadedCache()
+            } else {
+                // Navigation normale
+                // IMPORTANT: Toujours forcer le rechargement même si c'est le même fournisseur
+                // car on peut venir de l'aperçu avec des données mixtes
+                if (viewModel.selectedSupplier.value == supplierFromArgs) {
+                    android.util.Log.d("ScamarkFragment", "🔄 Same supplier, forcing reload")
+                    // Nettoyer seulement les données mixtes sans affecter previousWeekProducts
+                    viewModel.forceReloadSupplierData(supplierFromArgs)
+                } else {
+                    android.util.Log.d("ScamarkFragment", "🆕 New supplier, selecting: $supplierFromArgs")
+                    viewModel.selectSupplier(supplierFromArgs)
+                }
+            }
+            
+            // IMPORTANT: Charger les données préchargées depuis l'aperçu
+            val hasDataFromOverview = mainActivity?.hasPreloadedDataFor(supplierFromArgs) == true
+            if (hasDataFromOverview && mainActivity != null) {
+                android.util.Log.d("ScamarkFragment", "📦 Loading preloaded data from overview for $supplierFromArgs")
+                mainActivity.loadPreloadedDataToViewModel(supplierFromArgs, viewModel)
             }
             
             // Vérifier s'il y a un filtre à appliquer
             val filterFromArgs = arguments?.getString("filter")
-            if (filterFromArgs != null) {
-                android.util.Log.d("ScamarkFragment", "🎯 Application du filtre depuis les arguments: $filterFromArgs")
+            val currentVMFilter = viewModel.productFilter.value
+            
+            if (filterFromArgs != null && currentVMFilter == "all" && !hasDataFromOverview) {
+                // Nettoyer les arguments pour éviter la réapplication du filtre
+                arguments?.remove("filter")
+            } else if (filterFromArgs != null) {
+                android.util.Log.d("ScamarkFragment", "🔍 Applying filter: $filterFromArgs")
                 viewModel.setProductFilter(filterFromArgs)
             }
         } else {
-            android.util.Log.w("ScamarkFragment", "⚠️ Pas de supplier dans les arguments! Utilisation du supplier par défaut")
             viewModel.selectSupplier("all")
         }
         
+        android.util.Log.d("ScamarkFragment", "🔧 Setting up UI components...")
         setupRecyclerView()
         setupWeekSpinner()
         setupSearchSuggestions()
         observeViewModel()
         setupSwipeRefresh()
         setupFab()
-        
-        val endTime = System.currentTimeMillis()
-        android.util.Log.d("ScamarkFragment", "✅ onViewCreated TERMINÉ - Durée: ${endTime - startTime}ms")
+        android.util.Log.d("ScamarkFragment", "✅ Fragment initialization complete")
     }
     
     private fun setupRecyclerView() {
@@ -125,7 +148,7 @@ class ScamarkFragment : Fragment() {
             
             // Set listener for week changes
             selector.setOnWeekChangeListener { week, year ->
-                viewModel.selectWeek(year, week)
+                viewModel.selectWeek(year, week, "arrows")
             }
             
             // Set listener for week list dialog
@@ -199,8 +222,7 @@ class ScamarkFragment : Fragment() {
             viewModel,
             viewLifecycleOwner
         ) { selectedWeek, selectedYear ->
-            android.util.Log.d("ScamarkFragment", "✅ Semaine sélectionnée: $selectedWeek de l'année $selectedYear")
-            viewModel.selectWeek(selectedYear, selectedWeek)
+            viewModel.selectWeek(selectedYear, selectedWeek, "picker")
         }
         dialog.show()
     }
@@ -210,7 +232,6 @@ class ScamarkFragment : Fragment() {
         val availableWeeks = viewModel.availableWeeks.value ?: emptyList()
         
         if (availableWeeks.isEmpty()) {
-            android.util.Log.d("ScamarkFragment", "🔍 Aucune semaine disponible")
             return
         }
         
@@ -223,34 +244,75 @@ class ScamarkFragment : Fragment() {
             .setTitle("Choisir une semaine")
             .setItems(weekNames) { _, which ->
                 val selectedWeek = availableWeeks[which]
-                android.util.Log.d("ScamarkFragment", "🔍 Semaine sélectionnée: ${selectedWeek.week}/${selectedWeek.year}")
                 viewModel.selectWeek(selectedWeek.year, selectedWeek.week)
             }
             .setNegativeButton("Annuler", null)
             .show()
     }
     
+    private var loaderShownTime = 0L
+    private val MIN_LOADER_DURATION = 250L // Durée minimale d'affichage du loader en ms
+    private var loaderAnimator: android.animation.ValueAnimator? = null
+    
     private fun observeViewModel() {
         viewModel.products.observe(viewLifecycleOwner) { products ->
-            productsAdapter.submitList(products)
+            // Animation fluide pour l'apparition des produits
+            animateProductsUpdate(products)
+        }
+        
+        
+        // Observer les changements de fournisseur pour activer les animations
+        viewModel.selectedSupplier.observe(viewLifecycleOwner) { _ ->
+            // Activer les animations d'entrée pour les nouveaux éléments seulement
+            productsAdapter.enableEntranceAnimations()
+        }
+        
+        // Observer le state de loading pour réinitialiser l'adapter
+        viewModel.isLoadingWeekChange.observe(viewLifecycleOwner) { isLoading ->
+            if (isLoading) {
+                productsAdapter.submitList(emptyList())
+                productsAdapter.notifyDataSetChanged()
+            }
+        }
+        
+        // Observer les changements de filtre pour mettre à jour les couleurs de l'adapter
+        viewModel.productFilter.observe(viewLifecycleOwner) { filter ->
+            productsAdapter.isShowingEntrants = (filter == "entrants")
+            productsAdapter.isShowingSortants = (filter == "sortants")
+            productsAdapter.notifyDataSetChanged() // Force la mise à jour des couleurs
+        }
+        
+        // Observer les changements de semaine pour afficher un loader complet
+        viewModel.isLoadingWeekChange.observe(viewLifecycleOwner) { isLoadingWeekChange ->
+            // Ne pas afficher le loader pour les changements de semaine (utiliser seulement l'indicateur du sélecteur)
+            val weekSelector = binding.root.findViewById<com.nextjsclient.android.ui.components.Material3WeekSelector>(R.id.weekSelector)
+            if (isLoadingWeekChange) {
+                // Indicateur subtil sur le sélecteur de semaine seulement
+                weekSelector?.animate()
+                    ?.alpha(0.7f)
+                    ?.setDuration(150)
+                    ?.start()
+                weekSelector?.isEnabled = false
+            } else {
+                weekSelector?.animate()
+                    ?.alpha(1f)
+                    ?.setDuration(150)
+                    ?.start()
+                weekSelector?.isEnabled = true
+            }
         }
         
         // Observer les suggestions de recherche
         viewModel.searchSuggestions.observe(viewLifecycleOwner) { suggestions ->
-            android.util.Log.d("ScamarkFragment", "🔍 Observer suggestions triggered: ${suggestions.size} suggestions reçues")
             suggestionsAdapter.submitList(suggestions)
             
             // Afficher/masquer la carte des suggestions
             val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
             val suggestionsCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.suggestionsCard)
             
-            android.util.Log.d("ScamarkFragment", "🔍 searchContainer: ${searchContainer != null}, suggestionsCard: ${suggestionsCard != null}")
-            
             if (suggestions.isNotEmpty()) {
-                android.util.Log.d("ScamarkFragment", "🔍 Affichage des suggestions")
                 suggestionsCard?.visibility = View.VISIBLE
             } else {
-                android.util.Log.d("ScamarkFragment", "🔍 Masquage des suggestions")
                 suggestionsCard?.visibility = View.GONE
             }
         }
@@ -259,50 +321,73 @@ class ScamarkFragment : Fragment() {
     private fun setupSwipeRefresh() {
         val swipeRefresh = binding.root.findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(R.id.swipeRefresh)
         
-        // Observer le chargement UNE SEULE FOIS au setup
+        // Observer le chargement avec durée minimale pour éviter les clignotements
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            android.util.Log.d("ScamarkFragment", "🔄 Observer isLoading triggered: $isLoading")
-            android.util.Log.d("ScamarkFragment", "🔄 SwipeRefresh current state: ${swipeRefresh?.isRefreshing}")
-            
-            // Gérer le loader Material 3
             val loadingOverlay = binding.root.findViewById<View>(R.id.loadingOverlay)
-            if (isLoading) {
-                loadingOverlay?.visibility = View.VISIBLE
-                loadingOverlay?.animate()?.alpha(1f)?.setDuration(200)?.start()
-            } else {
-                loadingOverlay?.animate()?.alpha(0f)?.setDuration(150)?.withEndAction {
-                    loadingOverlay.visibility = View.GONE
-                }?.start()
-            }
             
-            if (!isLoading) {
-                android.util.Log.d("ScamarkFragment", "🔄 Setting swipeRefresh.isRefreshing = false")
-                swipeRefresh?.isRefreshing = false
+            if (isLoading) {
+                // Annuler toute animation en cours
+                loadingOverlay?.animate()?.cancel()
+                loaderAnimator?.cancel()
+                
+                // Animation d'apparition ultra fluide avec scale + alpha
+                loaderShownTime = System.currentTimeMillis()
+                loadingOverlay?.visibility = View.VISIBLE
+                loadingOverlay?.alpha = 0f
+                loadingOverlay?.scaleX = 0.8f
+                loadingOverlay?.scaleY = 0.8f
+                
+                // Animation combinée pour un effet plus fluide
+                loadingOverlay?.animate()
+                    ?.alpha(1f)
+                    ?.scaleX(1f)
+                    ?.scaleY(1f)
+                    ?.setDuration(200)
+                    ?.setInterpolator(android.view.animation.DecelerateInterpolator(1.2f))
+                    ?.start()
             } else {
-                android.util.Log.d("ScamarkFragment", "🔄 Loading is true, swipeRefresh should be spinning")
+                // Calculer combien de temps le loader a été affiché
+                val elapsedTime = System.currentTimeMillis() - loaderShownTime
+                val remainingTime = (MIN_LOADER_DURATION - elapsedTime).coerceAtLeast(0)
+                
+                // Attendre le temps minimum avant de masquer pour éviter les clignotements
+                loadingOverlay?.postDelayed({
+                    // Animation de disparition fluide avec scale + alpha
+                    loadingOverlay.animate()
+                        ?.alpha(0f)
+                        ?.scaleX(0.9f)
+                        ?.scaleY(0.9f)
+                        ?.setDuration(250)
+                        ?.setInterpolator(android.view.animation.AccelerateInterpolator(1.5f))
+                        ?.withEndAction {
+                            loadingOverlay.visibility = View.GONE
+                            loadingOverlay.scaleX = 1f
+                            loadingOverlay.scaleY = 1f
+                        }
+                        ?.start()
+                }, remainingTime)
+                
+                swipeRefresh?.isRefreshing = false
             }
         }
         
         swipeRefresh?.setOnRefreshListener {
-            android.util.Log.d("ScamarkFragment", "🔄 Rafraîchissement déclenché")
-            android.util.Log.d("ScamarkFragment", "🔄 SwipeRefresh state BEFORE setting: ${swipeRefresh.isRefreshing}")
-            
             // Activer le loader immédiatement
             swipeRefresh.isRefreshing = true
-            android.util.Log.d("ScamarkFragment", "🔄 SwipeRefresh state AFTER setting: ${swipeRefresh.isRefreshing}")
             
             // Fermer la barre de recherche si elle est ouverte
             val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
             if (searchContainer?.visibility == View.VISIBLE) {
-                android.util.Log.d("ScamarkFragment", "🔄 Fermeture de la barre de recherche")
                 val weekSelector = binding.weekSelector
                 val searchBarCard = searchContainer.findViewById<com.google.android.material.card.MaterialCardView>(R.id.searchBarCard)
                 val searchInput = searchBarCard?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
                 closeSearchMode(weekSelector, searchContainer, searchInput)
             }
             
+            // Nettoyer le cache de MainActivity pour éviter la persistance des filtres
+            (activity as? MainActivity)?.clearPreloadedCache()
+            
             // Utiliser refresh() qui force le rechargement même si c'est le même fournisseur
-            android.util.Log.d("ScamarkFragment", "🔄 Calling viewModel.refresh()")
             viewModel.refresh()
         }
         
@@ -320,18 +405,37 @@ class ScamarkFragment : Fragment() {
             // Quand on clique sur une suggestion
             viewModel.applySuggestion(suggestion)
             
-            // Fermer le clavier de manière plus robuste
-            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
-            val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchContainer)
+            // Obtenir les références aux vues
+            val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
             val searchInput = searchContainer?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
+            val suggestionsCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.suggestionsCard)
             
-            // Retirer le focus et fermer le clavier
-            searchInput?.clearFocus()
-            imm?.hideSoftInputFromWindow(searchInput?.windowToken, android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS)
-            
-            // Mettre à jour le texte de recherche avec une petite animation
+            // Mettre à jour le texte de recherche immédiatement
             searchInput?.setText(suggestion.text)
-            searchInput?.setSelection(suggestion.text.length) // Positionner le curseur à la fin
+            searchInput?.setSelection(suggestion.text.length)
+            
+            // Masquer les suggestions
+            suggestionsCard?.visibility = View.GONE
+            
+            // Fermer le clavier avec plusieurs méthodes pour assurer la fermeture
+            searchInput?.let { input ->
+                // Retirer le focus d'abord
+                input.clearFocus()
+                
+                // Fermer le clavier avec un délai pour être sûr
+                view?.post {
+                    val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                    
+                    // Essayer plusieurs approches pour fermer le clavier
+                    imm?.hideSoftInputFromWindow(input.windowToken, android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS)
+                    imm?.hideSoftInputFromWindow(input.windowToken, 0)
+                    
+                    // Force avec la vue principale si nécessaire
+                    activity?.currentFocus?.let { focusedView ->
+                        imm?.hideSoftInputFromWindow(focusedView.windowToken, 0)
+                    }
+                }
+            }
         }
         
         // Configurer la RecyclerView des suggestions
@@ -388,12 +492,12 @@ class ScamarkFragment : Fragment() {
         startActivity(intent)
     }
     
+    @Suppress("UNUSED_PARAMETER")
     private fun showEditDialog(product: com.nextjsclient.android.data.models.ScamarkProduct) {
         // TODO: Afficher le dialogue d'édition
     }
     
     fun toggleSearchMode() {
-        android.util.Log.d("ScamarkFragment", "🔍 Basculement du mode recherche")
         
         val weekSelector = binding.weekSelector
         
@@ -405,7 +509,6 @@ class ScamarkFragment : Fragment() {
         val searchClearButton = searchBarCard?.findViewById<View>(R.id.searchClearButton)
         val searchActionButton = searchBarCard?.findViewById<View>(R.id.searchActionButton)
         
-        android.util.Log.d("ScamarkFragment", "🔍 searchContainer trouvé: ${searchContainer != null}, visible: ${searchContainer?.visibility}")
         
         if (searchContainer?.visibility == View.VISIBLE) {
             // Fermer la recherche
@@ -465,7 +568,6 @@ class ScamarkFragment : Fragment() {
         searchInput?.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                android.util.Log.d("ScamarkFragment", "🔍 Texte changé: '$s'")
                 searchClearButton?.visibility = if (s?.isNotEmpty() == true) View.VISIBLE else View.GONE
                 // Recherche en temps réel pendant la frappe
                 viewModel.searchProducts(s?.toString())
@@ -524,6 +626,39 @@ class ScamarkFragment : Fragment() {
      */
     fun performSearch(query: String?) {
         viewModel.searchProducts(query)
+    }
+
+    /**
+     * Animation fluide et cohérente pour la mise à jour des produits
+     */
+    private fun animateProductsUpdate(products: List<com.nextjsclient.android.data.models.ScamarkProduct>) {
+        // Réinitialiser immédiatement les propriétés de la RecyclerView
+        binding.recyclerView.clearAnimation()
+        binding.recyclerView.scaleX = 1f
+        binding.recyclerView.scaleY = 1f
+        
+        // Si c'est la même liste, pas d'animation
+        if (productsAdapter.currentList == products) {
+            productsAdapter.submitList(products)
+            return
+        }
+        
+        // Pour éviter l'affichage flash, masquer immédiatement et vider la liste
+        binding.recyclerView.alpha = 0f
+        productsAdapter.submitList(emptyList()) {
+            // Attendre un court délai pour s'assurer que la liste est bien vide
+            binding.recyclerView.postDelayed({
+                // Maintenant soumettre les nouveaux produits
+                productsAdapter.submitList(products) {
+                    // Afficher avec une animation fade-in douce
+                    binding.recyclerView.animate()
+                        .alpha(1f)
+                        .setDuration(200)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
+                }
+            }, 50) // Court délai pour s'assurer que la liste vide est affichée
+        }
     }
 
     override fun onDestroyView() {

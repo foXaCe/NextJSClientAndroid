@@ -28,8 +28,8 @@ class Material3WeekSelector @JvmOverloads constructor(
     private lateinit var weekNumberDisplay: TextView
     private lateinit var dateRangeDisplay: TextView
     private lateinit var yearDisplay: TextView
-    private lateinit var previousWeekButton: FloatingActionButton
-    private lateinit var nextWeekButton: FloatingActionButton
+    private lateinit var previousWeekButton: MaterialButton
+    private lateinit var nextWeekButton: MaterialButton
     private lateinit var weekGridRecycler: RecyclerView
     
     private var currentWeek = Calendar.getInstance().get(Calendar.WEEK_OF_YEAR)

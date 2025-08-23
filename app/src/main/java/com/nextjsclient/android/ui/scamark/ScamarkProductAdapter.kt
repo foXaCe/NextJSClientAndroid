@@ -34,6 +34,9 @@ class ScamarkProductAdapter(
     
     // Variable pour savoir si nous affichons des produits entrants
     var isShowingEntrants: Boolean = false
+    
+    // Track des éléments qui ont été animés pour éviter de réanimer
+    private var shouldAnimateNewItems = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScamarkViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -45,6 +48,38 @@ class ScamarkProductAdapter(
         val product = getItem(position)
         val isLastItem = position == itemCount - 1
         holder.bind(product, isLastItem)
+        
+        // TOUJOURS s'assurer que l'élément est dans un état normal
+        holder.itemView.clearAnimation()
+        holder.itemView.alpha = 1f
+        holder.itemView.scaleX = 1f
+        holder.itemView.scaleY = 1f
+        holder.itemView.translationY = 0f
+        
+        // Animation fade très légère et fluide pour les nouveaux éléments
+        if (shouldAnimateNewItems) {
+            // Animation plus subtile avec délais réduits
+            holder.itemView.alpha = 0.6f
+            holder.itemView.translationY = 20f
+            holder.itemView.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(200) // Durée fixe plus courte
+                .setStartDelay(position * 10L) // Délai réduit pour plus de fluidité
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .withEndAction {
+                    // Désactiver après le dernier élément visible (limite à 10 pour éviter trop de délais)
+                    if (position == itemCount - 1 || position >= 9) {
+                        shouldAnimateNewItems = false
+                    }
+                }
+                .start()
+        }
+    }
+    
+    // Fonction pour activer les animations lors d'un changement de fournisseur
+    fun enableEntranceAnimations() {
+        shouldAnimateNewItems = true
     }
 
     inner class ScamarkViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -84,6 +119,12 @@ class ScamarkProductAdapter(
             } else if (getProductStatus != null) {
                 // Sinon, utiliser la fonction de statut si disponible
                 val status = getProductStatus.invoke(product.productName)
+                @Suppress("UNUSED_VARIABLE")
+                val colorType = when (status) {
+                    ProductStatus.ENTRANT -> "ENTRANT (vert)"
+                    ProductStatus.SORTANT -> "SORTANT (rouge)"
+                    ProductStatus.NEUTRAL -> "NEUTRAL"
+                }
                 val color = when (status) {
                     ProductStatus.ENTRANT -> ContextCompat.getColor(itemView.context, R.color.stat_in_color) // Vert
                     ProductStatus.SORTANT -> ContextCompat.getColor(itemView.context, R.color.stat_out_color) // Rouge

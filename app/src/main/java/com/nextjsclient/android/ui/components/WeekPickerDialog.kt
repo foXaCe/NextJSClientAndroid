@@ -71,18 +71,16 @@ class WeekPickerDialog(
         weekGridAdapter = WeekGridAdapter { weekItem ->
             if (weekItem.hasData) {
                 // Semaine disponible : sélection normale
-                android.util.Log.d("WeekPickerDialog", "✅ Sélection semaine ${weekItem.week}/${weekItem.year}")
                 onWeekSelected(weekItem.week, weekItem.year)
                 dismiss()
             } else {
                 // Semaine non-disponible : l'animation se fait dans l'adapter
-                android.util.Log.d("WeekPickerDialog", "❌ Semaine ${weekItem.week}/${weekItem.year} pas disponible")
             }
         }
         
         weeksRecyclerView.apply {
             adapter = weekGridAdapter
-            layoutManager = GridLayoutManager(context, 4) // 4 colonnes
+            layoutManager = GridLayoutManager(context, 3) // 3 colonnes
         }
     }
 
@@ -92,13 +90,13 @@ class WeekPickerDialog(
         previousYearButton.setOnClickListener {
             currentDisplayYear--
             updateYearDisplay()
-            loadWeeksForCurrentYear()
+            loadWeeksForSpecificYear(currentDisplayYear)
         }
         
         nextYearButton.setOnClickListener {
             currentDisplayYear++
             updateYearDisplay()
-            loadWeeksForCurrentYear()
+            loadWeeksForSpecificYear(currentDisplayYear)
         }
         
     }
@@ -106,24 +104,43 @@ class WeekPickerDialog(
     private fun observeViewModel() {
         // Observer les semaines disponibles
         viewModel.availableWeeks.observe(lifecycleOwner) { weeks ->
-            android.util.Log.d("WeekPickerDialog", "📅 Semaines disponibles mises à jour: ${weeks.size} total")
+            updateYearDisplay() // Mettre à jour les boutons basé sur les nouvelles données
             loadWeeksForCurrentYear()
         }
     }
-
-
     private fun updateYearDisplay() {
         currentYearDisplay.text = currentDisplayYear.toString()
         
-        // Désactiver les boutons si nécessaire
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        nextYearButton.isEnabled = currentDisplayYear < currentYear // Pas d'années futures
-        previousYearButton.isEnabled = currentDisplayYear > currentYear - 5 // 5 ans en arrière max
+        // Désactiver les boutons basé sur les données disponibles
+        val availableWeeks = viewModel.availableWeeks.value ?: emptyList()
+        val availableYears = availableWeeks.map { it.year }.distinct().sorted()
+        
+        
+        nextYearButton.isEnabled = if (availableYears.isNotEmpty()) {
+            val canGoNext = currentDisplayYear < availableYears.maxOrNull()!!
+            canGoNext
+        } else {
+            false
+        }
+        
+        previousYearButton.isEnabled = if (availableYears.isNotEmpty()) {
+            // Permettre de naviguer vers les années précédentes même si pas encore chargées
+            val canGoPrevious = currentDisplayYear > (availableYears.minOrNull()!! - 2) // Permettre 2 ans de plus
+            canGoPrevious
+        } else {
+            // Si aucune donnée, permettre quand même la navigation vers les 2 dernières années
+            val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+            val canGoPrevious = currentDisplayYear > currentYear - 2
+            canGoPrevious
+        }
     }
 
     private fun loadAllAvailableWeeks() {
-        android.util.Log.d("WeekPickerDialog", "🔄 Chargement automatique d'un batch supplémentaire de semaines")
-        // Charger un seul batch supplémentaire pour avoir plus de semaines disponibles
+        // Forcer le chargement de toutes les semaines de tous les fournisseurs
+        // pour que le sélecteur affiche toutes les semaines possibles
+        viewModel.loadAvailableWeeks("all")
+        
+        // Charger aussi un batch supplémentaire pour avoir plus de semaines disponibles
         if (viewModel.canLoadMoreWeeks.value == true) {
             viewModel.loadMoreWeeks()
         }
@@ -132,14 +149,12 @@ class WeekPickerDialog(
     private fun loadMoreWeeksRecursively() {
         // Empêcher les appels récursifs infinis si le chargement initial est terminé
         if (isInitialLoadComplete) {
-            android.util.Log.d("WeekPickerDialog", "🛑 Chargement récursif empêché - initial load terminé")
             return
         }
         
         // Vérifier s'il peut y avoir plus de semaines
         val canLoadMore = viewModel.canLoadMoreWeeks.value ?: true
         if (canLoadMore) {
-            android.util.Log.d("WeekPickerDialog", "🔄 Chargement automatique d'un batch de semaines")
             viewModel.loadMoreWeeks()
             
             // Observer une seule fois pour déclencher le prochain chargement
@@ -152,29 +167,26 @@ class WeekPickerDialog(
                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                             // DOUBLE-CHECK: Vérifier à nouveau canLoadMoreWeeks avant l'appel récursif
                             val canStillLoadMore = viewModel.canLoadMoreWeeks.value ?: false
-                            android.util.Log.d("WeekPickerDialog", "🔄 DOUBLE_CHECK avant récursion: canLoadMore=$canStillLoadMore")
                             if (canStillLoadMore && !isInitialLoadComplete) {
                                 loadMoreWeeksRecursively()
                             } else {
-                                android.util.Log.w("WeekPickerDialog", "🛑 RECURSION_STOPPED - canLoadMore=$canStillLoadMore, isInitialComplete=$isInitialLoadComplete")
                                 isInitialLoadComplete = true
-                                android.util.Log.d("WeekPickerDialog", "✅ Chargement initial terminé")
                             }
                         }, 100)
                     }
                 }
             })
         } else {
-            android.util.Log.d("WeekPickerDialog", "✅ Chargement automatique terminé - toutes les semaines chargées")
             isInitialLoadComplete = true
-            android.util.Log.d("WeekPickerDialog", "✅ Chargement initial terminé")
         }
     }
 
     private fun loadWeeksForCurrentYear() {
-        android.util.Log.d("WeekPickerDialog", "📅 loadWeeksForCurrentYear pour année $currentDisplayYear")
         val weekItems = viewModel.generateWeekGridItems(currentDisplayYear)
-        android.util.Log.d("WeekPickerDialog", "📅 Reçu ${weekItems.size} weekItems (${weekItems.count { it.hasData }} avec données)")
         weekGridAdapter.submitList(weekItems)
+    }
+    
+    private fun loadWeeksForSpecificYear(year: Int) {
+        viewModel.loadAvailableWeeksForYear("all", year)
     }
 }

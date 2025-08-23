@@ -60,20 +60,29 @@
                 android:gravity="center_vertical"
                 android:layout_marginTop="4dp">
 
-                <!-- Previous Week - SUPPRIMÉ TEMPORAIREMENT -->
-                <!--
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                <!-- Previous Week Button -->
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/previousWeekButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    app:fabSize="mini"
-                    app:elevation="2dp"
-                    app:backgroundTint="?attr/colorSurface"
-                    app:tint="?attr/colorOnSurface"
-                    android:src="@drawable/ic_arrow_left"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
-                -->
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="12dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:insetLeft="0dp"
+                    android:insetRight="0dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="0dp"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    app:icon="@drawable/ic_chevron_left"
+                    app:iconGravity="textStart"
+                    app:iconSize="16dp"
+                    app:iconTint="?attr/colorOnSurface"
+                    android:backgroundTint="?attr/colorSurfaceVariant"
+                    app:cornerRadius="16dp"
+                    android:alpha="0.6"
+                    app:rippleColor="?attr/colorOnSurface"
+                    android:contentDescription="Semaine précédente" />
 
                 <!-- Week Number - Clickable Button -->
                 <com.google.android.material.button.MaterialButton
@@ -102,20 +111,29 @@
                     android:elevation="4dp"
                     android:contentDescription="Sélectionner une semaine" />
 
-                <!-- Next Week - SUPPRIMÉ TEMPORAIREMENT -->
-                <!--
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                <!-- Next Week Button -->
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/nextWeekButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    app:fabSize="mini"
-                    app:elevation="2dp"
-                    app:backgroundTint="?attr/colorSurface"
-                    app:tint="?attr/colorOnSurface"
-                    android:src="@drawable/ic_arrow_right"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
-                -->
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="12dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:insetLeft="0dp"
+                    android:insetRight="0dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="0dp"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    app:icon="@drawable/ic_chevron_right"
+                    app:iconGravity="textStart"
+                    app:iconSize="16dp"
+                    app:iconTint="?attr/colorOnSurface"
+                    android:backgroundTint="?attr/colorSurfaceVariant"
+                    app:cornerRadius="16dp"
+                    android:alpha="0.6"
+                    app:rippleColor="?attr/colorOnSurface"
+                    android:contentDescription="Semaine suivante" />
 
             </LinearLayout>
 

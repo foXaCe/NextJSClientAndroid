@@ -15,8 +15,6 @@ import com.nextjsclient.android.data.models.ScamarkStats
  * Helper class pour gérer l'interface moderne du fragment Overview
  */
 class ModernOverviewHelper(private val fragment: OverviewFragment) {
-
-
     /**
      * Met à jour une card fournisseur moderne
      */
@@ -26,8 +24,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         val cardId = if (isAnecoop) R.id.anecoopModernCard else R.id.solagoraModernCard
         val card = binding.root.findViewById<View>(cardId) ?: return
         
-        android.util.Log.d("ModernOverviewHelper", "🎨 Updating ${supplier} card with stats: $stats")
-        android.util.Log.d("ModernOverviewHelper", "🎨 Parameters: supplier=$supplier, isAnecoop=$isAnecoop, cardId=${fragment.resources.getResourceEntryName(cardId)}")
         
         // Vérifier si ce fournisseur doit être visible selon les préférences
         val supplierPreferences = fragment.supplierPreferences
@@ -37,11 +33,9 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
             else -> true
         }
         
-        android.util.Log.d("ModernOverviewHelper", "👁️ Card visibility for $supplier: $shouldShowCard")
         
         if (!shouldShowCard) {
             card.visibility = View.GONE
-            android.util.Log.d("ModernOverviewHelper", "🫥 Card $supplier cachée selon préférences")
             return
         }
         
@@ -84,9 +78,8 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         val name = card.findViewById<TextView>(R.id.supplierName)
         name?.text = if (isAnecoop) "ANECOOP" else "SOLAGORA"
         
-        // Affichage de la semaine
-        val weekDisplay = card.findViewById<TextView>(R.id.weekDisplay)
-        weekDisplay?.text = getWeekDisplayText()
+        // L'affichage de la semaine a été déplacé dans l'en-tête principal
+        // Donc rien à faire ici
         
         // Les éléments sont maintenant masqués directement dans le layout XML
     }

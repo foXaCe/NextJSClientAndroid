@@ -20,7 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/card_header_gradient_solagora"
-            android:padding="20dp">
+            android:padding="16dp">
 
             <!-- Logo et nom -->
             <LinearLayout
@@ -74,16 +74,6 @@
                         android:textColor="@android:color/white"
                         android:alpha="0.8"
                         android:visibility="gone" />
-                    
-                    <TextView
-                        android:id="@+id/weekDisplay"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="S47 - 18/11 au 24/11"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="@android:color/white"
-                        android:alpha="0.9"
-                        android:layout_marginTop="2dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -317,7 +307,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingHorizontal="20dp"
-            android:paddingBottom="20dp">
+            android:paddingBottom="12dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/viewDetailsButton"

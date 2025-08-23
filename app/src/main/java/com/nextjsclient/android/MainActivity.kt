@@ -54,6 +54,10 @@ class MainActivity : AppCompatActivity() {
     private var preloadedData: MutableMap<String, Pair<List<com.nextjsclient.android.data.models.ScamarkProduct>, List<com.nextjsclient.android.data.models.AvailableWeek>>> = mutableMapOf()
     private var preloadedFilters: MutableMap<String, String> = mutableMapOf()
     
+    // Cache pour la semaine sélectionnée lors de navigation depuis l'aperçu
+    private var navigationYear: Int? = null
+    private var navigationWeek: Int? = null
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         // Initialize theme before calling super.onCreate()
         themeManager = ThemeManager(this)
@@ -94,7 +98,6 @@ class MainActivity : AppCompatActivity() {
             navController = navHostFragment?.navController
         } catch (e: Exception) {
             // En cas d'erreur de navigation, continuer sans navController
-            android.util.Log.w("MainActivity", "Navigation setup failed, using manual fragment management", e)
             navController = null
         }
         
@@ -119,6 +122,48 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             checkBiometricAuthentication()
         }
+    }
+    
+    /**
+     * Précharge les données de l'autre fournisseur en arrière-plan
+     */
+    private fun preloadOtherSupplier(currentSupplier: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val otherSupplier = if (currentSupplier == "anecoop") "solagora" else "anecoop"
+                
+                // Vérifier si le fournisseur est activé
+                val isOtherEnabled = if (otherSupplier == "anecoop") {
+                    supplierPreferences.isAnecoopEnabled
+                } else {
+                    supplierPreferences.isSolagoraEnabled
+                }
+                
+                if (isOtherEnabled) {
+                    android.util.Log.d("MainActivity", "📦 Preloading data for $otherSupplier in background...")
+                    
+                    // Précharger les données via le repository pour remplir le cache
+                    val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
+                    val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                    val week = getCurrentISOWeek()
+                    
+                    // Précharger les semaines et les données
+                    repository.getAvailableWeeks(otherSupplier)
+                    repository.getWeekDecisions(year, week, otherSupplier)
+                    
+                    android.util.Log.d("MainActivity", "✅ Preload completed for $otherSupplier")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Error preloading: ${e.message}")
+            }
+        }
+    }
+    
+    private fun getCurrentISOWeek(): Int {
+        val calendar = java.util.Calendar.getInstance()
+        calendar.firstDayOfWeek = java.util.Calendar.MONDAY
+        calendar.minimalDaysInFirstWeek = 4
+        return calendar.get(java.util.Calendar.WEEK_OF_YEAR)
     }
     
     /**
@@ -180,32 +225,66 @@ class MainActivity : AppCompatActivity() {
         // Mettre à jour la visibilité du menu selon les préférences
         updateNavigationVisibility()
         
-        // Configuration Material 3 expressive pour la navigation
-        binding.bottomNavigation.apply {
-            setOnItemSelectedListener { item ->
-                // Animation de l'icône au clic
-                animateIconSelection(item.itemId)
-                
-                // Navigation vers la destination
-                when (item.itemId) {
-                    R.id.navigation_overview -> {
-                        switchToOverview()
-                        true
-                    }
-                    R.id.navigation_anecoop -> {
-                        switchToSupplier("anecoop")
-                        true
-                    }
-                    R.id.navigation_solagora -> {
-                        switchToSupplier("solagora") 
-                        true
-                    }
-                    R.id.navigation_search -> {
-                        triggerSearch()
-                        false // Ne pas sélectionner l'item recherche
-                    }
-                    else -> false
+        // Appliquer les couleurs personnalisées pour chaque élément de navigation
+        setupNavigationColors()
+        
+        // La configuration de navigation est maintenant gérée dans setupNavigationColors()
+    }
+    
+    private fun setupNavigationColors() {
+        // Stocker les couleurs pour chaque item
+        val itemColors = mapOf(
+            R.id.navigation_overview to ContextCompat.getColorStateList(this, R.color.nav_overview_color),
+            R.id.navigation_anecoop to ContextCompat.getColorStateList(this, R.color.nav_anecoop_color),
+            R.id.navigation_solagora to ContextCompat.getColorStateList(this, R.color.nav_solagora_color),
+            R.id.navigation_search to ContextCompat.getColorStateList(this, R.color.nav_search_color)
+        )
+        
+        // Appliquer les couleurs initiales
+        updateNavigationItemColors(binding.bottomNavigation.selectedItemId, itemColors)
+        
+        // Mettre à jour les couleurs quand l'élément sélectionné change
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            updateNavigationItemColors(item.itemId, itemColors)
+            
+            // Animation de l'icône au clic
+            animateIconSelection(item.itemId)
+            
+            // Navigation vers la destination
+            when (item.itemId) {
+                R.id.navigation_overview -> {
+                    switchToOverview()
+                    true
                 }
+                R.id.navigation_anecoop -> {
+                    switchToSupplier("anecoop")
+                    true
+                }
+                R.id.navigation_solagora -> {
+                    switchToSupplier("solagora")
+                    true
+                }
+                R.id.navigation_search -> {
+                    triggerSearch()
+                    false // Ne pas sélectionner l'item recherche
+                }
+                else -> false
+            }
+        }
+    }
+    
+    private fun updateNavigationItemColors(selectedItemId: Int, itemColors: Map<Int, android.content.res.ColorStateList?>) {
+        val menu = binding.bottomNavigation.menu
+        
+        for (i in 0 until menu.size()) {
+            val menuItem = menu.getItem(i)
+            val colorStateList = itemColors[menuItem.itemId]
+            
+            if (menuItem.itemId == selectedItemId && colorStateList != null) {
+                // Appliquer la couleur spécifique pour l'item sélectionné
+                binding.bottomNavigation.itemIconTintList = colorStateList
+                binding.bottomNavigation.itemTextColor = colorStateList
+                break
             }
         }
     }
@@ -244,10 +323,6 @@ class MainActivity : AppCompatActivity() {
         menu.findItem(R.id.navigation_anecoop)?.isVisible = supplierPreferences.isAnecoopEnabled
         menu.findItem(R.id.navigation_solagora)?.isVisible = supplierPreferences.isSolagoraEnabled
         
-        android.util.Log.d("MainActivity", "🧭 Navigation visibility updated:")
-        android.util.Log.d("MainActivity", "   - Overview: visible=${overviewItem?.isVisible}")
-        android.util.Log.d("MainActivity", "   - Anecoop: visible=${menu.findItem(R.id.navigation_anecoop)?.isVisible}")
-        android.util.Log.d("MainActivity", "   - Solagora: visible=${menu.findItem(R.id.navigation_solagora)?.isVisible}")
         
         // Forcer le refresh de la navigation
         binding.bottomNavigation.invalidate()
@@ -296,10 +371,11 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun switchToSupplier(supplier: String) {
-        android.util.Log.d("MainActivity", "🔄 switchToSupplier DÉBUT - supplier: $supplier, currentSupplier: $currentSupplier")
-        val startTime = System.currentTimeMillis()
-        
+        android.util.Log.d("MainActivity", "🔄 Switching to supplier: $supplier")
         currentSupplier = supplier
+        
+        // Précharger l'autre fournisseur en arrière-plan
+        preloadOtherSupplier(supplier)
         
         // Create and show ScamarkFragment with supplier parameter
         val scamarkFragment = ScamarkFragment().apply {
@@ -309,7 +385,6 @@ class MainActivity : AppCompatActivity() {
                 // Passer le filtre s'il y en a un dans le cache
                 val filter = preloadedFilters[supplier]
                 if (filter != null) {
-                    android.util.Log.d("MainActivity", "📝 Ajout du filtre '$filter' aux arguments du fragment")
                     putString("filter", filter)
                 }
                 
@@ -317,14 +392,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        android.util.Log.d("MainActivity", "📝 Fragment créé avec arguments supplier: $supplier")
         
         supportFragmentManager.beginTransaction()
             .replace(R.id.nav_host_fragment, scamarkFragment)
             .commitNow()
-        
-        val endTime = System.currentTimeMillis()
-        android.util.Log.d("MainActivity", "✅ switchToSupplier TERMINÉ - Durée: ${endTime - startTime}ms")
         
         // Show toolbar with no title
         supportActionBar?.show()
@@ -341,7 +412,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun triggerSearch() {
-        android.util.Log.d("MainActivity", "🔍 Bouton recherche cliqué")
         
         // Obtenir le fragment actuel
         val currentFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
@@ -349,12 +419,10 @@ class MainActivity : AppCompatActivity() {
         when (currentFragment) {
             is ScamarkFragment -> {
                 // On est sur une page fournisseur, activer le mode recherche
-                android.util.Log.d("MainActivity", "🔍 Activation du mode recherche pour: $currentSupplier")
                 currentFragment.toggleSearchMode()
             }
             is OverviewFragment -> {
                 // On est sur la page overview, activer la recherche globale
-                android.util.Log.d("MainActivity", "🔍 Activation de la recherche sur l'aperçu")
                 currentFragment.toggleSearchMode()
             }
         }
@@ -369,7 +437,6 @@ class MainActivity : AppCompatActivity() {
         products: List<com.nextjsclient.android.data.models.ScamarkProduct>,
         weeks: List<com.nextjsclient.android.data.models.AvailableWeek>
     ) {
-        android.util.Log.d("MainActivity", "💾 Stockage/Mise à jour des données préchargées pour $supplier: ${products.size} produits, ${weeks.size} semaines")
         preloadedData[supplier] = Pair(products, weeks)
         // Supprimer le filtre existant pour ce fournisseur lors de la mise à jour
         preloadedFilters.remove(supplier)
@@ -384,23 +451,8 @@ class MainActivity : AppCompatActivity() {
         weeks: List<com.nextjsclient.android.data.models.AvailableWeek>,
         filter: String
     ) {
-        android.util.Log.d("MainActivity", "🟡🟡🟡 DÉBUT setPreloadedDataWithFilter")
-        android.util.Log.d("MainActivity", "   • Supplier: $supplier")
-        android.util.Log.d("MainActivity", "   • Filter: $filter")
-        android.util.Log.d("MainActivity", "   • Products: ${products.size}")
-        android.util.Log.d("MainActivity", "   • Weeks: ${weeks.size}")
-        
-        products.take(3).forEach { product ->
-            android.util.Log.d("MainActivity", "   • Produit préchargé: ${product.productName}")
-        }
-        
         preloadedData[supplier] = Pair(products, weeks)
         preloadedFilters[supplier] = filter
-        
-        android.util.Log.d("MainActivity", "✅ Données stockées dans le cache")
-        android.util.Log.d("MainActivity", "   • preloadedData[$supplier] = ${preloadedData[supplier]?.first?.size} produits")
-        android.util.Log.d("MainActivity", "   • preloadedFilters[$supplier] = ${preloadedFilters[supplier]}")
-        android.util.Log.d("MainActivity", "🟡🟡🟡 FIN setPreloadedDataWithFilter")
     }
     
     /**
@@ -414,22 +466,34 @@ class MainActivity : AppCompatActivity() {
      * Stocke seulement un filtre (sans données)
      */
     fun setFilterOnly(supplier: String, filter: String) {
-        android.util.Log.d("MainActivity", "🎯 Stockage du filtre seulement: $supplier -> $filter")
         preloadedFilters[supplier] = filter
+    }
+    
+    /**
+     * Stocke la semaine sélectionnée pour la navigation depuis l'aperçu
+     */
+    fun setSelectedWeekForNavigation(year: Int, week: Int) {
+        navigationYear = year
+        navigationWeek = week
+    }
+    
+    /**
+     * Récupère la semaine sélectionnée pour la navigation
+     */
+    fun getSelectedWeekForNavigation(): Pair<Int, Int>? {
+        return if (navigationYear != null && navigationWeek != null) {
+            Pair(navigationYear!!, navigationWeek!!)
+        } else null
     }
     
     /**
      * Nettoie le cache des données préchargées (utilisé lors du refresh)
      */
     fun clearPreloadedCache() {
-        android.util.Log.d("MainActivity", "🧹 Nettoyage du cache des données préchargées")
-        android.util.Log.d("MainActivity", "   • Cache avant: ${preloadedData.size} fournisseurs")
-        android.util.Log.d("MainActivity", "   • Filtres avant: ${preloadedFilters.size} filtres")
-        
         preloadedData.clear()
         preloadedFilters.clear()
-        
-        android.util.Log.d("MainActivity", "✅ Cache nettoyé")
+        navigationYear = null
+        navigationWeek = null
     }
     
     /**
@@ -443,38 +507,17 @@ class MainActivity : AppCompatActivity() {
      * Charge les données préchargées directement dans le ViewModel
      */
     fun loadPreloadedDataToViewModel(supplier: String, viewModel: com.nextjsclient.android.ui.scamark.ScamarkViewModel) {
-        android.util.Log.d("MainActivity", "🟢🟢🟢 DÉBUT loadPreloadedDataToViewModel")
-        android.util.Log.d("MainActivity", "   • Supplier demandé: $supplier")
-        android.util.Log.d("MainActivity", "   • Données en cache: ${if (preloadedData[supplier] != null) "OUI" else "NON"}")
-        
         preloadedData[supplier]?.let { (products, weeks) ->
             val filter = preloadedFilters[supplier]
-            android.util.Log.d("MainActivity", "📦 Données trouvées dans le cache:")
-            android.util.Log.d("MainActivity", "   • Products: ${products.size}")
-            android.util.Log.d("MainActivity", "   • Weeks: ${weeks.size}")
-            android.util.Log.d("MainActivity", "   • Filter: $filter")
-            
-            products.take(3).forEach { product ->
-                android.util.Log.d("MainActivity", "   • Produit à charger: ${product.productName}")
-            }
             
             if (filter != null) {
-                android.util.Log.d("MainActivity", "🎯 Application du filtre '$filter' AVANT setPreloadedData")
                 // IMPORTANT: Appliquer le filtre AVANT de charger les données
                 viewModel.setProductFilter(filter)
-                android.util.Log.d("MainActivity", "✅ Filtre appliqué, maintenant chargement des données")
                 viewModel.setPreloadedData(supplier, products, weeks)
             } else {
-                android.util.Log.d("MainActivity", "⚡ Chargement sans filtre")
                 viewModel.setPreloadedData(supplier, products, weeks)
             }
-            
-            android.util.Log.d("MainActivity", "💾 Données conservées en cache pour navigations futures")
-        } ?: run {
-            android.util.Log.e("MainActivity", "❌ AUCUNE donnée préchargée trouvée pour $supplier!")
         }
-        
-        android.util.Log.d("MainActivity", "🟢🟢🟢 FIN loadPreloadedDataToViewModel")
     }
     
     private fun applySupplierTheme(supplier: String) {

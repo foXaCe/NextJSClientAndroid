@@ -83,6 +83,5 @@ class SupplierPreferences(context: Context) {
     private fun notifyPreferencesChanged() {
         val intent = Intent(ACTION_SUPPLIER_PREFERENCES_CHANGED)
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
-        android.util.Log.d("SupplierPreferences", "📡 Broadcast sent: preferences changed")
     }
 }

@@ -391,26 +391,20 @@ class ProductDetailActivity : AppCompatActivity() {
         val selectedYear = intent.getIntExtra(EXTRA_SELECTED_YEAR, 0).takeIf { it > 0 }
         val selectedWeek = intent.getIntExtra(EXTRA_SELECTED_WEEK, 0).takeIf { it > 0 }
         
-        android.util.Log.d("ProductDetail", "🔍 UI_PALMARES_START: Chargement palmarès réel pour '$productName' code='$productCode' ($supplier) - semaine sélectionnée: $selectedYear-S$selectedWeek")
         
         // Démarrer l'animation de chargement
         startLoadingAnimation()
         
         lifecycleScope.launch {
             try {
-                android.util.Log.d("ProductDetail", "🔍 UI_PALMARES_FIREBASE_CALL: Appel Firebase pour '$productName' avec code='$productCode' et semaine $selectedYear-S$selectedWeek")
                 val palmares = firebaseRepository.getProductHistorySinceOctober(productName, supplier, productCode, selectedYear, selectedWeek)
                 
-                android.util.Log.d("ProductDetail", "📊 UI_PALMARES_RECEIVED: Palmarès récupéré - ${palmares.consecutiveWeeks} consécutives, ${palmares.totalReferences} total, ${palmares.percentage}%, ${palmares.referencedWeeks.size} semaines dans la liste")
                 
                 // Arrêter l'animation et mettre à jour avec les vraies données
                 stopLoadingAnimation()
-                android.util.Log.d("ProductDetail", "🎨 UI_PALMARES_UPDATE: Mise à jour affichage avec consécutif=${palmares.consecutiveWeeks}, total=${palmares.totalReferences}, pourcentage=${palmares.percentage}%")
                 updatePalmaresDisplay(palmares.consecutiveWeeks, palmares.totalReferences, palmares.percentage)
                 
             } catch (e: Exception) {
-                android.util.Log.e("ProductDetail", "🚨 UI_PALMARES_ERROR: Erreur chargement palmarès: ${e.message}")
-                android.util.Log.e("ProductDetail", "🚨 UI_PALMARES_STACK: ${e.stackTrace.joinToString("\n")}")
                 // Arrêter l'animation même en cas d'erreur
                 stopLoadingAnimation()
             }
@@ -421,7 +415,6 @@ class ProductDetailActivity : AppCompatActivity() {
      * Met à jour l'affichage du palmarès avec les vraies données
      */
     private fun updatePalmaresDisplay(consecutiveWeeks: Int, totalReferences: Int, percentage: Int = 0) {
-        android.util.Log.d("ProductDetail", "🎨 UI_UPDATE_START: Début mise à jour affichage - consécutif=$consecutiveWeeks, total=$totalReferences, pourcentage=$percentage%")
         
         // Mettre à jour les semaines consécutives
         val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
@@ -429,7 +422,6 @@ class ProductDetailActivity : AppCompatActivity() {
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
         val consecutiveEnd = consecutiveStart + "$consecutiveWeeks semaines".length
         
-        android.util.Log.d("ProductDetail", "🎨 UI_UPDATE_CONSECUTIVE: Texte='$consecutiveText', span=$consecutiveStart-$consecutiveEnd")
         
         consecutiveSpannable.setSpan(
             android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
@@ -450,7 +442,6 @@ class ProductDetailActivity : AppCompatActivity() {
             android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
         binding.consecutiveWeeks.text = consecutiveSpannable
-        android.util.Log.d("ProductDetail", "🎨 UI_UPDATE_CONSECUTIVE_SET: TextView mis à jour avec '$consecutiveText'")
         
         // Mettre à jour le total des références (sans pourcentage)
         val totalText = getString(R.string.since_date_format, totalReferences)
@@ -458,7 +449,6 @@ class ProductDetailActivity : AppCompatActivity() {
         val totalStart = totalText.indexOf("$totalReferences fois")
         val totalEnd = totalStart + "$totalReferences fois".length
         
-        android.util.Log.d("ProductDetail", "🎨 UI_UPDATE_TOTAL: Texte='$totalText', span=$totalStart-$totalEnd, pourcentage=$percentage%")
         
         // Colorer "XX fois" en bleu
         totalSpannable.setSpan(
@@ -483,9 +473,7 @@ class ProductDetailActivity : AppCompatActivity() {
         // Mettre à jour le pourcentage séparément avec couleur conditionnelle
         updatePercentageDisplay(percentage)
         binding.totalReferences.text = totalSpannable
-        android.util.Log.d("ProductDetail", "🎨 UI_UPDATE_TOTAL_SET: TextView mis à jour avec '$totalText'")
         
-        android.util.Log.d("ProductDetail", "✅ UI_UPDATE_COMPLETE: Affichage mis à jour avec les vraies données - consécutif=$consecutiveWeeks, total=$totalReferences")
     }
     
     /**
@@ -495,7 +483,6 @@ class ProductDetailActivity : AppCompatActivity() {
         if (isAnimating) return
         isAnimating = true
         
-        android.util.Log.d("ProductDetail", "🎬 ANIMATION_START: Démarrage animation de chargement")
         
         loadingAnimationJob = lifecycleScope.launch {
             val consecutiveNumbers = listOf(3, 7, 2, 9, 5, 8, 4, 6, 1, 12, 15, 8, 3, 11)
@@ -529,7 +516,6 @@ class ProductDetailActivity : AppCompatActivity() {
      * Arrête l'animation de chargement
      */
     private fun stopLoadingAnimation() {
-        android.util.Log.d("ProductDetail", "🛑 ANIMATION_STOP: Arrêt animation de chargement")
         isAnimating = false
         loadingAnimationJob?.cancel()
         loadingAnimationJob = null
@@ -615,13 +601,6 @@ class ProductDetailActivity : AppCompatActivity() {
         
         binding.percentageWeeks.setTextColor(color)
         
-        android.util.Log.d("ProductDetail", "🎨 UI_PERCENTAGE: $percentage% affiché avec couleur ${when {
-            percentage >= 80 -> "VERT_FONCE"
-            percentage >= 60 -> "VERT_CLAIR" 
-            percentage >= 40 -> "ORANGE"
-            percentage >= 20 -> "ROUGE_CLAIR"
-            else -> "ROUGE_FONCE"
-        }}")
     }
     
     /**

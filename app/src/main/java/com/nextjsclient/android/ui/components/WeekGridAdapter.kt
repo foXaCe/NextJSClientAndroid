@@ -176,7 +176,6 @@ class WeekGridAdapter(
         }
         
         holder.itemView.setOnClickListener {
-            android.util.Log.d("WeekGridAdapter", "🖱️ Clic sur semaine ${weekItem.week}/${weekItem.year}, hasData: ${weekItem.hasData}")
             
             if (weekItem.hasData) {
                 // Semaine disponible : sélection normale

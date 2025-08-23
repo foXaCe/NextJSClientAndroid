@@ -118,7 +118,9 @@
         android:layout_height="match_parent"
         android:background="?attr/colorSurface"
         android:visibility="gone"
-        android:alpha="0.98"
+        android:alpha="0"
+        android:clickable="true"
+        android:focusable="true"
         android:elevation="4dp">
 
         <LinearLayout
@@ -143,11 +145,11 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Chargement des produits..."
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginTop="16dp"
-                android:alpha="0.8" />
+                android:text="Chargement..."
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginTop="12dp"
+                android:alpha="0.7" />
 
         </LinearLayout>
 
