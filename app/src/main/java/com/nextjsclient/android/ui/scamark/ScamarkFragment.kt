@@ -263,6 +263,18 @@ class ScamarkFragment : Fragment() {
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             android.util.Log.d("ScamarkFragment", "🔄 Observer isLoading triggered: $isLoading")
             android.util.Log.d("ScamarkFragment", "🔄 SwipeRefresh current state: ${swipeRefresh?.isRefreshing}")
+            
+            // Gérer le loader Material 3
+            val loadingOverlay = binding.root.findViewById<View>(R.id.loadingOverlay)
+            if (isLoading) {
+                loadingOverlay?.visibility = View.VISIBLE
+                loadingOverlay?.animate()?.alpha(1f)?.setDuration(200)?.start()
+            } else {
+                loadingOverlay?.animate()?.alpha(0f)?.setDuration(150)?.withEndAction {
+                    loadingOverlay.visibility = View.GONE
+                }?.start()
+            }
+            
             if (!isLoading) {
                 android.util.Log.d("ScamarkFragment", "🔄 Setting swipeRefresh.isRefreshing = false")
                 swipeRefresh?.isRefreshing = false
@@ -308,14 +320,18 @@ class ScamarkFragment : Fragment() {
             // Quand on clique sur une suggestion
             viewModel.applySuggestion(suggestion)
             
-            // Fermer le clavier
+            // Fermer le clavier de manière plus robuste
             val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
             val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchContainer)
             val searchInput = searchContainer?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
-            imm?.hideSoftInputFromWindow(searchInput?.windowToken, 0)
             
-            // Mettre à jour le texte de recherche
+            // Retirer le focus et fermer le clavier
+            searchInput?.clearFocus()
+            imm?.hideSoftInputFromWindow(searchInput?.windowToken, android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS)
+            
+            // Mettre à jour le texte de recherche avec une petite animation
             searchInput?.setText(suggestion.text)
+            searchInput?.setSelection(suggestion.text.length) // Positionner le curseur à la fin
         }
         
         // Configurer la RecyclerView des suggestions
