@@ -54,7 +54,7 @@
     <string name="checking_updates">Vérification...</string>
     <string name="up_to_date">Vous êtes à jour</string>
     <string name="downloading">Téléchargement...</string>
-    <string name="download_progress">Téléchargement : %d%%</string>
+    <string name="download_progress">Téléchargement : %d</string>
     <string name="installing">Installation...</string>
     <string name="supplier_required">Au moins un fournisseur doit être sélectionné</string>
     <string name="anecoop_enabled">Anecoop activé</string>
