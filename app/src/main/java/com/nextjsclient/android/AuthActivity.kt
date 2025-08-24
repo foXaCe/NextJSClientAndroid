@@ -11,7 +11,9 @@ import com.google.firebase.auth.FirebaseAuthException
 import com.nextjsclient.android.databinding.ActivityAuthBinding
 import com.nextjsclient.android.data.repository.FirebaseRepository
 import com.nextjsclient.android.utils.ThemeManager
+import com.nextjsclient.android.utils.LocaleManager
 import kotlinx.coroutines.launch
+import android.content.Context
 
 class AuthActivity : AppCompatActivity() {
     
@@ -19,6 +21,12 @@ class AuthActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var themeManager: ThemeManager
     private val repository = FirebaseRepository()
+    
+    override fun attachBaseContext(newBase: Context) {
+        val localeManager = LocaleManager(newBase)
+        val updatedContext = localeManager.applyLanguageToContext(newBase, localeManager.getCurrentLanguage())
+        super.attachBaseContext(updatedContext)
+    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         // Initialize theme before calling super.onCreate()

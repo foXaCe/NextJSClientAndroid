@@ -38,7 +38,7 @@ class LocaleManager(private val context: Context) {
         applyLanguage(languageCode)
     }
     
-    fun applyLanguage(languageCode: String) {
+    fun applyLanguage(languageCode: String): Context {
         val locale = when (languageCode) {
             "system" -> Locale.getDefault()
             "en" -> Locale.ENGLISH
@@ -52,16 +52,37 @@ class LocaleManager(private val context: Context) {
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             config.setLocale(locale)
+            return context.createConfigurationContext(config)
         } else {
             @Suppress("DEPRECATION")
             config.locale = locale
-        }
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            context.createConfigurationContext(config)
-        } else {
             @Suppress("DEPRECATION")
             context.resources.updateConfiguration(config, context.resources.displayMetrics)
+            return context
+        }
+    }
+    
+    fun applyLanguageToContext(context: Context, languageCode: String): Context {
+        val locale = when (languageCode) {
+            "system" -> Locale.getDefault()
+            "en" -> Locale.ENGLISH
+            "fr" -> Locale.FRENCH  
+            "es" -> Locale("es", "ES")
+            else -> Locale.getDefault()
+        }
+        
+        Locale.setDefault(locale)
+        val config = Configuration(context.resources.configuration)
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            config.setLocale(locale)
+            return context.createConfigurationContext(config)
+        } else {
+            @Suppress("DEPRECATION")
+            config.locale = locale
+            @Suppress("DEPRECATION")
+            context.resources.updateConfiguration(config, context.resources.displayMetrics)
+            return context
         }
     }
     

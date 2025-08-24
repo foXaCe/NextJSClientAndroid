@@ -12,13 +12,7 @@ class NextJSClientApplication : Application() {
     
     override fun attachBaseContext(base: Context) {
         val localeManager = LocaleManager(base)
-        val updatedContext = updateContextWithLocale(base, localeManager.getCurrentLanguage())
+        val updatedContext = localeManager.applyLanguageToContext(base, localeManager.getCurrentLanguage())
         super.attachBaseContext(updatedContext)
-    }
-    
-    private fun updateContextWithLocale(context: Context, languageCode: String): Context {
-        val localeManager = LocaleManager(context)
-        localeManager.applyLanguage(languageCode)
-        return context
     }
 }

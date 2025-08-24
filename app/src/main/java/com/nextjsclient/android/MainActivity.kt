@@ -63,8 +63,8 @@ class MainActivity : AppCompatActivity() {
     
     override fun attachBaseContext(newBase: Context) {
         val localeManager = LocaleManager(newBase)
-        localeManager.applyLanguage(localeManager.getCurrentLanguage())
-        super.attachBaseContext(newBase)
+        val updatedContext = localeManager.applyLanguageToContext(newBase, localeManager.getCurrentLanguage())
+        super.attachBaseContext(updatedContext)
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,9 +82,6 @@ class MainActivity : AppCompatActivity() {
         supplierPreferences = SupplierPreferences(this)
         biometricManager = BiometricManager(this)
         localeManager = LocaleManager(this)
-        
-        // Apply saved language preference
-        localeManager.applyLanguage(localeManager.getCurrentLanguage())
         
         // Nettoyer les anciennes APK au démarrage
         cleanOldApks()
