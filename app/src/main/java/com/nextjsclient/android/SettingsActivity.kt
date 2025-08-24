@@ -156,17 +156,17 @@ class SettingsActivity : AppCompatActivity() {
             // Extraire uniquement la partie Build #XXX si disponible
             binding.buildInfo.text = when {
                 versionDisplayName.contains("Build #") -> {
-                    // Extraire (Build #XXX) depuis "1.0.0 (Build #123)"
-                    val buildPart = versionDisplayName.substringAfter("(").substringBefore(")")
-                    "($buildPart)"
+                    // Extraire Build #XXX depuis "1.0.0 (Build #123)" -> "(#123)"
+                    val buildNumber = versionDisplayName.substringAfter("Build #").substringBefore(")")
+                    "(#$buildNumber)"
                 }
                 versionDisplayName.contains("-dev+") -> {
                     // Pour les builds locaux, afficher le commit court
                     val commit = versionDisplayName.substringAfter("-dev+").take(7)
-                    "(Build $commit)"
+                    "($commit)"
                 }
                 else -> {
-                    "(Build #$buildNumber)"
+                    "(#$buildNumber)"
                 }
             }
             
