@@ -56,6 +56,13 @@
     <string name="downloading">Downloading...</string>
     <string name="download_progress">Download: %d%%</string>
     <string name="installing">Installing...</string>
+    <string name="ready_to_install">Ready to install</string>
+    <string name="install_now">Install now</string>
+    <string name="update_check_error">Check error</string>
+    <string name="installation_timeout">Installation timeout - Try again</string>
+    <string name="installation_success">Installation successful</string>
+    <string name="installation_failed">Installation failed - Please try again</string>
+    <string name="apk_file_corrupted">APK file corrupted</string>
     <string name="supplier_required">At least one supplier must be selected</string>
     <string name="anecoop_enabled">Anecoop enabled</string>
     <string name="anecoop_disabled">Anecoop disabled</string>

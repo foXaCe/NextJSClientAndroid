@@ -347,7 +347,7 @@ class UpdateManager(private val context: Context) {
             var iterationCount = 0
             
             while (true) {
-                delay(1000) // Check every second
+                delay(500) // Check every 500ms for better progress tracking
                 iterationCount++
                 
                 Log.d(TAG, "🔄 Monitoring iteration #$iterationCount")
@@ -525,14 +525,38 @@ class UpdateManager(private val context: Context) {
                             break
                         }
                         DownloadManager.STATUS_RUNNING -> {
-                            if (bytesTotal > 0) {
-                                val progress = ((bytesDownloaded * 100) / bytesTotal).toInt()
+                            if (bytesTotal > 0 && bytesTotal != -1L) {
+                                val progress = ((bytesDownloaded * 100) / bytesTotal).toInt().coerceIn(1, 100) // Au minimum 1% si on télécharge
                                 Log.d(TAG, "🏃 Download in progress: $progress% ($bytesDownloaded/$bytesTotal bytes)")
                                 withContext(Dispatchers.Main) {
                                     listener?.onDownloadProgress(progress)
                                 }
                             } else {
-                                Log.d(TAG, "🏃 Download running, size unknown: $bytesDownloaded bytes")
+                                // Taille inconnue - estimer le progrès basé sur les bytes téléchargés
+                                // Estimation basée sur la taille typique d'APK ~12-13 MB
+                                val estimatedTotalSize = 13 * 1024 * 1024 // 13 MB estimé
+                                val estimatedProgress = when {
+                                    bytesDownloaded == 0L -> 1 // Au moins 1% si le téléchargement a commencé
+                                    bytesDownloaded < 512 * 1024 -> 5  // < 0.5MB -> 5%
+                                    bytesDownloaded < 1024 * 1024 -> 8  // < 1MB -> 8%
+                                    bytesDownloaded < 2 * 1024 * 1024 -> 15  // < 2MB -> 15%
+                                    bytesDownloaded < 4 * 1024 * 1024 -> 30  // < 4MB -> 30%
+                                    bytesDownloaded < 6 * 1024 * 1024 -> 45  // < 6MB -> 45%
+                                    bytesDownloaded < 8 * 1024 * 1024 -> 60  // < 8MB -> 60%
+                                    bytesDownloaded < 10 * 1024 * 1024 -> 75 // < 10MB -> 75%
+                                    bytesDownloaded < 12 * 1024 * 1024 -> 85 // < 12MB -> 85%
+                                    else -> {
+                                        // Pour les derniers MB, calculer précisément si possible
+                                        val calculatedProgress = ((bytesDownloaded * 100) / estimatedTotalSize).toInt()
+                                        minOf(95, maxOf(90, calculatedProgress)) // Entre 90-95%
+                                    }
+                                }.coerceIn(1, 95) // Ne jamais dépasser 95% sans connaître la taille totale exacte
+                                
+                                val sizeMB = String.format("%.1f", bytesDownloaded / 1024.0 / 1024.0)
+                                Log.d(TAG, "🏃 Download running, size unknown: ${sizeMB}MB downloaded (estimated $estimatedProgress%)")
+                                withContext(Dispatchers.Main) {
+                                    listener?.onDownloadProgress(estimatedProgress)
+                                }
                             }
                         }
                         DownloadManager.STATUS_PENDING -> {
@@ -635,7 +659,7 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private fun isNewerVersion(_current: String, _latest: String, release: Release, _assetNames: List<String>): Boolean {
+    private fun isNewerVersion(@Suppress("UNUSED_PARAMETER") _current: String, @Suppress("UNUSED_PARAMETER") _latest: String, release: Release, @Suppress("UNUSED_PARAMETER") _assetNames: List<String>): Boolean {
         return try {
             // UNIQUEMENT LES BUILDS GITHUB - pas de version locale
             

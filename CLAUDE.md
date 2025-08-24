@@ -1,92 +1,180 @@
-# Instructions pour Claude - Projet NextJSClientAndroid
+# CLAUDE.md
 
-## Configuration Git et Commits
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-### Messages de commit
-- **NE JAMAIS** ajouter ces lignes dans les messages de commit :
-  ```
-  🤖 Generated with [Claude Code](https://claude.ai/code)
-  Co-Authored-By: Claude <noreply@anthropic.com>
-  ```
-- Utiliser des messages de commit simples et professionnels
-- Format préféré : `type: description courte et claire`
-- Types : feat, fix, docs, style, refactor, test, chore
+## Build and Development Commands
 
-### Exemple de commit correct
+### Building
 ```bash
-git commit -m "feat: Ajoute la signature APK de production avec certificat stable"
-```
-
-## Configuration de signature APK
-
-Le projet utilise un système de signature APK de production pour éviter les alertes Play Protect :
-
-- **Keystore** : `nextjs-client-release.keystore` (NE JAMAIS commiter)
-- **Mots de passe** : Stockés dans `keystore.properties` (NE JAMAIS commiter)
-- **GitHub Actions** : Configure les secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
-- **Documentation** : Voir `SIGNING-SETUP.md`
-
-## Fichiers sensibles à ne JAMAIS commiter
-
-- `*.keystore`
-- `*.jks`
-- `keystore.properties`
-- `keystore-passwords.txt`
-- Tout fichier contenant des mots de passe ou clés
-
-## Standards de code
-
-### Kotlin
-- Suivre les conventions Kotlin existantes dans le projet
-- Utiliser les data classes pour les modèles
-- Préférer les fonctions d'extension quand approprié
-
-### Build configuration
-- Les mots de passe doivent toujours être dans des fichiers de propriétés séparés
-- Utiliser des variables d'environnement pour CI/CD
-- Toujours avoir un fallback pour les configurations locales
-
-## Commandes utiles
-
-### Build
-```bash
-# Build debug
+# Build debug APK
 ./gradlew assembleDebug
 
-# Build release signé
+# Build release APK (requires keystore configuration)
 ./gradlew assembleRelease
 
-# Vérifier la signature
+# Install debug APK on connected device
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+# Clean build
+./gradlew clean
+
+# Verify APK signature
 apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
 ```
 
-### Tests
+### Testing and Quality
 ```bash
-# Lancer les tests
+# Run unit tests
 ./gradlew test
 
-# Lancer les lints
+# Run lint checks
 ./gradlew lint
+
+# Run specific test
+./gradlew test --tests "com.nextjsclient.android.YourTestClass"
+
+# Generate lint report
+./gradlew lintDebug
 ```
 
-## Architecture du projet
+## Architecture Overview
 
-- **MainActivity** : Point d'entrée de l'application
-- **Fragments** : Navigation par fragments (Overview, Scamark, etc.)
-- **Repository** : FirebaseRepository pour la gestion des données
-- **ViewModels** : Architecture MVVM
-- **UpdateManager** : Gestion des mises à jour depuis GitHub
+### MVVM Pattern
+The app follows MVVM (Model-View-ViewModel) architecture:
 
-## Notes importantes
+- **Models** (`data/models/`): Data classes representing business entities
+  - `ScamarkProduct`: Product with pricing, decisions, and article info
+  - `ScamarkStats`: Dashboard statistics (products in/out, promos, clients)
+  - `AvailableWeek`: Week navigation data
 
-1. Le projet utilise Firebase mais avec un fallback hors ligne
-2. Les images produits sont chargées depuis Firebase Storage
-3. Le système de mise à jour vérifie les releases GitHub
-4. L'APK doit toujours être signé avec le même certificat pour maintenir la confiance
+- **Repository** (`data/repository/FirebaseRepository`): 
+  - Single source of truth for data operations
+  - Handles Firebase Firestore queries with caching
+  - Week-based data fetching with supplier filtering
+  - Cache invalidation after 30 minutes
 
-## Préférences utilisateur
+- **ViewModels** (`ui/*/ScamarkViewModel`):
+  - Shared between fragments via `activityViewModels()`
+  - Manages UI state with LiveData
+  - Handles product filtering, search, and week selection
+  - Coordinates data loading with loading states
 
-- Messages courts et directs
-- Pas d'emojis dans le code ou les commits
-- Documentation en français
-- Code en anglais (noms de variables, fonctions, etc.)
+- **Views** (Fragments):
+  - `OverviewFragment`: Dashboard with supplier stats and Top SCA
+  - `ScamarkFragment`: Product list with filters and search
+  - Navigation via BottomNavigationView in MainActivity
+
+### Navigation Flow
+```
+AuthActivity (login) 
+    ↓
+MainActivity (container)
+    ├── OverviewFragment (dashboard)
+    ├── ScamarkFragment (Anecoop)
+    └── ScamarkFragment (Solagora)
+```
+
+### Data Flow with Preloading
+When navigating from Overview to Scamark with filters:
+1. OverviewFragment preloads supplier data
+2. Stores in MainActivity cache with filter type
+3. ScamarkFragment receives preloaded filtered data
+4. Avoids redundant Firebase queries
+
+### Key Components
+
+**MainActivity**:
+- Manages navigation between fragments
+- Handles preloaded data cache for performance
+- Manages biometric authentication overlay
+- Coordinates theme changes per supplier
+- Handles deep navigation with week/filter parameters
+
+**UpdateManager**:
+- Checks GitHub releases for updates
+- Downloads and installs APKs
+- Version comparison logic
+- Shows update dialog with changelog
+
+**BiometricManager**:
+- Handles fingerprint/face authentication
+- Shows lock overlay when app resumes
+- Integrates with system biometric APIs
+
+**SupplierThemeManager**:
+- Dynamically changes app colors per supplier
+- Updates status bar, navigation bar, FAB colors
+- Smooth color transitions
+
+## Firebase Integration
+
+### Configuration
+- `google-services.json` required in `app/` directory
+- Firebase services: Auth, Firestore, Storage
+- Fallback to offline mode if Firebase unavailable
+
+### Data Structure
+```
+decisions/
+  └── {year}/
+      └── S{week}/
+          └── {supplier}/
+              └── products (array)
+```
+
+## APK Signing
+
+### Production Keystore
+- Keystore: `nextjs-client-release.keystore` (never commit)
+- Properties: `keystore.properties` (never commit)
+- GitHub Actions secrets: KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+
+### Version Management
+- Version code: Git commit count
+- Version name: `{major}.{minor}.{patch}` or `{major}.{minor}.{patch}-dev+{commit}`
+- CI builds: Includes GitHub run number
+
+## Git Commit Standards
+
+### Format
+```
+type: description courte et claire
+```
+
+Types: feat, fix, docs, style, refactor, test, chore
+
+### Important Rules
+- Never include Claude attribution in commits
+- Use professional, concise messages
+- Code in English, documentation in French
+
+## Performance Considerations
+
+### Caching Strategy
+- Firebase data cached for 30 minutes per supplier/week
+- Preloaded data passed between fragments
+- Images cached with Glide
+
+### Animation Performance
+- Material 3 animations with hardware acceleration
+- Careful use of `withEndAction` to chain animations
+- Reset animation properties after completion
+
+## UI/UX Guidelines
+
+### Material Design 3
+- Dynamic color theming per supplier
+- Consistent elevation (cards: 4dp, header: 16dp)
+- Expressive animations with FastOutSlowInInterpolator
+
+### Fragment Lifecycle
+- Use `viewLifecycleOwner` for observers
+- Clean up bindings in `onDestroyView`
+- Handle configuration changes with ViewModel
+
+## Critical Files Never to Commit
+- `*.keystore`
+- `*.jks`  
+- `keystore.properties`
+- `keystore-passwords.txt`
+- `google-services.json` (except in CI)

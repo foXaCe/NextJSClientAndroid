@@ -103,7 +103,7 @@ class WeekPickerDialog(
 
     private fun observeViewModel() {
         // Observer les semaines disponibles
-        viewModel.availableWeeks.observe(lifecycleOwner) { weeks ->
+        viewModel.availableWeeks.observe(lifecycleOwner) { _ ->
             updateYearDisplay() // Mettre à jour les boutons basé sur les nouvelles données
             loadWeeksForCurrentYear()
         }
@@ -159,7 +159,8 @@ class WeekPickerDialog(
             
             // Observer une seule fois pour déclencher le prochain chargement
             viewModel.isLoadingMoreWeeks.observe(lifecycleOwner, object : androidx.lifecycle.Observer<Boolean> {
-                override fun onChanged(isLoading: Boolean) {
+                override fun onChanged(value: Boolean) {
+                    val isLoading = value
                     if (!isLoading) {
                         // Retirer cet observer et continuer le chargement récursif
                         viewModel.isLoadingMoreWeeks.removeObserver(this)

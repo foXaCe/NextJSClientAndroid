@@ -169,6 +169,14 @@
     <string name="sca_count_format">SCA: %1$d BLL + %2$d EUROPOOL = %3$d</string>
     
     <!-- Update notifications -->
-    <string name="click_here">Haga clic aquí</string>
+    <string name="ready_to_install">Listo para instalar</string>
+    <string name="install_now">Instalar ahora</string>
+    <string name="update_check_error">Error al verificar</string>
+    <string name="click_here">Toque para detalles</string>
+    <string name="installation_timeout">Tiempo de instalación agotado - Por favor inténtelo de nuevo</string>
+    <string name="installation_failed">Error de instalación - Por favor inténtelo de nuevo</string>
     <string name="update_date">Fecha de actualización</string>
+    
+    <!-- Test update system -->
+    <string name="test_update">Sistema de prueba de actualización v1</string>
 </resources>

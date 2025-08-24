@@ -9,26 +9,26 @@
     <string name="title_casino">Casino</string>
     
     <!-- Actions -->
-    <string name="action_settings">Settings</string>
-    <string name="action_refresh">Refresh</string>
+    <string name="action_settings">Paramètres</string>
+    <string name="action_refresh">Actualiser</string>
     
     <!-- Errors -->
-    <string name="error_loading_page">Unable to load page</string>
-    <string name="error_check_connection">Please check your internet connection</string>
-    <string name="retry">Retry</string>
+    <string name="error_loading_page">Impossible de charger la page</string>
+    <string name="error_check_connection">Veuillez vérifier votre connexion internet</string>
+    <string name="retry">Réessayer</string>
     
     <!-- Authentication -->
-    <string name="login">Login</string>
-    <string name="logout">Logout</string>
-    <string name="email">Email</string>
-    <string name="password">Password</string>
-    <string name="login_error">Login failed. Please try again.</string>
+    <string name="login">Connexion</string>
+    <string name="logout">Déconnexion</string>
+    <string name="email">E-mail</string>
+    <string name="password">Mot de passe</string>
+    <string name="login_error">Échec de la connexion. Veuillez réessayer.</string>
     
     <!-- Settings -->
-    <string name="settings_server_url">Server URL</string>
-    <string name="settings_server_url_summary">Configure the server URL for the application</string>
-    <string name="settings_cache">Clear Cache</string>
-    <string name="settings_cache_summary">Clear WebView cache and cookies</string>
+    <string name="settings_server_url">URL du serveur</string>
+    <string name="settings_server_url_summary">Configurer l\'URL du serveur pour l\'application</string>
+    <string name="settings_cache">Vider le cache</string>
+    <string name="settings_cache_summary">Vider le cache et les cookies WebView</string>
     
     <!-- Update -->
     <string name="update_available">Nouvelle version disponible</string>
@@ -42,7 +42,7 @@
     
     <!-- Settings Activity -->
     <string name="settings_title">Paramètres</string>
-    <string name="email_not_available">Email non disponible</string>
+    <string name="email_not_available">E-mail non disponible</string>
     <string name="build_format">Build %s</string>
     <string name="version_code_format">Version %1$s • Code %2$d</string>
     <string name="build_number_format">Build #%d</string>
@@ -54,8 +54,8 @@
     <string name="checking_updates">Vérification...</string>
     <string name="up_to_date">Vous êtes à jour</string>
     <string name="downloading">Téléchargement...</string>
-    <string name="download_progress">Téléchargement: %d%%</string>
-    <string name="installing">Installation en cours...</string>
+    <string name="download_progress">Téléchargement : %d%%</string>
+    <string name="installing">Installation...</string>
     <string name="supplier_required">Au moins un fournisseur doit être sélectionné</string>
     <string name="anecoop_enabled">Anecoop activé</string>
     <string name="anecoop_disabled">Anecoop désactivé</string>
@@ -64,7 +64,7 @@
     <string name="biometric_activate_title">Activer l\'authentification biométrique</string>
     <string name="biometric_activate_subtitle">Confirmez votre identité pour activer cette fonctionnalité</string>
     <string name="biometric_enabled">Authentification biométrique activée</string>
-    <string name="biometric_error">Erreur: %s</string>
+    <string name="biometric_error">Erreur : %s</string>
     <string name="biometric_disabled">Authentification biométrique désactivée</string>
     <string name="fingerprint_auth">Empreinte digitale</string>
     <string name="face_auth">Reconnaissance faciale</string>
@@ -89,7 +89,7 @@
     <string name="update_status">Vérification...</string>
     <string name="update_button">Mettre à jour</string>
     <string name="suppliers_section_title">FOURNISSEURS</string>
-    <string name="suppliers_description">Choisissez les fournisseurs à afficher</string>
+    <string name="suppliers_description">Choisir les fournisseurs à afficher</string>
     <string name="anecoop_name">Anecoop</string>
     <string name="solagora_name">Solagora</string>
     <string name="appearance_section_title">APPARENCE</string>
@@ -113,9 +113,9 @@
     <string name="incoming_products">Entrants</string>
     <string name="outgoing_products">Sortants</string>
     <string name="promo_products">Promos</string>
-    <string name="view_details">Voir détails</string>
+    <string name="view_details">Voir les détails</string>
     <string name="product_details">Détails du produit</string>
-    <string name="current_week">Semaine en cours</string>
+    <string name="current_week">Semaine actuelle</string>
     <string name="loading">Chargement...</string>
     <string name="week_overview">Aperçu de la semaine</string>
     <string name="products_label">Produits</string>
@@ -138,22 +138,22 @@
     <string name="since_date_format">Depuis le 01 Octobre %d fois</string>
     <string name="price_title">Prix</string>
     <string name="no_products_found">Aucun produit trouvé</string>
-    <string name="add_products_start">Ajoutez des produits pour commencer</string>
+    <string name="add_products_start">Ajouter des produits pour commencer</string>
     <string name="app_locked">Application verrouillée</string>
     <string name="auth_required">Authentification requise</string>
     <string name="unlock_button">Déverrouiller</string>
     <string name="connect_button">Se connecter</string>
-    <string name="filter_active">Filtre actif • Tirez vers le bas pour rafraîchir</string>
+    <string name="filter_active">Filtre actif • Tirez vers le bas pour actualiser</string>
     <string name="select_week">Sélectionner une semaine</string>
     <string name="load_more">Charger 10 de plus</string>
     <string name="current_label">Actuelle</string>
     <string name="list_label">Liste</string>
     <string name="promo_label">PROMO</string>
-    <string name="total_products">Produits total</string>
-    <string name="vs_last_week">vs sem. passée</string>
+    <string name="total_products">Total produits</string>
+    <string name="vs_last_week">vs sem. dernière</string>
     <string name="trend_format">%1$s %2$s</string>
     <string name="percentage_weeks">%d%% des semaines</string>
-    <string name="overview_title">Vue d\'ensemble</string>
+    <string name="overview_title">Aperçu</string>
     
     <!-- Date formatting -->
     <string name="date_range_separator">au</string>
@@ -161,10 +161,10 @@
     <string name="week_short">S</string>
     
     <!-- Filter messages -->
-    <string name="filter_incoming_message">🟢 Affichage des produits entrants • Tirez vers le bas pour rafraîchir</string>
-    <string name="filter_outgoing_message">🔴 Affichage des produits sortants • Tirez vers le bas pour rafraîchir</string>
-    <string name="filter_promo_message">🔥 Affichage des promotions • Tirez vers le bas pour rafraîchir</string>
-    <string name="filter_active_message">Filtre actif • Tirez vers le bas pour rafraîchir</string>
+    <string name="filter_incoming_message">🟢 Affichage produits entrants • Tirez vers le bas pour actualiser</string>
+    <string name="filter_outgoing_message">🔴 Affichage produits sortants • Tirez vers le bas pour actualiser</string>
+    <string name="filter_promo_message">🔥 Affichage promotions • Tirez vers le bas pour actualiser</string>
+    <string name="filter_active_message">Filtre actif • Tirez vers le bas pour actualiser</string>
     
     <!-- Loading states -->
     <string name="please_wait">Veuillez patienter...</string>
@@ -177,6 +177,27 @@
     <string name="sca_count_format">SCA : %1$d BLL + %2$d EUROPOOL = %3$d</string>
     
     <!-- Update notifications -->
-    <string name="click_here">Cliquer ici</string>
-    <string name="update_date">Date de la mise à jour</string>
+    <string name="click_here">Cliquez ici</string>
+    <string name="update_date">Date de mise à jour</string>
+    
+    <!-- Missing update system strings -->
+    <string name="ready_to_install">Prêt à installer</string>
+    <string name="install_now">Installer maintenant</string>
+    <string name="update_check_error">Erreur de vérification</string>
+    <string name="installation_timeout">Timeout d\'installation - Réessayer</string>
+    <string name="installation_success">Installation réussie</string>
+    <string name="installation_failed">Erreur d\'installation</string>
+    <string name="apk_file_corrupted">Fichier APK corrompu</string>
+    
+    <!-- Test update system -->
+    <string name="test_update">Système de test de mise à jour v1</string>
+    
+    <!-- Week selector -->
+    <string name="week_selector_current">Actuelle</string>
+    <string name="week_selector_history">Historique</string>
+    <string name="week_format">SEMAINE %d</string>
+    
+    <!-- Overview expressive -->
+    <string name="week_progress_label">Progression de la semaine</string>
+    
 </resources>

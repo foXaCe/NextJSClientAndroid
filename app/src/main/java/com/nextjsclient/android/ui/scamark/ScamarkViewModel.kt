@@ -204,7 +204,7 @@ class ScamarkViewModel : ViewModel() {
         
         viewModelScope.launch(Dispatchers.IO) {
             _isLoadingMoreWeeks.value = true
-            val startTime = System.currentTimeMillis()
+            // val startTime = System.currentTimeMillis() // Unused variable
             try {
                 android.util.Log.d("ScamarkVM", "⏳ Loading more weeks...")
                 // Calculer la semaine de départ pour l'extension en tenant compte de l'année
@@ -364,9 +364,9 @@ class ScamarkViewModel : ViewModel() {
             // IMPORTANT: S'assurer que le loading est désactivé pour le cache
             _isLoading.value = false
             
-            // Assigner directement les données (elvis operator pour satisfaire lint)
+            // Assigner directement les données (vérification non-null pour lint)
             _allProducts.value = cachedProducts ?: emptyList()
-            val stats = calculateStatsFromProducts(cachedProducts ?: emptyList())
+            val stats = calculateStatsFromProducts(cachedProducts)
             _stats.value = stats
             
             // Charger S-1 en arrière-plan
@@ -941,6 +941,8 @@ class ScamarkViewModel : ViewModel() {
         val calendar = Calendar.getInstance()
         val currentYear = calendar.get(Calendar.YEAR)
         val currentWeek = getCurrentISOWeek()
+        
+        // Réinitialiser la semaine sélectionnée à la semaine actuelle
         _selectedYear.value = currentYear
         _selectedWeek.value = currentWeek
         

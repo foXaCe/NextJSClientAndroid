@@ -52,6 +52,8 @@ keystore-passwords.txt
 keystore.properties
 nextjs-client-release.keystore
 release-keystore.jks
+release-key.keystore
+keystore_base64.txt
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
@@ -105,4 +107,3 @@ lint/reports/
 !SIGNING-SETUP.md
 !CLAUDE.md
 !PLAY-PROTECT-SOLUTIONS.md
-keystore_base64.txt

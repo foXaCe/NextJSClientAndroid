@@ -16,7 +16,7 @@ final def buildCommit = providers.exec {
 final def getBuildNumber = { ->
     try {
         def stdout = new ByteArrayOutputStream()
-        exec {
+        project.exec {
             commandLine 'git', 'rev-list', '--count', 'HEAD'
             standardOutput = stdout
         }
@@ -41,7 +41,7 @@ if (ciBuild) {
 }
 
 android {
-    namespace 'com.nextjsclient.android'
+    namespace = 'com.nextjsclient.android'
     compileSdk 34
 
     defaultConfig {
@@ -110,7 +110,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // Toujours appliquer la signature (avec keystore de production ou debug en fallback)
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
         }
     }
     
@@ -124,8 +124,8 @@ android {
     }
     
     buildFeatures {
-        viewBinding true
-        buildConfig true
+        viewBinding = true
+        buildConfig = true
     }
 }
 

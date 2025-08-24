@@ -27,7 +27,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.io.File
+import android.os.Handler
+import android.os.Looper
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import android.content.pm.PackageManager
 
 class SettingsActivity : AppCompatActivity() {
     
@@ -40,6 +46,8 @@ class SettingsActivity : AppCompatActivity() {
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var pendingUpdate: Release? = null
     private var downloadedFile: File? = null
+    private var installationTimeoutHandler: Handler? = null
+    private var installationReceiver: BroadcastReceiver? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +64,7 @@ class SettingsActivity : AppCompatActivity() {
         setupWindowInsets()
         setupToolbar()
         setupViews()
+        setupSwipeRefresh()
         setupUpdateManager()
         setupSupplierPreferences()
         setupBiometric()
@@ -68,6 +77,16 @@ class SettingsActivity : AppCompatActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
+        installationTimeoutHandler?.removeCallbacksAndMessages(null)
+        
+        // Désenregistrer le receiver d'installation
+        installationReceiver?.let { receiver ->
+            try {
+                unregisterReceiver(receiver)
+            } catch (e: Exception) {
+                Log.e("SettingsActivity", "Error unregistering installation receiver", e)
+            }
+        }
     }
     
     private fun setupWindowInsets() {
@@ -82,6 +101,28 @@ class SettingsActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = getString(R.string.settings_title)
+    }
+    
+    private fun setupSwipeRefresh() {
+        // Configurer les couleurs du SwipeRefreshLayout
+        binding.swipeRefresh.setColorSchemeResources(
+            R.color.md_theme_light_primary,
+            R.color.md_theme_light_secondary,
+            R.color.md_theme_light_tertiary
+        )
+        
+        // Action de refresh
+        binding.swipeRefresh.setOnRefreshListener {
+            // Réinitialiser l'état de la mise à jour
+            pendingUpdate = null
+            downloadedFile = null
+            binding.updateProgressBar.visibility = View.GONE
+            binding.updateProgressBar.progress = 0
+            binding.updateButton.visibility = View.GONE
+            
+            // Vérifier les mises à jour
+            checkForUpdates()
+        }
     }
     
     private fun setupViews() {
@@ -144,6 +185,7 @@ class SettingsActivity : AppCompatActivity() {
             override fun onUpdateChecking() {
                 binding.updateStatus.text = getString(R.string.checking_updates)
                 binding.updateButton.visibility = View.GONE
+                // Ne pas arrêter le SwipeRefresh ici car la vérification est en cours
             }
             
             override fun onUpdateAvailable(release: Release) {
@@ -172,6 +214,8 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 binding.updateStatus.text = "$versionText disponible • ${getString(R.string.click_here)}"
                 binding.updateButton.visibility = View.GONE
+                binding.updateProgressBar.visibility = View.GONE
+                binding.swipeRefresh.isRefreshing = false  // Arrêter le loader
                 pendingUpdate = release
                 // Rendre la carte cliquable pour ouvrir la bottom sheet
                 binding.updateSection.isClickable = true
@@ -183,30 +227,45 @@ class SettingsActivity : AppCompatActivity() {
             override fun onUpToDate() {
                 binding.updateStatus.text = getString(R.string.up_to_date)
                 binding.updateButton.visibility = View.GONE
+                binding.updateProgressBar.visibility = View.GONE
+                binding.swipeRefresh.isRefreshing = false
             }
             
             override fun onDownloadStarted() {
                 binding.updateStatus.text = getString(R.string.downloading)
-                binding.updateButton.text = getString(R.string.downloading)
-                binding.updateButton.isEnabled = false
+                binding.updateButton.visibility = View.GONE
+                binding.updateProgressBar.visibility = View.VISIBLE
+                binding.updateProgressBar.progress = 0
+                binding.swipeRefresh.isRefreshing = false  // Arrêter le loader car le téléchargement a commencé
             }
             
             override fun onDownloadProgress(progress: Int) {
                 binding.updateStatus.text = getString(R.string.download_progress, progress)
+                binding.updateProgressBar.progress = progress
             }
             
             override fun onDownloadCompleted(file: File) {
-                binding.updateStatus.text = getString(R.string.installing)
-                binding.updateButton.visibility = View.GONE
+                binding.updateStatus.text = getString(R.string.ready_to_install)
+                binding.updateProgressBar.visibility = View.GONE
+                binding.updateButton.text = getString(R.string.install_now)
+                binding.updateButton.visibility = View.VISIBLE
+                binding.updateButton.isEnabled = true
+                binding.swipeRefresh.isRefreshing = false  // S'assurer que le loader est arrêté
                 downloadedFile = file
                 
-                // Lancer l'installation automatiquement
-                updateManager.installUpdate(file)
+                // Ne pas lancer l'installation automatiquement
+                // L'utilisateur doit cliquer sur le bouton pour installer
             }
             
             override fun onError(message: String) {
                 binding.updateStatus.text = message
                 binding.updateButton.visibility = View.GONE
+                binding.updateProgressBar.visibility = View.GONE
+                binding.swipeRefresh.isRefreshing = false
+                
+                // Réinitialiser l'état après une erreur
+                pendingUpdate = null
+                downloadedFile = null
             }
         })
         
@@ -214,7 +273,24 @@ class SettingsActivity : AppCompatActivity() {
         binding.updateButton.setOnClickListener {
             when {
                 downloadedFile != null -> {
-                    updateManager.installUpdate(downloadedFile!!)
+                    binding.updateStatus.text = getString(R.string.installing)
+                    binding.updateButton.visibility = View.GONE
+                    
+                    // Enregistrer un receiver pour écouter les événements d'installation
+                    setupInstallationReceiver()
+                    
+                    // Démarrer un timeout pour détecter les échecs d'installation
+                    startInstallationTimeout()
+                    
+                    // Vérifier que le fichier est toujours valide avant installation
+                    if (downloadedFile!!.exists() && downloadedFile!!.canRead()) {
+                        updateManager.installUpdate(downloadedFile!!)
+                    } else {
+                        binding.updateStatus.text = getString(R.string.apk_file_corrupted)
+                        binding.updateButton.text = getString(R.string.install_now)
+                        binding.updateButton.visibility = View.VISIBLE
+                        binding.updateButton.isEnabled = true
+                    }
                 }
                 pendingUpdate != null -> {
                     updateManager.downloadUpdate(pendingUpdate!!)
@@ -380,12 +456,36 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun checkForUpdates() {
         try {
+            // Afficher l'indicateur de chargement si ce n'est pas déjà fait par swipe refresh
+            if (!binding.swipeRefresh.isRefreshing) {
+                binding.updateStatus.text = getString(R.string.checking_updates)
+                binding.updateProgressBar.visibility = View.GONE
+            }
+            
             coroutineScope.launch {
-                updateManager.checkForUpdates()
+                try {
+                    updateManager.checkForUpdates()
+                    
+                    // Timeout de sécurité pour arrêter le loader si aucun callback n'est appelé
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (binding.swipeRefresh.isRefreshing) {
+                            binding.swipeRefresh.isRefreshing = false
+                            binding.updateStatus.text = getString(R.string.update_check_error)
+                        }
+                    }, 15000) // 15 secondes de timeout
+                    
+                } catch (e: Exception) {
+                    binding.updateStatus.text = getString(R.string.update_check_error)
+                    binding.updateButton.visibility = View.GONE
+                    binding.updateProgressBar.visibility = View.GONE
+                    binding.swipeRefresh.isRefreshing = false
+                }
             }
         } catch (e: Exception) {
-            binding.updateStatus.text = getString(R.string.up_to_date)
+            binding.updateStatus.text = getString(R.string.update_check_error)
             binding.updateButton.visibility = View.GONE
+            binding.updateProgressBar.visibility = View.GONE
+            binding.swipeRefresh.isRefreshing = false
         }
     }
     
@@ -631,6 +731,124 @@ class SettingsActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+    
+    private fun startInstallationTimeout() {
+        installationTimeoutHandler = Handler(Looper.getMainLooper())
+        installationTimeoutHandler?.postDelayed({
+            // Si l'installation prend plus de 30 secondes, considérer qu'elle a échoué
+            if (downloadedFile != null) {
+                binding.updateStatus.text = getString(R.string.installation_timeout)
+                binding.updateButton.text = getString(R.string.install_now)
+                binding.updateButton.visibility = View.VISIBLE
+                binding.updateButton.isEnabled = true
+                
+                Toast.makeText(this, getString(R.string.installation_timeout), Toast.LENGTH_LONG).show()
+            }
+        }, 30000) // 30 secondes
+    }
+    
+    private fun setupInstallationReceiver() {
+        // Désactiver l'ancien receiver s'il existe
+        installationReceiver?.let { receiver ->
+            try {
+                unregisterReceiver(receiver)
+            } catch (e: Exception) {
+                Log.e("SettingsActivity", "Error unregistering old receiver", e)
+            }
+        }
+        
+        // Créer un nouveau receiver pour écouter les événements d'installation
+        installationReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Intent.ACTION_PACKAGE_REPLACED, Intent.ACTION_PACKAGE_ADDED -> {
+                        val installedPackageName = intent.data?.schemeSpecificPart
+                        Log.d("SettingsActivity", "Package installation success: $installedPackageName")
+                        if (installedPackageName == this@SettingsActivity.packageName) {
+                            // L'installation a réussi
+                            binding.updateStatus.text = getString(R.string.installation_success)
+                            installationTimeoutHandler?.removeCallbacksAndMessages(null)
+                            downloadedFile = null
+                        }
+                    }
+                    // Intent.ACTION_PACKAGE_INSTALL deprecated - removed
+                }
+            }
+        }
+        
+        // Enregistrer le receiver pour les événements de package
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            // ACTION_PACKAGE_INSTALL deprecated - removed
+            addDataScheme("package")
+        }
+        
+        try {
+            registerReceiver(installationReceiver, filter)
+            Log.d("SettingsActivity", "Installation receiver registered")
+            
+            // Démarrer une vérification périodique de l'état d'installation
+            startInstallationStatusCheck()
+        } catch (e: Exception) {
+            Log.e("SettingsActivity", "Error registering installation receiver", e)
+        }
+    }
+    
+    private fun startInstallationStatusCheck() {
+        // Vérifier toutes les 2 secondes si l'installation est toujours en cours
+        val handler = Handler(Looper.getMainLooper())
+        var checkCount = 0
+        val maxChecks = 15 // 30 secondes max (2s * 15)
+        
+        val checkRunnable = object : Runnable {
+            override fun run() {
+                checkCount++
+                
+                // Vérifier si l'installateur Android est toujours en cours
+                val installerRunning = isPackageInstallerRunning()
+                
+                Log.d("SettingsActivity", "Installation check $checkCount/$maxChecks, installer running: $installerRunning")
+                
+                // Si l'installateur n'est plus en cours et qu'on n'a pas reçu de succès
+                if (!installerRunning && downloadedFile != null) {
+                    // L'installation a probablement échoué
+                    Log.w("SettingsActivity", "Installation likely failed - installer not running")
+                    binding.updateStatus.text = getString(R.string.installation_failed)
+                    binding.updateButton.text = getString(R.string.install_now)
+                    binding.updateButton.visibility = View.VISIBLE
+                    binding.updateButton.isEnabled = true
+                    installationTimeoutHandler?.removeCallbacksAndMessages(null)
+                    return
+                }
+                
+                // Continuer la vérification si on n'a pas atteint le max
+                if (checkCount < maxChecks && downloadedFile != null) {
+                    handler.postDelayed(this, 2000)
+                }
+            }
+        }
+        
+        // Démarrer la première vérification après 3 secondes (laisser le temps à l'installateur de démarrer)
+        handler.postDelayed(checkRunnable, 3000)
+    }
+    
+    private fun isPackageInstallerRunning(): Boolean {
+        return try {
+            val activityManager = getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val runningApps = activityManager.runningAppProcesses
+            
+            // Chercher le processus de l'installateur Android
+            runningApps?.any { processInfo ->
+                processInfo.processName.contains("packageinstaller", ignoreCase = true) ||
+                processInfo.processName.contains("com.google.android.packageinstaller", ignoreCase = true) ||
+                processInfo.processName.contains("com.android.packageinstaller", ignoreCase = true)
+            } ?: false
+        } catch (e: Exception) {
+            Log.e("SettingsActivity", "Error checking package installer status", e)
+            true // En cas d'erreur, assumer qu'il est toujours en cours
+        }
     }
     
 }

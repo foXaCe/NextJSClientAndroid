@@ -345,6 +345,20 @@ class OverviewFragment : Fragment() {
             alpha = 0.5f
             setOnClickListener {
                 if (isClickable) {
+                    // Animation de pulsation du bouton
+                    animate()
+                        .scaleX(1.3f)
+                        .scaleY(1.3f)
+                        .setDuration(100)
+                        .withEndAction {
+                            animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .setDuration(100)
+                                .start()
+                        }
+                        .start()
+                    
                     // Toggle : si le top SCA est déjà visible pour ce fournisseur, le fermer
                     if (isShowingTopSca && topScaSupplier == "anecoop") {
                         hideTopSca()
@@ -360,6 +374,20 @@ class OverviewFragment : Fragment() {
             alpha = 0.5f
             setOnClickListener {
                 if (isClickable) {
+                    // Animation de pulsation du bouton
+                    animate()
+                        .scaleX(1.3f)
+                        .scaleY(1.3f)
+                        .setDuration(100)
+                        .withEndAction {
+                            animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .setDuration(100)
+                                .start()
+                        }
+                        .start()
+                    
                     // Toggle : si le top SCA est déjà visible pour ce fournisseur, le fermer
                     if (isShowingTopSca && topScaSupplier == "solagora") {
                         hideTopSca()
@@ -437,46 +465,97 @@ class OverviewFragment : Fragment() {
         val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
-        val settingsButton = binding.root.findViewById<View>(R.id.settingsButton)
         
-        // Animation d'apparition Material 3 expressive
-        topScaCard?.apply {
-            visibility = View.VISIBLE
-            alpha = 0f
-            scaleX = 0.9f
-            scaleY = 0.9f
-            translationY = 50f
-            animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .translationY(0f)
-                .setDuration(400)
-                .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
-                .start()
+        if (!autoShow) {
+            // Mode manuel avec animations expressives
+            
+            // 1. D'abord, faire glisser et disparaître la carte active du fournisseur
+            val cardToHide = if (supplier == "anecoop") solagoraCard else anecoopCard
+            val cardToShrink = if (supplier == "anecoop") anecoopCard else solagoraCard
+            
+            // Animation de sortie pour la carte opposée (glissement + fade)
+            cardToHide?.animate()
+                ?.translationX(if (supplier == "anecoop") 100f else -100f)
+                ?.alpha(0f)
+                ?.scaleX(0.95f)
+                ?.scaleY(0.95f)
+                ?.setDuration(350)
+                ?.setInterpolator(android.view.animation.AccelerateInterpolator(1.2f))
+                ?.withEndAction {
+                    cardToHide.visibility = View.GONE
+                    cardToHide.translationX = 0f
+                    cardToHide.scaleX = 1f
+                    cardToHide.scaleY = 1f
+                }?.start()
+            
+            // 2. Animation de réduction pour la carte du fournisseur sélectionné
+            cardToShrink?.animate()
+                ?.scaleX(0.92f)
+                ?.scaleY(0.92f)
+                ?.translationY(-30f)
+                ?.setDuration(300)
+                ?.setInterpolator(android.view.animation.DecelerateInterpolator())
+                ?.setStartDelay(100)
+                ?.withEndAction {
+                    // 3. Après réduction, faire apparaître le Top SCA avec un effet de ressort
+                    topScaCard?.apply {
+                        visibility = View.VISIBLE
+                        alpha = 0f
+                        scaleX = 0.8f
+                        scaleY = 0.8f
+                        translationY = 100f
+                        rotationX = 15f // Légère rotation 3D
+                        
+                        animate()
+                            .alpha(1f)
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .translationY(0f)
+                            .rotationX(0f)
+                            .setDuration(500)
+                            .setInterpolator(androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                            .withEndAction {
+                                // 4. Faire disparaître complètement la carte du fournisseur après l'apparition du Top SCA
+                                cardToShrink.animate()
+                                    ?.alpha(0f)
+                                    ?.scaleX(0.8f)
+                                    ?.scaleY(0.8f)
+                                    ?.translationY(-50f)
+                                    ?.setDuration(250)
+                                    ?.setInterpolator(android.view.animation.AccelerateInterpolator())
+                                    ?.withEndAction {
+                                        cardToShrink.visibility = View.GONE
+                                        cardToShrink.alpha = 1f
+                                        cardToShrink.scaleX = 1f
+                                        cardToShrink.scaleY = 1f
+                                        cardToShrink.translationY = 0f
+                                    }?.start()
+                            }
+                            .start()
+                    }
+                }?.start()
+                
+        } else {
+            // Mode automatique (un seul fournisseur) - animation plus simple
+            topScaCard?.apply {
+                visibility = View.VISIBLE
+                alpha = 0f
+                scaleX = 0.95f
+                scaleY = 0.95f
+                translationY = 30f
+                animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .setDuration(400)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
+                    .start()
+            }
         }
         
         // Masquer/afficher le bouton fermer selon le mode
         topScaCard?.findViewById<View>(R.id.closeTopScaButton)?.visibility = if (autoShow) View.GONE else View.VISIBLE
-        
-        // S'assurer que le bouton paramètres reste visible et au-dessus
-        settingsButton?.apply {
-            bringToFront()
-            elevation = 12f // Plus élevé que la carte (8dp)
-        }
-        
-        if (!autoShow) {
-            // Mode manuel : masquer l'autre fournisseur
-            if (supplier == "anecoop") {
-                solagoraCard?.animate()?.alpha(0f)?.setDuration(200)?.withEndAction {
-                    solagoraCard.visibility = View.GONE
-                }?.start()
-            } else {
-                anecoopCard?.animate()?.alpha(0f)?.setDuration(200)?.withEndAction {
-                    anecoopCard.visibility = View.GONE
-                }?.start()
-            }
-        }
         
         // Charger et afficher les données du top SCA
         loadTopScaData(supplier)
@@ -490,27 +569,44 @@ class OverviewFragment : Fragment() {
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
         
-        // Animation de disparition Material 3 expressive
+        // Animation de disparition du Top SCA avec effet de glissement et rotation
         topScaCard?.animate()
             ?.alpha(0f)
-            ?.scaleX(0.9f)
-            ?.scaleY(0.9f)
-            ?.translationY(30f)
-            ?.setDuration(300)
-            ?.setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+            ?.scaleX(0.85f)
+            ?.scaleY(0.85f)
+            ?.translationY(80f)
+            ?.rotationX(-10f) // Rotation 3D inverse
+            ?.setDuration(350)
+            ?.setInterpolator(android.view.animation.AccelerateInterpolator(1.3f))
             ?.withEndAction {
                 topScaCard.visibility = View.GONE
                 topScaCard.scaleX = 1f
                 topScaCard.scaleY = 1f
                 topScaCard.translationY = 0f
+                topScaCard.rotationX = 0f
+                topScaCard.alpha = 1f
             }?.start()
         
-        // Réafficher les cartes fournisseurs
+        // Réafficher les cartes fournisseurs avec des animations expressives
         if (supplierPreferences.isAnecoopEnabled) {
             anecoopCard?.apply {
                 visibility = View.VISIBLE
                 alpha = 0f
-                animate().alpha(1f).setDuration(300).start()
+                scaleX = 0.9f
+                scaleY = 0.9f
+                translationY = 40f
+                translationX = -50f // Arrive de la gauche
+                
+                animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .translationX(0f)
+                    .setDuration(450)
+                    .setStartDelay(150) // Délai pour effet séquentiel
+                    .setInterpolator(androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                    .start()
             }
         }
         
@@ -518,7 +614,21 @@ class OverviewFragment : Fragment() {
             solagoraCard?.apply {
                 visibility = View.VISIBLE
                 alpha = 0f
-                animate().alpha(1f).setDuration(300).start()
+                scaleX = 0.9f
+                scaleY = 0.9f
+                translationY = 40f
+                translationX = 50f // Arrive de la droite
+                
+                animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .translationX(0f)
+                    .setDuration(450)
+                    .setStartDelay(if (supplierPreferences.isAnecoopEnabled) 250 else 150) // Délai plus long si les deux cartes
+                    .setInterpolator(androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                    .start()
             }
         }
     }
@@ -615,6 +725,19 @@ class OverviewFragment : Fragment() {
             setOnRefreshListener {
                 // Activer le loader immédiatement
                 isRefreshing = true
+                
+                // Réinitialiser l'état du top SCA
+                if (isShowingTopSca) {
+                    hideTopSca()
+                }
+                
+                // Réinitialiser à la semaine actuelle
+                val calendar = java.util.Calendar.getInstance()
+                val currentYear = calendar.get(java.util.Calendar.YEAR)
+                val currentWeek = getCurrentISOWeek()
+                viewModel.selectWeek(currentYear, currentWeek)
+                
+                // Rafraîchir les données
                 viewModel.refresh()
             }
         }

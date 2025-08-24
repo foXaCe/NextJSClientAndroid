@@ -203,7 +203,7 @@ class WeekGridAdapter(
     private fun Int.dpToPx(context: android.content.Context): Int = 
         (this * context.resources.displayMetrics.density).toInt()
     
-    private fun animateCardFlip(holder: WeekViewHolder, weekItem: WeekItem, position: Int) {
+    private fun animateCardFlip(holder: WeekViewHolder, @Suppress("UNUSED_PARAMETER") weekItem: WeekItem, @Suppress("UNUSED_PARAMETER") position: Int) {
         // Empêcher les clics multiples pendant l'animation
         holder.itemView.isEnabled = false
         

@@ -557,27 +557,6 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // API ancienne pour compatibilité
-            val transparentColor = ContextCompat.getColor(this, android.R.color.transparent)
-            window.statusBarColor = transparentColor
-            
-            // Edge-to-edge
-            window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or 
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                // Adapter les icônes selon le thème
-                val nightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-                val isNightMode = nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
-                
-                if (!isNightMode) {
-                    // Thème clair : icônes sombres
-                    window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or 
-                        View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                }
-            }
         }
     }
     
