@@ -406,6 +406,9 @@ class OverviewFragment : Fragment() {
     
     
     private fun enableTrophyButtons() {
+        if (!areTopProductsReady()) {
+            return
+        }
         
         val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
         val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
@@ -419,6 +422,28 @@ class OverviewFragment : Fragment() {
             isClickable = true
             alpha = 1.0f
         }
+    }
+    
+    private fun areTopProductsReady(): Boolean {
+        val supplierPreferences = com.nextjsclient.android.utils.SupplierPreferences(requireContext())
+        val anecoopEnabled = supplierPreferences.isAnecoopEnabled
+        val solagoraEnabled = supplierPreferences.isSolagoraEnabled
+        
+        // Vérifier que les données des fournisseurs activés sont chargées et contiennent des top produits
+        var anecoopReady = true
+        var solagoraReady = true
+        
+        if (anecoopEnabled) {
+            anecoopReady = preloadedAnecoopProducts.isNotEmpty() && 
+                          preloadedAnecoopProducts.any { it.totalScas > 0 }
+        }
+        
+        if (solagoraEnabled) {
+            solagoraReady = preloadedSolagoraProducts.isNotEmpty() && 
+                           preloadedSolagoraProducts.any { it.totalScas > 0 }
+        }
+        
+        return anecoopReady && solagoraReady
     }
     
     private fun refreshTopScaIfNeeded() {
