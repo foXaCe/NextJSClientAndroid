@@ -28,9 +28,11 @@ import com.nextjsclient.android.utils.SupplierThemeManager
 import com.nextjsclient.android.utils.SupplierPreferences
 import com.nextjsclient.android.utils.BiometricManager
 import com.nextjsclient.android.utils.UpdateManager
+import com.nextjsclient.android.utils.LocaleManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.content.Context
 
 class MainActivity : AppCompatActivity() {
     
@@ -41,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var supplierThemeManager: SupplierThemeManager
     private lateinit var supplierPreferences: SupplierPreferences
     private lateinit var biometricManager: BiometricManager
+    private lateinit var localeManager: LocaleManager
     private var currentScamarkFragment: ScamarkFragment? = null
     private var isBiometricPromptShown = false
     private var isAppInBackground = false
@@ -58,6 +61,12 @@ class MainActivity : AppCompatActivity() {
     private var navigationYear: Int? = null
     private var navigationWeek: Int? = null
     
+    override fun attachBaseContext(newBase: Context) {
+        val localeManager = LocaleManager(newBase)
+        localeManager.applyLanguage(localeManager.getCurrentLanguage())
+        super.attachBaseContext(newBase)
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         // Initialize theme before calling super.onCreate()
         themeManager = ThemeManager(this)
@@ -72,6 +81,10 @@ class MainActivity : AppCompatActivity() {
         supplierThemeManager = SupplierThemeManager(this)
         supplierPreferences = SupplierPreferences(this)
         biometricManager = BiometricManager(this)
+        localeManager = LocaleManager(this)
+        
+        // Apply saved language preference
+        localeManager.applyLanguage(localeManager.getCurrentLanguage())
         
         // Nettoyer les anciennes APK au démarrage
         cleanOldApks()

@@ -23,6 +23,7 @@ import com.nextjsclient.android.utils.UpdateManager
 import com.nextjsclient.android.utils.Release
 import com.nextjsclient.android.utils.SupplierPreferences
 import com.nextjsclient.android.utils.BiometricManager
+import com.nextjsclient.android.utils.LocaleManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,6 +35,7 @@ import android.os.Looper
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.Context
 
 class SettingsActivity : AppCompatActivity() {
     
@@ -43,11 +45,18 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var updateManager: UpdateManager
     private lateinit var supplierPreferences: SupplierPreferences
     private lateinit var biometricManager: BiometricManager
+    private lateinit var localeManager: LocaleManager
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var pendingUpdate: Release? = null
     private var downloadedFile: File? = null
     private var installationTimeoutHandler: Handler? = null
     private var installationReceiver: BroadcastReceiver? = null
+    
+    override fun attachBaseContext(newBase: Context) {
+        val localeManager = LocaleManager(newBase)
+        localeManager.applyLanguage(localeManager.getCurrentLanguage())
+        super.attachBaseContext(newBase)
+    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +69,7 @@ class SettingsActivity : AppCompatActivity() {
         updateManager = UpdateManager(this)
         supplierPreferences = SupplierPreferences(this)
         biometricManager = BiometricManager(this)
+        localeManager = LocaleManager(this)
         
         setupWindowInsets()
         setupToolbar()
@@ -68,6 +78,7 @@ class SettingsActivity : AppCompatActivity() {
         setupUpdateManager()
         setupSupplierPreferences()
         setupBiometric()
+        setupLanguageSelector()
         updateUI()
         animateViews()
         
@@ -609,6 +620,9 @@ class SettingsActivity : AppCompatActivity() {
     private fun updateUI() {
         val currentTheme = themeManager.getCurrentTheme()
         binding.currentTheme.text = themeManager.getThemeDisplayName(currentTheme)
+        
+        // Update language display
+        binding.currentLanguage.text = localeManager.getCurrentLanguageDisplayName()
     }
     
     private fun showThemeDialog() {
@@ -626,6 +640,39 @@ class SettingsActivity : AppCompatActivity() {
                 dialog.dismiss()
                 
                 // Smooth transition before recreating
+                binding.root.animate()
+                    .alpha(0f)
+                    .setDuration(200)
+                    .withEndAction {
+                        recreate()
+                    }
+                    .start()
+            }
+            .setNegativeButton(getString(R.string.cancel_button), null)
+            .show()
+    }
+    
+    private fun setupLanguageSelector() {
+        binding.languageSelector.setOnClickListener {
+            showLanguageDialog()
+        }
+    }
+    
+    private fun showLanguageDialog() {
+        val languages = LocaleManager.SUPPORTED_LANGUAGES
+        val languageNames = languages.map { it.nativeName }.toTypedArray()
+        val currentLanguage = localeManager.getCurrentLanguage()
+        val currentIndex = languages.indexOfFirst { it.code == currentLanguage }
+        
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.language_dialog_title))
+            .setSingleChoiceItems(languageNames, currentIndex) { dialog, which ->
+                val selectedLanguage = languages[which].code
+                localeManager.setLanguage(selectedLanguage)
+                updateUI()
+                dialog.dismiss()
+                
+                // Smooth transition before recreating to apply language change
                 binding.root.animate()
                     .alpha(0f)
                     .setDuration(200)

@@ -102,6 +102,14 @@
     <string name="appearance_section_title">APPEARANCE</string>
     <string name="theme_title">Application theme</string>
     <string name="theme_current">Dark</string>
+    <string name="language_section_title">LANGUAGE</string>
+    <string name="language_title">Application language</string>
+    <string name="language_current">System Default</string>
+    <string name="language_dialog_title">Choose language</string>
+    <string name="language_system">System Default</string>
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="language_spanish">Español</string>
     <string name="security_section_title">SECURITY</string>
     <string name="biometric_title">Biometric authentication</string>
     <string name="biometric_status">Checking...</string>
