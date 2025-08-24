@@ -28,7 +28,11 @@ final def getBuildNumber = { ->
 
 final def ciBuild = System.getenv("CI") == "true"
 final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-final def buildNumber = getBuildNumber()
+
+// Système de versionCode unifié pour compatibilité bidirectionnelle
+final def buildNumber = ciBuild ? 
+    (10000 + (ciRunNumber as Integer)) :  // GitHub: 10000+ pour être toujours supérieur
+    getBuildNumber()  // Local: nombre de commits git
 final def majorVersion = "1"
 final def minorVersion = "0"
 final def patchVersion = "0"
@@ -126,6 +130,11 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+    }
+    
+    // Fix pour Google Play Protect - désactiver compression DEX
+    aaptOptions {
+        noCompress 'dex'
     }
 }
 
