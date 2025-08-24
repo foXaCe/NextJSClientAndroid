@@ -20,6 +20,7 @@ import com.nextjsclient.android.R
 import com.nextjsclient.android.data.models.ScamarkProduct
 import com.nextjsclient.android.data.models.ClientDecision
 import com.nextjsclient.android.ui.scamark.ProductStatus
+import com.nextjsclient.android.utils.CategoryTranslator
 import java.text.DecimalFormat
 
 class ScamarkProductAdapter(
@@ -271,7 +272,8 @@ class ScamarkProductAdapter(
             // Catégorie et marques - masquer si non défini
             val category = product.articleInfo?.categorie
             if (!category.isNullOrBlank()) {
-                categoryTextView.text = category
+                val translatedCategory = CategoryTranslator.translateCategory(itemView.context, category)
+                categoryTextView.text = translatedCategory
                 categoryTextView.visibility = View.VISIBLE
             } else {
                 categoryTextView.visibility = View.GONE

@@ -9,8 +9,12 @@
     <string name="title_casino">Casino</string>
     
     <!-- Actions -->
+    <string name="action_search">Search</string>
     <string name="action_settings">Settings</string>
     <string name="action_refresh">Refresh</string>
+    <string name="navigation_search">Search</string>
+    <string name="navigation_anecoop">Anecoop</string>
+    <string name="navigation_solagora">Solagora</string>
     
     <!-- Errors -->
     <string name="error_loading_page">Unable to load page</string>
@@ -151,6 +155,20 @@
     <string name="consecutive_weeks_format">Consecutive %d weeks</string>
     <string name="since_date">Since October 1st 15 times</string>
     <string name="since_date_format">Since October 1st %d times</string>
+    <string name="product_name_placeholder">Product name</string>
+    <string name="price_placeholder">2.45€</string>
+    <string name="undefined_price">Not defined</string>
+    <string name="undefined_time">Not defined</string>
+    <string name="search_product_type">Product</string>
+    <string name="search_brand_type">Brand</string>
+    <string name="search_products_count">%d products</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="available">available</string>
+    <string name="weeks">weeks</string>
+    <string name="brand_placeholder">Brand</string>
+    <string name="origin_placeholder">Origin</string>
     <string name="price_title">Price</string>
     <string name="no_products_found">No products found</string>
     <string name="add_products_start">Add products to start</string>
@@ -160,6 +178,7 @@
     <string name="connect_button">Connect</string>
     <string name="filter_active">Active filter • Pull down to refresh</string>
     <string name="select_week">Select a week</string>
+    <string name="choose_available_week">Choose an available week</string>
     <string name="load_more">Load 10 more</string>
     <string name="current_label">Current</string>
     <string name="list_label">List</string>
@@ -169,11 +188,29 @@
     <string name="trend_format">%1$s %2$s</string>
     <string name="percentage_weeks">%d%% of weeks</string>
     <string name="overview_title">Overview</string>
+    <string name="top_products">TOP PRODUCTS</string>
     
     <!-- Date formatting -->
-    <string name="date_range_separator">au</string>
-    <string name="week_label">Semaine</string>
-    <string name="week_short">S</string>
+    <string name="date_range_separator">to</string>
+    <string name="week_label">Week</string>
+    <string name="week_short">W</string>
+    <string name="week_with_number">Week %d</string>
+    <string name="search_hint">Search products or SCA...</string>
+    
+    <!-- Content descriptions -->
+    <string name="close_search">Close search</string>
+    <string name="clear_search">Clear search</string>
+    <string name="launch_search">Launch search</string>
+    <string name="close_button">Close</string>
+    <string name="data_available">Data available</string>
+    <string name="settings_button_desc">Settings</string>
+    <string name="previous_week">Previous week</string>
+    <string name="select_week_desc">Select a week</string>
+    <string name="next_week">Next week</string>
+    <string name="previous_year">Previous year</string>
+    <string name="next_year">Next year</string>
+    <string name="logo_desc">Anecoop logo</string>
+    <string name="error_icon">Error</string>
     
     <!-- Filter messages -->
     <string name="filter_incoming_message">🟢 Showing incoming products • Pull down to refresh</string>
@@ -183,6 +220,11 @@
     
     <!-- Loading states -->
     <string name="please_wait">Please wait...</string>
+    <string name="error_loading_more_weeks">Error loading more weeks</string>
+    <string name="error_loading_year">Error loading year</string>
+    <string name="error_loading_weeks">Error loading weeks</string>
+    <string name="error_loading">Error loading</string>
+    <string name="error_reloading">Error reloading</string>
     
     <!-- Product card labels -->
     <string name="sca_prefix">SCA:</string>
@@ -201,7 +243,7 @@
     <!-- Week selector -->
     <string name="week_selector_current">Actuelle</string>
     <string name="week_selector_history">Historique</string>
-    <string name="week_format">SEMAINE %d</string>
+    <string name="week_format">WEEK %d</string>
     
     <!-- Overview expressive -->
     <string name="week_progress_label">Progression de la semaine</string>

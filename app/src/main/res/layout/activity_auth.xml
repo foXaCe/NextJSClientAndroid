@@ -32,7 +32,7 @@
                 android:layout_height="80dp"
                 android:layout_gravity="center"
                 android:src="@drawable/logo_anecoop"
-                android:contentDescription="Logo Anecoop" />
+                android:contentDescription="@string/logo_desc" />
 
         </com.google.android.material.card.MaterialCardView>
 
@@ -159,7 +159,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="12dp"
                     android:src="@drawable/ic_error_24"
-                    android:contentDescription="Erreur"
+                    android:contentDescription="@string/error_icon"
                     app:tint="?attr/colorOnErrorContainer" />
 
                 <TextView

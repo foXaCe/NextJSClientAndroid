@@ -223,7 +223,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     else -> "Version ${release.tagName}"
                 }
-                binding.updateStatus.text = "$versionText disponible • ${getString(R.string.click_here)}"
+                binding.updateStatus.text = "$versionText ${getString(R.string.available)} • ${getString(R.string.click_here)}"
                 binding.updateButton.visibility = View.GONE
                 binding.updateProgressBar.visibility = View.GONE
                 binding.swipeRefresh.isRefreshing = false  // Arrêter le loader
@@ -619,14 +619,14 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun updateUI() {
         val currentTheme = themeManager.getCurrentTheme()
-        binding.currentTheme.text = themeManager.getThemeDisplayName(currentTheme)
+        binding.currentTheme.text = themeManager.getThemeDisplayName(currentTheme, this)
         
         // Update language display
         binding.currentLanguage.text = localeManager.getCurrentLanguageDisplayName()
     }
     
     private fun showThemeDialog() {
-        val themes = themeManager.getAllThemes()
+        val themes = themeManager.getAllThemes(this)
         val themeNames = themes.map { it.second }.toTypedArray()
         val currentTheme = themeManager.getCurrentTheme()
         val currentIndex = themes.indexOfFirst { it.first == currentTheme }
@@ -659,7 +659,7 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun showLanguageDialog() {
-        val languages = LocaleManager.SUPPORTED_LANGUAGES
+        val languages = LocaleManager.getSupportedLanguages(this)
         val languageNames = languages.map { it.nativeName }.toTypedArray()
         val currentLanguage = localeManager.getCurrentLanguage()
         val currentIndex = languages.indexOfFirst { it.code == currentLanguage }

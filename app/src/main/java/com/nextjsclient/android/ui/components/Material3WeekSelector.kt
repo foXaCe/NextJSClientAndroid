@@ -146,12 +146,14 @@ class Material3WeekSelector @JvmOverloads constructor(
         calendar.add(Calendar.DAY_OF_WEEK, 6)
         val endDate = calendar.time
         
-        val dateFormat = SimpleDateFormat("d MMMM", Locale.FRANCE)
+        val currentLocale = context.resources.configuration.locales[0]
+        val dateFormat = SimpleDateFormat("d MMMM", currentLocale)
         val startStr = dateFormat.format(startDate)
         val endStr = dateFormat.format(endDate)
+        val separator = context.getString(R.string.date_range_separator)
         
         weekNumberDisplay.text = context.getString(R.string.week_format, currentWeek)
-        dateRangeDisplay.text = "$startStr - $endStr"
+        dateRangeDisplay.text = "$startStr $separator $endStr"
         yearDisplay.text = currentYear.toString()
         
     }

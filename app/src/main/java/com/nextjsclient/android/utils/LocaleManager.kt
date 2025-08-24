@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.os.Build
+import com.nextjsclient.android.R
 import java.util.Locale
 
 class LocaleManager(private val context: Context) {
@@ -19,12 +20,14 @@ class LocaleManager(private val context: Context) {
             val nativeName: String
         )
         
-        val SUPPORTED_LANGUAGES = listOf(
-            Language("system", "System Default", "Système par défaut"),
-            Language("en", "English", "English"),
-            Language("fr", "French", "Français"),
-            Language("es", "Spanish", "Español")
-        )
+        fun getSupportedLanguages(context: Context): List<Language> {
+            return listOf(
+                Language("system", "System Default", context.getString(R.string.language_system)),
+                Language("en", "English", context.getString(R.string.language_english)),
+                Language("fr", "French", context.getString(R.string.language_french)),
+                Language("es", "Spanish", context.getString(R.string.language_spanish))
+            )
+        }
     }
     
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -88,6 +91,7 @@ class LocaleManager(private val context: Context) {
     
     fun getCurrentLanguageDisplayName(): String {
         val currentCode = getCurrentLanguage()
-        return SUPPORTED_LANGUAGES.find { it.code == currentCode }?.nativeName ?: "System Default"
+        val supportedLanguages = getSupportedLanguages(context)
+        return supportedLanguages.find { it.code == currentCode }?.nativeName ?: context.getString(R.string.language_system)
     }
 }

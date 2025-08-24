@@ -203,7 +203,7 @@ class ScamarkViewModel : ViewModel() {
         markWeeksAsLoading()
         
         viewModelScope.launch(Dispatchers.IO) {
-            _isLoadingMoreWeeks.value = true
+            _isLoadingMoreWeeks.postValue(true)
             // val startTime = System.currentTimeMillis() // Unused variable
             try {
                 android.util.Log.d("ScamarkVM", "⏳ Loading more weeks...")
@@ -258,11 +258,11 @@ class ScamarkViewModel : ViewModel() {
                 }
                 
             } catch (e: Exception) {
-                _error.value = "Erreur lors du chargement de plus de semaines: ${e.message}"
+                _error.postValue("Error loading more weeks: ${e.message}")
             } finally {
                 // Nettoyer les semaines en chargement
                 clearLoadingWeeks()
-                _isLoadingMoreWeeks.value = false
+                _isLoadingMoreWeeks.postValue(false)
             }
         }
     }

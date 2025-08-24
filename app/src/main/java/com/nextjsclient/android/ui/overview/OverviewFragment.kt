@@ -748,7 +748,7 @@ class OverviewFragment : Fragment() {
         val year = viewModel.selectedYear.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
         
         // Mettre à jour le numéro de semaine
-        binding.root.findViewById<TextView>(R.id.weekNumberHeader)?.text = "Semaine $weekNumber"
+        binding.root.findViewById<TextView>(R.id.weekNumberHeader)?.text = getString(R.string.week_with_number, weekNumber)
         
         // Calculer et afficher la plage de dates
         val calendar = java.util.Calendar.getInstance()
@@ -761,8 +761,9 @@ class OverviewFragment : Fragment() {
         val endDate = calendar.time
         
         // Formats pour éviter la répétition de l'année
-        val dateFormatWithYear = java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale.FRANCE)
-        val dateFormatWithoutYear = java.text.SimpleDateFormat("d MMMM", java.util.Locale.FRANCE)
+        val currentLocale = resources.configuration.locales[0]
+        val dateFormatWithYear = java.text.SimpleDateFormat("d MMMM yyyy", currentLocale)
+        val dateFormatWithoutYear = java.text.SimpleDateFormat("d MMMM", currentLocale)
         
         val startCalendar = java.util.Calendar.getInstance().apply { time = startDate }
         val endCalendar = java.util.Calendar.getInstance().apply { time = endDate }
@@ -770,21 +771,24 @@ class OverviewFragment : Fragment() {
         val dateRangeText = if (startCalendar.get(java.util.Calendar.YEAR) == endCalendar.get(java.util.Calendar.YEAR)) {
             // Même année et même mois : "19 au 25 août 2025"
             if (startCalendar.get(java.util.Calendar.MONTH) == endCalendar.get(java.util.Calendar.MONTH)) {
-                val dayOnlyFormat = java.text.SimpleDateFormat("d", java.util.Locale.FRANCE)
+                val dayOnlyFormat = java.text.SimpleDateFormat("d", currentLocale)
                 val startDay = dayOnlyFormat.format(startDate)
                 val endStr = dateFormatWithYear.format(endDate)
-                "$startDay au $endStr"
+                val separator = getString(R.string.date_range_separator)
+                "$startDay $separator $endStr"
             } else {
                 // Même année mais mois différents : "28 décembre au 3 janvier 2025"
                 val startStr = dateFormatWithoutYear.format(startDate)
                 val endStr = dateFormatWithYear.format(endDate)
-                "$startStr au $endStr"
+                val separator = getString(R.string.date_range_separator)
+                "$startStr $separator $endStr"
             }
         } else {
             // Années différentes : "28 décembre 2024 au 3 janvier 2025"
             val startStr = dateFormatWithYear.format(startDate)
             val endStr = dateFormatWithYear.format(endDate)
-            "$startStr au $endStr"
+            val separator = getString(R.string.date_range_separator)
+            "$startStr $separator $endStr"
         }
         
         binding.root.findViewById<TextView>(R.id.weekDateRange)?.text = dateRangeText
@@ -1204,7 +1208,7 @@ class OverviewFragment : Fragment() {
         calendar.add(java.util.Calendar.DAY_OF_YEAR, 6)
         val weekEnd = calendar.time
         
-        val dateFormat = java.text.SimpleDateFormat("dd/MM", java.util.Locale.getDefault())
+        val dateFormat = java.text.SimpleDateFormat("dd/MM", resources.configuration.locales[0])
         val separator = getString(R.string.date_range_separator)
         
         return "${dateFormat.format(weekStart)} $separator ${dateFormat.format(weekEnd)}"

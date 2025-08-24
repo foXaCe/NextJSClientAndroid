@@ -2,6 +2,7 @@ package com.nextjsclient.android.utils
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import com.nextjsclient.android.R
 
 class ThemeManager(private val context: Context) {
     
@@ -35,20 +36,20 @@ class ThemeManager(private val context: Context) {
         applyTheme(getCurrentTheme())
     }
     
-    fun getThemeDisplayName(theme: String): String {
+    fun getThemeDisplayName(theme: String, context: Context): String {
         return when (theme) {
-            THEME_LIGHT -> "Clair"
-            THEME_DARK -> "Sombre"
-            THEME_SYSTEM -> "Système"
-            else -> "Système"
+            THEME_LIGHT -> context.getString(R.string.theme_light)
+            THEME_DARK -> context.getString(R.string.theme_dark)
+            THEME_SYSTEM -> context.getString(R.string.theme_system)
+            else -> context.getString(R.string.theme_system)
         }
     }
     
-    fun getAllThemes(): List<Pair<String, String>> {
+    fun getAllThemes(context: Context): List<Pair<String, String>> {
         return listOf(
-            THEME_SYSTEM to getThemeDisplayName(THEME_SYSTEM),
-            THEME_LIGHT to getThemeDisplayName(THEME_LIGHT),
-            THEME_DARK to getThemeDisplayName(THEME_DARK)
+            THEME_SYSTEM to getThemeDisplayName(THEME_SYSTEM, context),
+            THEME_LIGHT to getThemeDisplayName(THEME_LIGHT, context),
+            THEME_DARK to getThemeDisplayName(THEME_DARK, context)
         )
     }
 }

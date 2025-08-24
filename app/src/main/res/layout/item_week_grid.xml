@@ -73,7 +73,7 @@
                 app:tint="?attr/colorPrimary"
                 android:visibility="gone"
                 android:layout_marginEnd="4dp"
-                android:contentDescription="Données disponibles" />
+                android:contentDescription="@string/data_available" />
 
             <!-- Indicateur de chargement -->
             <ProgressBar

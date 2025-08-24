@@ -9,8 +9,12 @@
     <string name="title_casino">Casino</string>
     
     <!-- Actions -->
+    <string name="action_search">Buscar</string>
     <string name="action_settings">Configuración</string>
     <string name="action_refresh">Actualizar</string>
+    <string name="navigation_search">Búsqueda</string>
+    <string name="navigation_anecoop">Anecoop</string>
+    <string name="navigation_solagora">Solagora</string>
     
     <!-- Errors -->
     <string name="error_loading_page">No se puede cargar la página</string>
@@ -138,7 +142,16 @@
     <string name="origin_label">Origen:</string>
     <string name="palmares_title">Clasificaciones</string>
     <string name="consecutive_weeks">Consecutivo 5 semanas</string>
+    <string name="consecutive_weeks_format">Consecutivo %d semanas</string>
     <string name="since_date">Desde el 1 de octubre 15 veces</string>
+    <string name="since_date_format">Desde el 1 de octubre %d veces</string>
+    <string name="product_name_placeholder">Nombre del producto</string>
+    <string name="price_placeholder">2,45€</string>
+    <string name="undefined_price">No definido</string>
+    <string name="undefined_time">No definido</string>
+    <string name="weeks">semanas</string>
+    <string name="brand_placeholder">Marca</string>
+    <string name="origin_placeholder">Origen</string>
     <string name="price_title">Precio</string>
     <string name="no_products_found">No se encontraron productos</string>
     <string name="add_products_start">Añade productos para comenzar</string>
@@ -155,11 +168,13 @@
     <string name="total_products">Productos totales</string>
     <string name="vs_last_week">vs sem. pasada</string>
     <string name="overview_title">Resumen</string>
+    <string name="top_products">TOP PRODUCTOS</string>
     
     <!-- Date formatting -->
     <string name="date_range_separator">a</string>
     <string name="week_label">Semana</string>
     <string name="week_short">S</string>
+    <string name="week_with_number">Semana %d</string>
     
     <!-- Filter messages -->
     <string name="filter_incoming_message">🟢 Mostrando productos entrantes • Desliza hacia abajo para actualizar</string>
@@ -169,6 +184,11 @@
     
     <!-- Loading states -->
     <string name="please_wait">Por favor espere...</string>
+    <string name="error_loading_more_weeks">Error al cargar más semanas</string>
+    <string name="error_loading_year">Error al cargar el año</string>
+    <string name="error_loading_weeks">Error al cargar semanas</string>
+    <string name="error_loading">Error al cargar</string>
+    <string name="error_reloading">Error al recargar</string>
     
     <!-- Product card labels -->
     <string name="sca_prefix">SCA:</string>
@@ -184,6 +204,33 @@
     <string name="installation_timeout">Tiempo de instalación agotado - Por favor inténtelo de nuevo</string>
     <string name="installation_failed">Error de instalación - Por favor inténtelo de nuevo</string>
     <string name="update_date">Fecha de actualización</string>
+    
+    <!-- Week selector -->
+    <string name="week_format">SEMANA %d</string>
+    <string name="choose_available_week">Elige una semana disponible</string>
+    <string name="search_hint">Buscar productos o SCA...</string>
+    <string name="search_product_type">Producto</string>
+    <string name="search_brand_type">Marca</string>
+    <string name="search_products_count">%d productos</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_system">Sistema</string>
+    <string name="available">disponible</string>
+    
+    <!-- Content descriptions -->
+    <string name="close_search">Cerrar búsqueda</string>
+    <string name="clear_search">Limpiar búsqueda</string>
+    <string name="launch_search">Iniciar búsqueda</string>
+    <string name="close_button">Cerrar</string>
+    <string name="data_available">Datos disponibles</string>
+    <string name="settings_button_desc">Configuración</string>
+    <string name="previous_week">Semana anterior</string>
+    <string name="select_week_desc">Seleccionar una semana</string>
+    <string name="next_week">Siguiente semana</string>
+    <string name="previous_year">Año anterior</string>
+    <string name="next_year">Siguiente año</string>
+    <string name="logo_desc">Logo Anecoop</string>
+    <string name="error_icon">Error</string>
     
     <!-- Test update system -->
     <string name="test_update">Sistema de prueba de actualización v1</string>

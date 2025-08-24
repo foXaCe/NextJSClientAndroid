@@ -210,28 +210,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
     }
     
     /**
-     * Génère le texte d'affichage de la semaine au format compact "SXX - dd/mm au dd/mm"
-     */
-    private fun getWeekDisplayText(): String {
-        val calendar = java.util.Calendar.getInstance()
-        val currentWeek = getCurrentISOWeek()
-        
-        // Configurer le calendrier pour la semaine courante
-        calendar.set(java.util.Calendar.WEEK_OF_YEAR, currentWeek)
-        calendar.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
-        
-        val startDate = calendar.time
-        calendar.add(java.util.Calendar.DAY_OF_WEEK, 6)
-        val endDate = calendar.time
-        
-        val dateFormat = java.text.SimpleDateFormat("dd/MM", java.util.Locale.FRANCE)
-        val startStr = dateFormat.format(startDate)
-        val endStr = dateFormat.format(endDate)
-        
-        return "S$currentWeek - $startStr au $endStr"
-    }
-    
-    /**
      * Récupère le numéro de semaine ISO courante
      */
     private fun getCurrentISOWeek(): Int {

@@ -35,7 +35,7 @@
                 app:icon="@drawable/ic_arrow_left"
                 app:iconTint="?attr/colorOnSurface"
                 app:iconSize="24dp"
-                android:contentDescription="Fermer la recherche" />
+                android:contentDescription="@string/close_search" />
 
             <!-- Search input -->
             <com.google.android.material.textfield.TextInputLayout
@@ -52,7 +52,7 @@
                     android:id="@+id/searchInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Rechercher produits ou SCA..."
+                    android:hint="@string/search_hint"
                     android:textAppearance="?attr/textAppearanceBodyLarge"
                     android:imeOptions="actionSearch"
                     android:inputType="text"
@@ -71,7 +71,7 @@
                 app:iconTint="?attr/colorOnSurfaceVariant"
                 app:iconSize="20dp"
                 android:visibility="gone"
-                android:contentDescription="Effacer la recherche" />
+                android:contentDescription="@string/clear_search" />
 
             <!-- Search/Loading indicator -->
             <FrameLayout
@@ -86,7 +86,7 @@
                     app:icon="@drawable/ic_search"
                     app:iconTint="?attr/colorPrimary"
                     app:iconSize="24dp"
-                    android:contentDescription="Lancer la recherche" />
+                    android:contentDescription="@string/launch_search" />
 
                 <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/searchProgress"

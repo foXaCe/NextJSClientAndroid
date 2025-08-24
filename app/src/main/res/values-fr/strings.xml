@@ -9,8 +9,12 @@
     <string name="title_casino">Casino</string>
     
     <!-- Actions -->
+    <string name="action_search">Rechercher</string>
     <string name="action_settings">Paramètres</string>
     <string name="action_refresh">Actualiser</string>
+    <string name="navigation_search">Recherche</string>
+    <string name="navigation_anecoop">Anecoop</string>
+    <string name="navigation_solagora">Solagora</string>
     
     <!-- Errors -->
     <string name="error_loading_page">Impossible de charger la page</string>
@@ -144,6 +148,13 @@
     <string name="consecutive_weeks_format">Consécutif %d semaines</string>
     <string name="since_date">Depuis le 01 Octobre 15 fois</string>
     <string name="since_date_format">Depuis le 01 Octobre %d fois</string>
+    <string name="product_name_placeholder">Nom du produit</string>
+    <string name="price_placeholder">2,45€</string>
+    <string name="undefined_price">Non défini</string>
+    <string name="undefined_time">Non défini</string>
+    <string name="weeks">semaines</string>
+    <string name="brand_placeholder">Marque</string>
+    <string name="origin_placeholder">Origine</string>
     <string name="price_title">Prix</string>
     <string name="no_products_found">Aucun produit trouvé</string>
     <string name="add_products_start">Ajouter des produits pour commencer</string>
@@ -153,6 +164,7 @@
     <string name="connect_button">Se connecter</string>
     <string name="filter_active">Filtre actif • Tirez vers le bas pour actualiser</string>
     <string name="select_week">Sélectionner une semaine</string>
+    <string name="choose_available_week">Choisissez une semaine disponible</string>
     <string name="load_more">Charger 10 de plus</string>
     <string name="current_label">Actuelle</string>
     <string name="list_label">Liste</string>
@@ -162,11 +174,36 @@
     <string name="trend_format">%1$s %2$s</string>
     <string name="percentage_weeks">%d%% des semaines</string>
     <string name="overview_title">Aperçu</string>
+    <string name="top_products">TOP PRODUITS</string>
     
     <!-- Date formatting -->
     <string name="date_range_separator">au</string>
     <string name="week_label">Semaine</string>
     <string name="week_short">S</string>
+    <string name="week_with_number">Semaine %d</string>
+    <string name="search_hint">Rechercher produits ou SCA...</string>
+    <string name="search_product_type">Produit</string>
+    <string name="search_brand_type">Marque</string>
+    <string name="search_products_count">%d produits</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_system">Système</string>
+    <string name="available">disponible</string>
+    
+    <!-- Content descriptions -->
+    <string name="close_search">Fermer la recherche</string>
+    <string name="clear_search">Effacer la recherche</string>
+    <string name="launch_search">Lancer la recherche</string>
+    <string name="close_button">Fermer</string>
+    <string name="data_available">Données disponibles</string>
+    <string name="settings_button_desc">Paramètres</string>
+    <string name="previous_week">Semaine précédente</string>
+    <string name="select_week_desc">Sélectionner une semaine</string>
+    <string name="next_week">Semaine suivante</string>
+    <string name="previous_year">Année précédente</string>
+    <string name="next_year">Année suivante</string>
+    <string name="logo_desc">Logo Anecoop</string>
+    <string name="error_icon">Erreur</string>
     
     <!-- Filter messages -->
     <string name="filter_incoming_message">🟢 Affichage produits entrants • Tirez vers le bas pour actualiser</string>
@@ -176,6 +213,11 @@
     
     <!-- Loading states -->
     <string name="please_wait">Veuillez patienter...</string>
+    <string name="error_loading_more_weeks">Erreur lors du chargement de plus de semaines</string>
+    <string name="error_loading_year">Erreur lors du chargement de l\'année</string>
+    <string name="error_loading_weeks">Erreur lors du chargement des semaines</string>
+    <string name="error_loading">Erreur lors du chargement</string>
+    <string name="error_reloading">Erreur lors du rechargement</string>
     
     <!-- Product card labels -->
     <string name="sca_prefix">SCA :</string>

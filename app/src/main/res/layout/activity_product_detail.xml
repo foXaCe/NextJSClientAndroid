@@ -51,7 +51,7 @@
                         android:textAppearance="?attr/textAppearanceHeadlineSmall"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface"
-                        android:text="Nom du produit" />
+                        android:text="@string/product_name_placeholder" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -162,7 +162,7 @@
                                 android:layout_height="wrap_content"
                                 android:textAppearance="?attr/textAppearanceBodyMedium"
                                 android:textColor="?attr/colorOnSurface"
-                                android:text="Depuis le 01 Octobre 15 fois" />
+                                android:text="@string/since_date" />
 
                             <TextView
                                 android:id="@+id/percentageWeeks"
@@ -217,7 +217,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Retenu : "
+                            android:text="@string/price_retained"
                             android:textAppearance="?attr/textAppearanceLabelMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -228,7 +228,7 @@
                             android:textAppearance="?attr/textAppearanceHeadlineMedium"
                             android:textStyle="bold"
                             android:textColor="?attr/colorPrimary"
-                            android:text="2.45€" />
+                            android:text="@string/price_placeholder" />
 
                     </LinearLayout>
 
@@ -242,7 +242,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Offert : "
+                            android:text="@string/price_offered"
                             android:textAppearance="?attr/textAppearanceLabelMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -253,7 +253,7 @@
                             android:textAppearance="?attr/textAppearanceBodyLarge"
                             android:textStyle="bold"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="2.25€" />
+                            android:text="@string/price_placeholder" />
 
                     </LinearLayout>
 
@@ -413,7 +413,7 @@
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="Marque" />
+                            android:text="@string/brand_placeholder" />
 
                     </LinearLayout>
 
@@ -438,7 +438,7 @@
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="Origine" />
+                            android:text="@string/origin_placeholder" />
 
                     </LinearLayout>
 

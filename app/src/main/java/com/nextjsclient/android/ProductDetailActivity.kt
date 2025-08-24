@@ -13,15 +13,39 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import android.widget.LinearLayout
+import com.nextjsclient.android.utils.LocaleManager
 import com.google.android.material.snackbar.Snackbar
 import com.nextjsclient.android.data.models.ScamarkProduct
 import com.nextjsclient.android.data.repository.FirebaseRepository
 import com.nextjsclient.android.databinding.ActivityProductDetailBinding
+import com.nextjsclient.android.utils.CategoryTranslator
 import java.text.DecimalFormat
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 
 class ProductDetailActivity : AppCompatActivity() {
+    
+    override fun attachBaseContext(newBase: Context) {
+        try {
+            val localeManager = LocaleManager(newBase)
+            val languageCode = localeManager.getCurrentLanguage()
+            
+            val locale = when (languageCode) {
+                "system" -> java.util.Locale.getDefault()
+                "en" -> java.util.Locale.ENGLISH
+                "fr" -> java.util.Locale.FRENCH
+                "es" -> java.util.Locale("es", "ES")
+                else -> java.util.Locale.getDefault()
+            }
+            
+            val config = android.content.res.Configuration(newBase.resources.configuration)
+            config.setLocale(locale)
+            val updatedContext = newBase.createConfigurationContext(config)
+            super.attachBaseContext(updatedContext)
+        } catch (e: Exception) {
+            super.attachBaseContext(newBase)
+        }
+    }
     
     private lateinit var binding: ActivityProductDetailBinding
     private val priceFormat = DecimalFormat("#,##0.00")
@@ -60,10 +84,10 @@ class ProductDetailActivity : AppCompatActivity() {
                 putExtra(EXTRA_IS_PROMO, product.isPromo)
                 putExtra(EXTRA_PRODUCT_CODE, product.articleInfo?.codeProduit ?: 
                     product.decisions.firstOrNull()?.codeProduit ?: "N/A")
-                putExtra(EXTRA_EAN, product.articleInfo?.gencode ?: product.articleInfo?.ean ?: "Non disponible")
-                putExtra(EXTRA_CATEGORY, product.articleInfo?.categorie ?: product.articleInfo?.category ?: "Non défini")
-                putExtra(EXTRA_BRAND, product.articleInfo?.marque ?: "Non défini")
-                putExtra(EXTRA_ORIGIN, product.articleInfo?.origine ?: "Non défini")
+                putExtra(EXTRA_EAN, product.articleInfo?.gencode ?: product.articleInfo?.ean ?: "N/A")
+                putExtra(EXTRA_CATEGORY, product.articleInfo?.categorie ?: product.articleInfo?.category ?: "N/A")
+                putExtra(EXTRA_BRAND, product.articleInfo?.marque ?: "N/A")
+                putExtra(EXTRA_ORIGIN, product.articleInfo?.origine ?: "N/A")
                 putExtra(EXTRA_CLIENTS_COUNT, product.totalScas)
                 
                 // Ajouter les paramètres de semaine/année sélectionnée
@@ -78,7 +102,7 @@ class ProductDetailActivity : AppCompatActivity() {
                 product.decisions.forEach { decision ->
                     clientNames.add(decision.clientInfo?.nom ?: decision.nomClient)
                     clientTypes.add(decision.clientInfo?.typeCaisse ?: "standard")
-                    clientTimes.add(decision.clientInfo?.heureDepart ?: "Non défini")
+                    clientTimes.add(decision.clientInfo?.heureDepart ?: "N/A")
                 }
                 
                 putStringArrayListExtra(EXTRA_CLIENTS_NAMES, clientNames)
@@ -147,10 +171,10 @@ class ProductDetailActivity : AppCompatActivity() {
         val priceOffert = intent.getDoubleExtra(EXTRA_PRICE_OFFERT, 0.0)
         val isPromo = intent.getBooleanExtra(EXTRA_IS_PROMO, false)
         val productCode = intent.getStringExtra(EXTRA_PRODUCT_CODE) ?: "N/A"
-        val ean = intent.getStringExtra(EXTRA_EAN) ?: "Non disponible"
-        val category = intent.getStringExtra(EXTRA_CATEGORY) ?: "Non défini"
-        val brand = intent.getStringExtra(EXTRA_BRAND) ?: "Non défini"
-        val origin = intent.getStringExtra(EXTRA_ORIGIN) ?: "Non défini"
+        val ean = intent.getStringExtra(EXTRA_EAN) ?: "N/A"
+        val category = intent.getStringExtra(EXTRA_CATEGORY) ?: "N/A"
+        val brand = intent.getStringExtra(EXTRA_BRAND) ?: "N/A"
+        val origin = intent.getStringExtra(EXTRA_ORIGIN) ?: "N/A"
         val clientsCount = intent.getIntExtra(EXTRA_CLIENTS_COUNT, 0)
         val consecutiveWeeks = intent.getIntExtra(EXTRA_CONSECUTIVE_WEEKS, 0)
         val totalReferences = intent.getIntExtra(EXTRA_TOTAL_REFERENCES, 0)
@@ -159,51 +183,56 @@ class ProductDetailActivity : AppCompatActivity() {
         val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
-        val consecutiveEnd = consecutiveStart + "$consecutiveWeeks semaines".length
-        consecutiveSpannable.setSpan(
-            android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        consecutiveSpannable.setSpan(
-            android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        consecutiveSpannable.setSpan(
-            android.text.style.RelativeSizeSpan(1.3f),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        if (consecutiveStart != -1) {
+            val weeksText = getString(R.string.weeks)
+            val consecutiveEnd = consecutiveStart + "$consecutiveWeeks".length
+            consecutiveSpannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            consecutiveSpannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            consecutiveSpannable.setSpan(
+                android.text.style.RelativeSizeSpan(1.3f),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
         binding.consecutiveWeeks.text = consecutiveSpannable
         
         // Version initiale avec pourcentage par défaut
         val defaultPercentage = if (totalReferences > 0) 30 else 0 // Pourcentage par défaut
         val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)
-        val totalStart = totalText.indexOf("$totalReferences fois")
-        val totalEnd = totalStart + "$totalReferences fois".length
-        totalSpannable.setSpan(
-            android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        totalSpannable.setSpan(
-            android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        totalSpannable.setSpan(
-            android.text.style.RelativeSizeSpan(1.3f),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        val totalStart = totalText.indexOf("$totalReferences")
+        if (totalStart != -1) {
+            val totalEnd = totalStart + "$totalReferences".length
+            totalSpannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            totalSpannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            totalSpannable.setSpan(
+                android.text.style.RelativeSizeSpan(1.3f),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
         
         // Affichage du pourcentage séparé
         updatePercentageDisplay(defaultPercentage)
@@ -222,12 +251,12 @@ class ProductDetailActivity : AppCompatActivity() {
         // Set product information
         binding.productCode.text = productCode
         binding.productEan.text = ean
-        binding.productCategory.text = category
+        binding.productCategory.text = CategoryTranslator.translateCategory(this, category)
         binding.productBrand.text = brand
         binding.productOrigin.text = origin
         
         // Hide EAN layout if not available
-        if (ean == "Non disponible") {
+        if (ean == "N/A") {
             binding.eanLayout.visibility = View.GONE
         }
         
@@ -275,13 +304,13 @@ class ProductDetailActivity : AppCompatActivity() {
                 binding.priceRetenu.text = baseText
             }
         } else {
-            binding.priceRetenu.text = "Non défini"
+            binding.priceRetenu.text = getString(R.string.undefined_price)
         }
         
         binding.priceOffert.text = if (priceOffert > 0) {
             "${priceFormat.format(priceOffert)}€"
         } else {
-            "Non défini"
+            getString(R.string.undefined_price)
         }
         
         // Couleur conditionnelle pour le prix offert seulement (prix retenu géré au-dessus avec vs S-1)
@@ -327,11 +356,11 @@ class ProductDetailActivity : AppCompatActivity() {
             // Le nom du client garde la couleur par défaut (pas de couleur spéciale)
             
             // Heure de départ
-            val time = if (index < clientTimes.size) clientTimes[index] else "Non défini"
-            if (time != "Non défini") {
+            val time = if (index < clientTimes.size) clientTimes[index] else "N/A"
+            if (time != "N/A") {
                 departureTimeTextView.text = "🕐 $time"
             } else {
-                departureTimeTextView.text = "🕐 Non défini"
+                departureTimeTextView.text = "🕐 ${getString(R.string.undefined_time)}"
             }
             
             clientsLayout.addView(clientView)
@@ -420,55 +449,57 @@ class ProductDetailActivity : AppCompatActivity() {
         val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
-        val consecutiveEnd = consecutiveStart + "$consecutiveWeeks semaines".length
-        
-        
-        consecutiveSpannable.setSpan(
-            android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        consecutiveSpannable.setSpan(
-            android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        consecutiveSpannable.setSpan(
-            android.text.style.RelativeSizeSpan(1.3f),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        if (consecutiveStart != -1) {
+            val consecutiveEnd = consecutiveStart + "$consecutiveWeeks".length
+            
+            consecutiveSpannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            consecutiveSpannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            consecutiveSpannable.setSpan(
+                android.text.style.RelativeSizeSpan(1.3f),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
         binding.consecutiveWeeks.text = consecutiveSpannable
         
         // Mettre à jour le total des références (sans pourcentage)
         val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)
-        val totalStart = totalText.indexOf("$totalReferences fois")
-        val totalEnd = totalStart + "$totalReferences fois".length
-        
-        
-        // Colorer "XX fois" en bleu
-        totalSpannable.setSpan(
-            android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        totalSpannable.setSpan(
-            android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        totalSpannable.setSpan(
-            android.text.style.RelativeSizeSpan(1.3f),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        val totalStart = totalText.indexOf("$totalReferences")
+        if (totalStart != -1) {
+            val totalEnd = totalStart + "$totalReferences".length
+            
+            // Colorer "XX" en bleu
+            totalSpannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            totalSpannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            totalSpannable.setSpan(
+                android.text.style.RelativeSizeSpan(1.3f),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
         
         // Mettre à jour le pourcentage séparément avec couleur conditionnelle
         updatePercentageDisplay(percentage)
@@ -529,26 +560,28 @@ class ProductDetailActivity : AppCompatActivity() {
         val consecutiveText = getString(R.string.consecutive_weeks_format, consecutiveWeeks)
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
-        val consecutiveEnd = consecutiveStart + "$consecutiveWeeks semaines".length
-        
-        consecutiveSpannable.setSpan(
-            android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        consecutiveSpannable.setSpan(
-            android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        consecutiveSpannable.setSpan(
-            android.text.style.RelativeSizeSpan(1.3f),
-            consecutiveStart,
-            consecutiveEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        if (consecutiveStart != -1) {
+            val consecutiveEnd = consecutiveStart + "$consecutiveWeeks".length
+            
+            consecutiveSpannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            consecutiveSpannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            consecutiveSpannable.setSpan(
+                android.text.style.RelativeSizeSpan(1.3f),
+                consecutiveStart,
+                consecutiveEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
         binding.consecutiveWeeks.text = consecutiveSpannable
     }
     
@@ -559,27 +592,29 @@ class ProductDetailActivity : AppCompatActivity() {
     private fun updateTotalDisplay(totalReferences: Int, _isLoading: Boolean = false) {
         val totalText = getString(R.string.since_date_format, totalReferences)
         val totalSpannable = android.text.SpannableString(totalText)
-        val totalStart = totalText.indexOf("$totalReferences fois")
-        val totalEnd = totalStart + "$totalReferences fois".length
-        
-        totalSpannable.setSpan(
-            android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        totalSpannable.setSpan(
-            android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        totalSpannable.setSpan(
-            android.text.style.RelativeSizeSpan(1.3f),
-            totalStart,
-            totalEnd,
-            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        val totalStart = totalText.indexOf("$totalReferences")
+        if (totalStart != -1) {
+            val totalEnd = totalStart + "$totalReferences".length
+            
+            totalSpannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            totalSpannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            totalSpannable.setSpan(
+                android.text.style.RelativeSizeSpan(1.3f),
+                totalStart,
+                totalEnd,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
         binding.totalReferences.text = totalSpannable
     }
     
@@ -587,7 +622,7 @@ class ProductDetailActivity : AppCompatActivity() {
      * Met à jour l'affichage du pourcentage avec une couleur conditionnelle
      */
     private fun updatePercentageDisplay(percentage: Int) {
-        val percentageText = "$percentage% des semaines"
+        val percentageText = getString(R.string.percentage_weeks, percentage)
         binding.percentageWeeks.text = percentageText
         
         // Couleur conditionnelle selon le pourcentage

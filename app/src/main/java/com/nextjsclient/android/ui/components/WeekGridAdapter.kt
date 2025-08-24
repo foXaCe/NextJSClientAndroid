@@ -21,7 +21,7 @@ data class WeekItem(
     val hasData: Boolean = false,
     val isLoading: Boolean = false
 ) {
-    fun getDateRange(): String {
+    fun getDateRange(context: android.content.Context? = null): String {
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, year)
         calendar.set(Calendar.WEEK_OF_YEAR, week)
@@ -31,7 +31,8 @@ data class WeekItem(
         calendar.add(Calendar.DAY_OF_WEEK, 6)
         val endDate = calendar.time
         
-        val dateFormat = SimpleDateFormat("d MMM", Locale.FRANCE)
+        val currentLocale = context?.resources?.configuration?.locales?.get(0) ?: Locale.getDefault()
+        val dateFormat = SimpleDateFormat("d MMM", currentLocale)
         val startStr = dateFormat.format(startDate)
         val endStr = dateFormat.format(endDate)
         
@@ -69,7 +70,7 @@ class WeekGridAdapter(
         val weekItem = getItem(position)
         
         holder.weekNumber.text = weekItem.week.toString()
-        holder.weekRange.text = weekItem.getDateRange()
+        holder.weekRange.text = weekItem.getDateRange(holder.itemView.context)
         
         // Indicateurs visuels et gestion de l'affichage "pas disponible"
         if (holder.isFlipped) {

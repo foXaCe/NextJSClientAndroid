@@ -82,7 +82,7 @@
                     app:cornerRadius="16dp"
                     android:alpha="0.6"
                     app:rippleColor="?attr/colorOnSurface"
-                    android:contentDescription="Semaine précédente" />
+                    android:contentDescription="@string/previous_week" />
 
                 <!-- Week Number - Clickable Button -->
                 <com.google.android.material.button.MaterialButton
@@ -109,7 +109,7 @@
                     app:iconTint="?attr/colorOnPrimaryContainer"
                     app:iconSize="20dp"
                     android:elevation="4dp"
-                    android:contentDescription="Sélectionner une semaine" />
+                    android:contentDescription="@string/select_week_desc" />
 
                 <!-- Next Week Button -->
                 <com.google.android.material.button.MaterialButton
@@ -133,7 +133,7 @@
                     app:cornerRadius="16dp"
                     android:alpha="0.6"
                     app:rippleColor="?attr/colorOnSurface"
-                    android:contentDescription="Semaine suivante" />
+                    android:contentDescription="@string/next_week" />
 
             </LinearLayout>
 

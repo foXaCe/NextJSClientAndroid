@@ -78,31 +78,31 @@ class SearchSuggestionsAdapter(
                     typeView.text = "Client SCA"
                     typeView.visibility = View.VISIBLE
                     if (suggestion.count > 0) {
-                        countView.text = "${suggestion.count} produits"
+                        countView.text = itemView.context.getString(R.string.search_products_count, suggestion.count)
                         countView.visibility = View.VISIBLE
                     }
                 }
                 SuggestionType.PRODUCT -> {
                     icon.setImageResource(R.drawable.ic_search)
-                    typeView.text = "Produit"
+                    typeView.text = itemView.context.getString(R.string.search_product_type)
                     typeView.visibility = View.VISIBLE
                     countView.visibility = View.GONE
                 }
                 SuggestionType.BRAND -> {
                     icon.setImageResource(R.drawable.ic_trophy)
-                    typeView.text = "Marque"
+                    typeView.text = itemView.context.getString(R.string.search_brand_type)
                     typeView.visibility = View.VISIBLE
                     if (suggestion.count > 0) {
-                        countView.text = "${suggestion.count} produits"
+                        countView.text = itemView.context.getString(R.string.search_products_count, suggestion.count)
                         countView.visibility = View.VISIBLE
                     }
                 }
                 SuggestionType.CATEGORY -> {
                     icon.setImageResource(R.drawable.ic_calendar)
-                    typeView.text = "Catégorie"
+                    typeView.text = itemView.context.getString(R.string.category_label)
                     typeView.visibility = View.VISIBLE
                     if (suggestion.count > 0) {
-                        countView.text = "${suggestion.count} produits"
+                        countView.text = itemView.context.getString(R.string.search_products_count, suggestion.count)
                         countView.visibility = View.VISIBLE
                     }
                 }
