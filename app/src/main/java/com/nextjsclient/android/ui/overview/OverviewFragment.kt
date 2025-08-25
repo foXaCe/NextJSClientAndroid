@@ -1,5 +1,6 @@
 package com.nextjsclient.android.ui.overview
 
+import android.animation.ObjectAnimator
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -53,6 +54,9 @@ class OverviewFragment : Fragment() {
     
     // Tracking pour éviter les refresh inutiles
     private var lastDataLoadTime = 0L
+    
+    // Flag pour indiquer qu'on vient d'arrêter des animations continues
+    private var justStoppedContinuousAnimations: Boolean = false
     private var isInitialLoad = true
     
     // BroadcastReceiver pour écouter les changements de préférences
@@ -119,6 +123,9 @@ class OverviewFragment : Fragment() {
         val selectedWeek = viewModel.selectedWeek.value
         
         android.util.Log.d("OverviewFragment", "📊 Checking selected week: year=$selectedYear, week=$selectedWeek")
+        
+        // Démarrer immédiatement les animations de loading pour donner l'impression d'activité
+        startLoadingAnimations()
         
         if (selectedYear != null && selectedWeek != null) {
             // PRIORITÉ: Utiliser la semaine déjà sélectionnée dans le ViewModel
@@ -201,11 +208,17 @@ class OverviewFragment : Fragment() {
     private fun forceRefreshDataOnResume() {
         android.util.Log.d("OverviewFragment", "🔄 Forcing data refresh on resume...")
         
-        // Éviter le refresh si les données viennent d'être chargées (moins de 2 secondes)
+        // Arrêter toutes les animations en cours pour éviter les conflits
+        completelyStopAllAnimations()
+        
+        // Remettre les placeholders pour que les animations se relancent correctement
+        resetToPlaceholders()
+        
+        // Éviter le refresh si les données viennent d'être chargées (moins de 1 seconde)
         val currentTime = System.currentTimeMillis()
         val timeSinceLastLoad = currentTime - lastDataLoadTime
         
-        if (!isInitialLoad && timeSinceLastLoad < 2000) {
+        if (!isInitialLoad && timeSinceLastLoad < 1000) {
             android.util.Log.d("OverviewFragment", "⏭️ Skipping refresh - data was loaded recently (${timeSinceLastLoad}ms ago)")
             return
         }
@@ -218,6 +231,9 @@ class OverviewFragment : Fragment() {
         
         if (selectedYear != null && selectedWeek != null) {
             android.util.Log.d("OverviewFragment", "📊 Refreshing data for week $selectedYear-W$selectedWeek")
+            
+            // Démarrer les animations de loading
+            startLoadingAnimations()
             
             // IMPORTANT: Toujours recharger TOUTES les données depuis Firebase
             // Le ViewModel peut contenir seulement les données du fournisseur visité !
@@ -295,6 +311,9 @@ class OverviewFragment : Fragment() {
                 // Mettre à jour les UI sur le thread principal
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
+                        // Pas besoin d'arrêter des animations
+                        android.util.Log.d("OverviewFragment", "📊 Ready to display real values...")
+                        
                         // Activer les boutons trophée maintenant que les données sont chargées
                         enableTrophyButtons()
                         // Auto-refresh du top SCA si un seul fournisseur est activé
@@ -310,6 +329,8 @@ class OverviewFragment : Fragment() {
             } catch (e: Exception) {
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
+                        // Pas d'animations à arrêter
+                        
                         com.google.android.material.snackbar.Snackbar.make(
                             binding.root,
                             "Erreur lors du chargement des données: ${e.message}",
@@ -374,6 +395,9 @@ class OverviewFragment : Fragment() {
                         android.util.Log.d("OverviewFragment", "🎨 Updating UI with loaded data...")
                         val uiStartTime = System.currentTimeMillis()
                         
+                        // Pas besoin d'arrêter des animations (il n'y en a pas)
+                        android.util.Log.d("OverviewFragment", "📊 Ready to update stats with real data...")
+                        
                         // IMPORTANT: Utiliser directement les weekProducts chargés depuis Firebase
                         // Ne pas passer par viewModel.setProducts() qui peut avoir des données incomplètes
                         android.util.Log.d("OverviewFragment", "📦 Using fresh Firebase data directly: ${weekProducts.size} products")
@@ -391,6 +415,8 @@ class OverviewFragment : Fragment() {
                 android.util.Log.e("OverviewFragment", "❌ Error in loadDataForWeek: ${e.message}", e)
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
+                        // Pas d'animations à arrêter en cas d'erreur non plus
+                        
                         com.google.android.material.snackbar.Snackbar.make(
                             binding.root,
                             "Erreur lors du chargement de la semaine: ${e.message}",
@@ -501,6 +527,266 @@ class OverviewFragment : Fragment() {
         // Setup close button for top SCA card
         topScaCard?.findViewById<View>(R.id.closeTopScaButton)?.setOnClickListener {
             hideTopSca()
+        }
+    }
+    
+    private fun startLoadingAnimations() {
+        android.util.Log.d("OverviewFragment", "🎭 Starting immediate loading animations...")
+        
+        // Démarrer les animations shimmer sur toutes les cartes immédiatement
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // Animation shimmer subtile sur les valeurs principales
+        startShimmerAnimation(anecoopCard?.findViewById(R.id.totalProductsValue))
+        startShimmerAnimation(anecoopCard?.findViewById(R.id.productsInValue))
+        startShimmerAnimation(anecoopCard?.findViewById(R.id.productsOutValue))
+        
+        startShimmerAnimation(solagoraCard?.findViewById(R.id.totalProductsValue))
+        startShimmerAnimation(solagoraCard?.findViewById(R.id.productsInValue))
+        startShimmerAnimation(solagoraCard?.findViewById(R.id.productsOutValue))
+        
+        // Animation de pulsation subtile sur les headers
+        startPulseAnimation(anecoopCard?.findViewById(R.id.supplierHeader))
+        startPulseAnimation(solagoraCard?.findViewById(R.id.supplierHeader))
+        
+        // Démarrer immédiatement un CountUp anticipé avec des valeurs estimées
+        startAnticipatedCountUp()
+        
+        // Si le top SCA est visible, l'animer aussi
+        if (isShowingTopSca) {
+            val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
+            // Pas d'animation sur les top products pour le moment
+        }
+    }
+    
+    private fun startAnticipatedCountUp() {
+        android.util.Log.d("OverviewFragment", "💤 Setting default values to zero (no animations)")
+        
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // Simplement mettre toutes les valeurs à 0 - pas d'animations
+        anecoopCard?.findViewById<TextView>(R.id.totalProductsValue)?.text = "0"
+        anecoopCard?.findViewById<TextView>(R.id.productsInValue)?.text = "0"
+        anecoopCard?.findViewById<TextView>(R.id.productsOutValue)?.text = "0"
+        
+        solagoraCard?.findViewById<TextView>(R.id.totalProductsValue)?.text = "0"
+        solagoraCard?.findViewById<TextView>(R.id.productsInValue)?.text = "0"
+        solagoraCard?.findViewById<TextView>(R.id.productsOutValue)?.text = "0"
+    }
+    
+    private fun startShimmerAnimation(view: TextView?) {
+        view?.let { textView ->
+            // Animation de shimmer sur le texte
+            val shimmerAnimator = ObjectAnimator.ofFloat(textView, "alpha", 1.0f, 0.3f, 1.0f)
+            shimmerAnimator.duration = 1200
+            shimmerAnimator.repeatCount = ObjectAnimator.INFINITE
+            shimmerAnimator.repeatMode = ObjectAnimator.REVERSE
+            shimmerAnimator.interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
+            shimmerAnimator.start()
+            
+            // Stocker l'animator pour pouvoir l'arrêter plus tard
+            textView.tag = shimmerAnimator
+        }
+    }
+    
+    private fun startPulseAnimation(view: View?) {
+        view?.let { header ->
+            // Animation de pulsation très subtile sur le header
+            val pulseAnimator = ObjectAnimator.ofFloat(header, "alpha", 1.0f, 0.9f)
+            pulseAnimator.duration = 2000
+            pulseAnimator.repeatCount = ObjectAnimator.INFINITE
+            pulseAnimator.repeatMode = ObjectAnimator.REVERSE
+            pulseAnimator.interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
+            pulseAnimator.start()
+            
+            // Stocker l'animator pour pouvoir l'arrêter plus tard
+            header.tag = pulseAnimator
+        }
+    }
+    
+    private fun stopLoadingAnimations() {
+        android.util.Log.d("OverviewFragment", "🛑 Stopping continuous animations - Firebase data ready...")
+        
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // DEBUG: Vérifier l'état avant arrêt
+        val anecoopTotal = anecoopCard?.findViewById<TextView>(R.id.totalProductsValue)
+        val anecoopIn = anecoopCard?.findViewById<TextView>(R.id.productsInValue) 
+        val anecoopOut = anecoopCard?.findViewById<TextView>(R.id.productsOutValue)
+        
+        android.util.Log.d("OverviewFragment", "🔍 BEFORE stopping - Anecoop values: total='${anecoopTotal?.text}', in='${anecoopIn?.text}', out='${anecoopOut?.text}'")
+        android.util.Log.d("OverviewFragment", "🔍 BEFORE stopping - Anecoop tags: total=${anecoopTotal?.tag != null}, in=${anecoopIn?.tag != null}, out=${anecoopOut?.tag != null}")
+        
+        // Marquer qu'on vient d'arrêter des animations continues
+        val hadContinuousAnimations = (anecoopTotal?.tag != null) || (anecoopIn?.tag != null) || (anecoopOut?.tag != null)
+        
+        // FORCER l'arrêt des animations continues en annulant les animators ET supprimant les tags
+        android.util.Log.d("OverviewFragment", "🛑 Force stopping continuous animations...")
+        
+        // Annuler les animators avant de supprimer les tags
+        val anecoopTotalTV = anecoopCard?.findViewById<TextView>(R.id.totalProductsValue)
+        val anecoopInTV = anecoopCard?.findViewById<TextView>(R.id.productsInValue)
+        val anecoopOutTV = anecoopCard?.findViewById<TextView>(R.id.productsOutValue)
+        val solagoraTotalTV = solagoraCard?.findViewById<TextView>(R.id.totalProductsValue)
+        val solagoraInTV = solagoraCard?.findViewById<TextView>(R.id.productsInValue)
+        val solagoraOutTV = solagoraCard?.findViewById<TextView>(R.id.productsOutValue)
+        
+        // Cancel tous les animators actifs
+        (anecoopTotalTV?.tag as? android.animation.ValueAnimator)?.cancel()
+        (anecoopInTV?.tag as? android.animation.ValueAnimator)?.cancel()
+        (anecoopOutTV?.tag as? android.animation.ValueAnimator)?.cancel()
+        (solagoraTotalTV?.tag as? android.animation.ValueAnimator)?.cancel()
+        (solagoraInTV?.tag as? android.animation.ValueAnimator)?.cancel()
+        (solagoraOutTV?.tag as? android.animation.ValueAnimator)?.cancel()
+        
+        // Supprimer les tags après annulation
+        anecoopTotalTV?.tag = null
+        anecoopInTV?.tag = null
+        anecoopOutTV?.tag = null
+        solagoraTotalTV?.tag = null
+        solagoraInTV?.tag = null
+        solagoraOutTV?.tag = null
+        
+        // Flag pour indiquer qu'on vient d'arrêter des animations continues
+        justStoppedContinuousAnimations = hadContinuousAnimations
+        android.util.Log.d("OverviewFragment", "🔍 AFTER stopping - Had continuous animations: $hadContinuousAnimations, Flag set: $justStoppedContinuousAnimations")
+        
+        // Arrêter complètement les shimmer animations sur les headers
+        stopAnimatorIfExists(anecoopCard?.findViewById(R.id.supplierHeader))
+        stopAnimatorIfExists(solagoraCard?.findViewById(R.id.supplierHeader))
+        anecoopCard?.findViewById<View>(R.id.supplierHeader)?.alpha = 1.0f
+        solagoraCard?.findViewById<View>(R.id.supplierHeader)?.alpha = 1.0f
+        
+        // Les animations CountUp continues vont maintenant s'arrêter naturellement
+        // car les tags sont supprimés et ModernOverviewHelper va prendre le relais
+        
+        // Arrêter complètement les animations de header
+        stopAnimatorIfExists(anecoopCard?.findViewById(R.id.supplierHeader))
+        stopAnimatorIfExists(solagoraCard?.findViewById(R.id.supplierHeader))
+        anecoopCard?.findViewById<View>(R.id.supplierHeader)?.alpha = 1.0f
+        solagoraCard?.findViewById<View>(R.id.supplierHeader)?.alpha = 1.0f
+        
+        // Arrêt progressif après un délai pour laisser les vraies valeurs se stabiliser
+        binding.root.postDelayed({
+            completelyStopAllAnimations()
+        }, 2000L) // 2 secondes de fade lent avant arrêt complet
+        
+        // DEBUG: Vérifier les valeurs finales après 3 secondes
+        binding.root.postDelayed({
+            val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+            val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+            val anecoopTotal = anecoopCard?.findViewById<TextView>(R.id.totalProductsValue)?.text
+            val anecoopIn = anecoopCard?.findViewById<TextView>(R.id.productsInValue)?.text
+            val anecoopOut = anecoopCard?.findViewById<TextView>(R.id.productsOutValue)?.text
+            val solagoraTotal = solagoraCard?.findViewById<TextView>(R.id.totalProductsValue)?.text
+            val solagoraIn = solagoraCard?.findViewById<TextView>(R.id.productsInValue)?.text
+            val solagoraOut = solagoraCard?.findViewById<TextView>(R.id.productsOutValue)?.text
+            android.util.Log.d("OverviewFragment", "🔍 FINAL UI VALUES - Anecoop: total='$anecoopTotal', in='$anecoopIn', out='$anecoopOut'")
+            android.util.Log.d("OverviewFragment", "🔍 FINAL UI VALUES - Solagora: total='$solagoraTotal', in='$solagoraIn', out='$solagoraOut'")
+        }, 3000L)
+    }
+    
+    private fun transitionToSlowFade(view: TextView?) {
+        view?.let { textView ->
+            // Arrêter l'animation rapide existante
+            val currentAnimator = textView.tag as? ObjectAnimator
+            currentAnimator?.cancel()
+            
+            // Démarrer une animation plus lente et plus subtile
+            val slowFadeAnimator = ObjectAnimator.ofFloat(textView, "alpha", 1.0f, 0.7f, 1.0f)
+            slowFadeAnimator.duration = 3000L // 3 secondes au lieu de 1.2
+            slowFadeAnimator.repeatCount = 3 // Seulement 3 répétitions au lieu d'infini
+            slowFadeAnimator.repeatMode = ObjectAnimator.REVERSE
+            slowFadeAnimator.interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
+            
+            // À la fin, s'arrêter à alpha = 1.0f
+            slowFadeAnimator.addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    textView.alpha = 1.0f
+                    textView.tag = null
+                }
+            })
+            
+            slowFadeAnimator.start()
+            textView.tag = slowFadeAnimator
+        }
+    }
+    
+    private fun completelyStopAllAnimations() {
+        android.util.Log.d("OverviewFragment", "🔇 Completely stopping all remaining animations...")
+        
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // Arrêt définitif seulement pour les entrants/sortants
+        // (les produits actifs sont déjà arrêtés précédemment)
+        stopAnimatorIfExists(anecoopCard?.findViewById(R.id.productsInValue))
+        stopAnimatorIfExists(anecoopCard?.findViewById(R.id.productsOutValue))
+        stopAnimatorIfExists(solagoraCard?.findViewById(R.id.productsInValue))
+        stopAnimatorIfExists(solagoraCard?.findViewById(R.id.productsOutValue))
+        
+        // Assurer alpha = 1.0f pour entrants/sortants
+        // (produits actifs déjà à alpha = 1.0f)
+        anecoopCard?.findViewById<View>(R.id.productsInValue)?.alpha = 1.0f
+        anecoopCard?.findViewById<View>(R.id.productsOutValue)?.alpha = 1.0f
+        solagoraCard?.findViewById<View>(R.id.productsInValue)?.alpha = 1.0f
+        solagoraCard?.findViewById<View>(R.id.productsOutValue)?.alpha = 1.0f
+    }
+    
+    private fun resetToPlaceholders() {
+        android.util.Log.d("OverviewFragment", "🔄 Resetting to placeholders for fresh animation...")
+        
+        val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
+        val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
+        
+        // Remettre les placeholders "--" pour forcer une détection de first load
+        anecoopCard?.findViewById<TextView>(R.id.totalProductsValue)?.apply {
+            text = "--"
+            alpha = 1.0f
+            translationY = 0f
+            tag = null
+        }
+        anecoopCard?.findViewById<TextView>(R.id.productsInValue)?.apply {
+            text = "--"
+            alpha = 1.0f
+            translationY = 0f
+            tag = null
+        }
+        anecoopCard?.findViewById<TextView>(R.id.productsOutValue)?.apply {
+            text = "--"
+            alpha = 1.0f
+            translationY = 0f
+            tag = null
+        }
+        
+        solagoraCard?.findViewById<TextView>(R.id.totalProductsValue)?.apply {
+            text = "--"
+            alpha = 1.0f
+            translationY = 0f
+            tag = null
+        }
+        solagoraCard?.findViewById<TextView>(R.id.productsInValue)?.apply {
+            text = "--"
+            alpha = 1.0f
+            translationY = 0f
+            tag = null
+        }
+        solagoraCard?.findViewById<TextView>(R.id.productsOutValue)?.apply {
+            text = "--"
+            alpha = 1.0f
+            translationY = 0f
+            tag = null
+        }
+    }
+    
+    private fun stopAnimatorIfExists(view: View?) {
+        view?.let {
+            val animator = it.tag as? ObjectAnimator
+            animator?.cancel()
+            it.tag = null
         }
     }
     
@@ -1123,7 +1409,13 @@ class OverviewFragment : Fragment() {
         
         // Déléguer à ModernOverviewHelper pour la nouvelle UI moderne
         val isAnecoop = supplier.lowercase() == "anecoop"
-        modernHelper.updateSupplierCard(supplier, stats, isAnecoop)
+        modernHelper.updateSupplierCard(supplier, stats, isAnecoop, justStoppedContinuousAnimations)
+        
+        // Reset le flag après utilisation (seul le premier appel doit l'utiliser)
+        if (justStoppedContinuousAnimations) {
+            justStoppedContinuousAnimations = false
+            android.util.Log.d("OverviewFragment", "🔄 Reset justStoppedContinuousAnimations flag after ${supplier.uppercase()} card update")
+        }
         
     }
     
