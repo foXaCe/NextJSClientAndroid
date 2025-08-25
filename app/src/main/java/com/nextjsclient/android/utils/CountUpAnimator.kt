@@ -123,5 +123,81 @@ class CountUpAnimator {
             
             countAnimator.start()
         }
+
+        /**
+         * Animation Material 3 de placeholder pendant le chargement
+         */
+        fun animateLoadingPlaceholder(textView: TextView, placeholder: String = "--") {
+            // Animation de shimmer/pulsation douce
+            textView.text = placeholder
+            textView.alpha = 0.6f
+            
+            val shimmerAnimator = ValueAnimator.ofFloat(0.6f, 1.0f, 0.6f)
+            shimmerAnimator.duration = 1500L
+            shimmerAnimator.repeatCount = ValueAnimator.INFINITE
+            shimmerAnimator.interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
+            
+            shimmerAnimator.addUpdateListener { animation ->
+                textView.alpha = animation.animatedValue as Float
+            }
+            
+            // Stocker l'animator dans le tag pour pouvoir l'arrêter plus tard
+            textView.tag = shimmerAnimator
+            shimmerAnimator.start()
+        }
+
+        /**
+         * Arrête l'animation de placeholder et lance l'animation de comptage
+         */
+        fun stopPlaceholderAndCountUp(
+            textView: TextView,
+            targetValue: Int,
+            duration: Long = 800L,
+            prefix: String = "",
+            suffix: String = "",
+            withPulse: Boolean = true
+        ) {
+            // Arrêter l'animation de placeholder
+            val placeholderAnimator = textView.tag as? ValueAnimator
+            placeholderAnimator?.cancel()
+            textView.tag = null
+            
+            // Reset alpha
+            textView.alpha = 1.0f
+            
+            // Démarrer l'animation de comptage
+            if (withPulse) {
+                animateCountUpWithPulse(textView, targetValue, duration, prefix, suffix)
+            } else {
+                animateCountUp(textView, targetValue, duration, prefix, suffix)
+            }
+        }
+
+        /**
+         * Animation Material 3 avec effet de slide-in depuis le bas
+         */
+        fun animateCountUpWithSlideIn(
+            textView: TextView,
+            targetValue: Int,
+            duration: Long = 800L,
+            prefix: String = "",
+            suffix: String = ""
+        ) {
+            // Préparer la position initiale
+            textView.translationY = 30f
+            textView.alpha = 0f
+            
+            // Animation d'entrée
+            textView.animate()
+                .translationY(0f)
+                .alpha(1f)
+                .setDuration(400L)
+                .setInterpolator(androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                .withEndAction {
+                    // Lancer l'animation de comptage après l'entrée
+                    animateCountUp(textView, targetValue, duration - 400L, prefix, suffix)
+                }
+                .start()
+        }
     }
 }

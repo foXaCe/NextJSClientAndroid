@@ -59,6 +59,7 @@
     <string name="up_to_date">You are up to date</string>
     <string name="downloading">Downloading...</string>
     <string name="download_progress">Download: %d</string>
+    <string name="downloading_update">Downloading update...</string>
     <string name="installing">Installing...</string>
     <string name="ready_to_install">Ready to install</string>
     <string name="install_now">Install now</string>

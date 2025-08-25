@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import com.nextjsclient.android.utils.CountUpAnimator
+import com.nextjsclient.android.utils.TopProductAnimator
 import com.nextjsclient.android.data.models.ScamarkStats
 import com.nextjsclient.android.utils.SupplierPreferences
 
@@ -50,6 +51,10 @@ class OverviewFragment : Fragment() {
     private var isShowingTopSca = false
     private var topScaSupplier: String? = null
     
+    // Tracking pour éviter les refresh inutiles
+    private var lastDataLoadTime = 0L
+    private var isInitialLoad = true
+    
     // BroadcastReceiver pour écouter les changements de préférences
     private val preferencesReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -74,42 +79,68 @@ class OverviewFragment : Fragment() {
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val startTime = System.currentTimeMillis()
+        android.util.Log.d("OverviewFragment", "🚀 onViewCreated started")
         
         // Initialiser les préférences fournisseurs
+        android.util.Log.d("OverviewFragment", "⚙️ Initializing supplier preferences...")
         supplierPreferences = SupplierPreferences(requireContext())
+        android.util.Log.d("OverviewFragment", "✅ Supplier preferences initialized (${System.currentTimeMillis() - startTime}ms)")
         
         // Initialiser le helper moderne
+        android.util.Log.d("OverviewFragment", "🎨 Initializing modern helper...")
         modernHelper = ModernOverviewHelper(this)
+        android.util.Log.d("OverviewFragment", "✅ Modern helper initialized (${System.currentTimeMillis() - startTime}ms)")
         
         // Initialiser la visibilité des cartes selon les préférences
+        android.util.Log.d("OverviewFragment", "👀 Initializing card visibility...")
         initializeCardVisibility()
+        android.util.Log.d("OverviewFragment", "✅ Card visibility initialized (${System.currentTimeMillis() - startTime}ms)")
         
         // Mettre à jour l'affichage du numéro de semaine
+        android.util.Log.d("OverviewFragment", "📅 Updating week number display...")
         updateWeekNumberDisplay()
+        android.util.Log.d("OverviewFragment", "✅ Week number display updated (${System.currentTimeMillis() - startTime}ms)")
         
+        android.util.Log.d("OverviewFragment", "🔘 Setting up buttons...")
         setupButtons()
+        android.util.Log.d("OverviewFragment", "✅ Buttons setup complete (${System.currentTimeMillis() - startTime}ms)")
+        
+        android.util.Log.d("OverviewFragment", "🔄 Setting up swipe refresh...")
         setupSwipeRefresh()
+        android.util.Log.d("OverviewFragment", "✅ Swipe refresh setup complete (${System.currentTimeMillis() - startTime}ms)")
+        
+        android.util.Log.d("OverviewFragment", "👁️ Observing ViewModel...")
         observeViewModel()
+        android.util.Log.d("OverviewFragment", "✅ ViewModel observers setup (${System.currentTimeMillis() - startTime}ms)")
         
         // Vérifier s'il y a une semaine déjà sélectionnée
         val selectedYear = viewModel.selectedYear.value
         val selectedWeek = viewModel.selectedWeek.value
         
+        android.util.Log.d("OverviewFragment", "📊 Checking selected week: year=$selectedYear, week=$selectedWeek")
+        
         if (selectedYear != null && selectedWeek != null) {
             // PRIORITÉ: Utiliser la semaine déjà sélectionnée dans le ViewModel
+            android.util.Log.d("OverviewFragment", "🎯 Using existing selected week: $selectedYear-W$selectedWeek")
             loadDataForWeek(selectedYear, selectedWeek)
         } else {
             // Fallback seulement si aucune semaine n'est vraiment sélectionnée
             val calendar = java.util.Calendar.getInstance()
             val currentYear = calendar.get(java.util.Calendar.YEAR)
             val currentWeek = getCurrentISOWeek()
+            android.util.Log.d("OverviewFragment", "🕰️ Using current week fallback: $currentYear-W$currentWeek")
             viewModel.selectWeek(currentYear, currentWeek)
             loadDataForWeek(currentYear, currentWeek)
         }
+        
+        android.util.Log.d("OverviewFragment", "✅ onViewCreated completed in ${System.currentTimeMillis() - startTime}ms")
     }
     
     override fun onResume() {
         super.onResume()
+        android.util.Log.d("OverviewFragment", "🔄 onResume - Fragment is back in foreground")
+        
         // Enregistrer le BroadcastReceiver pour écouter les changements de préférences
         val filter = IntentFilter(SupplierPreferences.ACTION_SUPPLIER_PREFERENCES_CHANGED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(preferencesReceiver, filter)
@@ -117,6 +148,10 @@ class OverviewFragment : Fragment() {
         // Mettre à jour la visibilité des cartes au cas où les préférences auraient changé
         // pendant que le fragment était en pause (ex: dans les paramètres)
         updateCardVisibilityOnResume()
+        
+        // Force refresh des données pour s'assurer que les calculs sont corrects
+        // après un retour depuis une page fournisseur
+        forceRefreshDataOnResume()
     }
     
     override fun onPause() {
@@ -160,6 +195,43 @@ class OverviewFragment : Fragment() {
             viewModel.products.value?.let { products ->
                 calculateAndDisplayStats(products)
             }
+        }
+    }
+    
+    private fun forceRefreshDataOnResume() {
+        android.util.Log.d("OverviewFragment", "🔄 Forcing data refresh on resume...")
+        
+        // Éviter le refresh si les données viennent d'être chargées (moins de 2 secondes)
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastLoad = currentTime - lastDataLoadTime
+        
+        if (!isInitialLoad && timeSinceLastLoad < 2000) {
+            android.util.Log.d("OverviewFragment", "⏭️ Skipping refresh - data was loaded recently (${timeSinceLastLoad}ms ago)")
+            return
+        }
+        
+        isInitialLoad = false
+        
+        // Vérifier s'il y a une semaine sélectionnée
+        val selectedYear = viewModel.selectedYear.value
+        val selectedWeek = viewModel.selectedWeek.value
+        
+        if (selectedYear != null && selectedWeek != null) {
+            android.util.Log.d("OverviewFragment", "📊 Refreshing data for week $selectedYear-W$selectedWeek")
+            
+            // IMPORTANT: Toujours recharger TOUTES les données depuis Firebase
+            // Le ViewModel peut contenir seulement les données du fournisseur visité !
+            android.util.Log.d("OverviewFragment", "⚠️ ViewModel products may be incomplete - forcing fresh Firebase load")
+            loadDataForWeek(selectedYear, selectedWeek)
+        } else {
+            android.util.Log.d("OverviewFragment", "⚠️ No selected week found, using current week")
+            
+            // Fallback vers la semaine courante
+            val calendar = java.util.Calendar.getInstance()
+            val currentYear = calendar.get(java.util.Calendar.YEAR)
+            val currentWeek = getCurrentISOWeek()
+            viewModel.selectWeek(currentYear, currentWeek)
+            loadDataForWeek(currentYear, currentWeek)
         }
     }
     
@@ -253,42 +325,70 @@ class OverviewFragment : Fragment() {
      * Charge les données pour une semaine spécifique (utilisé quand on vient d'une page fournisseur)
      */
     private fun loadDataForWeek(year: Int, week: Int) {
+        val loadStartTime = System.currentTimeMillis()
+        android.util.Log.d("OverviewFragment", "📥 Starting loadDataForWeek($year, $week)")
         
         viewModel.viewModelScope.launch {
             try {
+                android.util.Log.d("OverviewFragment", "🔧 Creating Firebase repository...")
                 val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
+                android.util.Log.d("OverviewFragment", "✅ Repository created (${System.currentTimeMillis() - loadStartTime}ms)")
                 
-                // Charger les données de la semaine demandée
-                val weekProducts = repository.getWeekDecisions(year, week, "all")
+                // Optimisation: charger les données en parallèle avec coroutines
+                android.util.Log.d("OverviewFragment", "📊 Loading all data in parallel...")
+                val allDataStartTime = System.currentTimeMillis()
                 
-                // Charger la semaine précédente pour calculer entrants/sortants
+                val weekProductsDeferred = async { repository.getWeekDecisions(year, week, "all") }
+                
                 val (previousYear, previousWeek) = getPreviousWeek(year, week)
-                previousWeekProducts = repository.getWeekDecisions(previousYear, previousWeek, "all")
+                val previousWeekProductsDeferred = async { repository.getWeekDecisions(previousYear, previousWeek, "all") }
+                val anecoopProductsDeferred = async { repository.getWeekDecisions(year, week, "anecoop") }
+                val solagoraProductsDeferred = async { repository.getWeekDecisions(year, week, "solagora") }
                 
-                // Précharger les données des fournisseurs pour le top SCA
-                preloadedAnecoopProducts = repository.getWeekDecisions(year, week, "anecoop")
-                preloadedSolagoraProducts = repository.getWeekDecisions(year, week, "solagora")
+                // Attendre toutes les requêtes en parallèle
+                val weekProducts = weekProductsDeferred.await()
+                previousWeekProducts = previousWeekProductsDeferred.await()
+                preloadedAnecoopProducts = anecoopProductsDeferred.await()
+                preloadedSolagoraProducts = solagoraProductsDeferred.await()
                 
+                android.util.Log.d("OverviewFragment", "✅ All data loaded in parallel: ${weekProducts.size} current, ${previousWeekProducts.size} previous, ${preloadedAnecoopProducts.size} anecoop, ${preloadedSolagoraProducts.size} solagora (${System.currentTimeMillis() - allDataStartTime}ms)")
+                
+                android.util.Log.d("OverviewFragment", "📊 All data loaded in ${System.currentTimeMillis() - loadStartTime}ms, updating UI...")
+                
+                // Marquer le timestamp du chargement
+                lastDataLoadTime = System.currentTimeMillis()
                 
                 // Activer les boutons trophée maintenant que les données sont chargées
                 activity?.runOnUiThread {
+                    android.util.Log.d("OverviewFragment", "🏆 Enabling trophy buttons...")
                     enableTrophyButtons()
                     // Auto-refresh du top SCA si un seul fournisseur est activé
                     refreshTopScaIfNeeded()
+                    android.util.Log.d("OverviewFragment", "✅ Trophy buttons enabled")
                 }
                 
                 
                 // Mettre à jour l'UI
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
+                        android.util.Log.d("OverviewFragment", "🎨 Updating UI with loaded data...")
+                        val uiStartTime = System.currentTimeMillis()
+                        
+                        // IMPORTANT: Utiliser directement les weekProducts chargés depuis Firebase
+                        // Ne pas passer par viewModel.setProducts() qui peut avoir des données incomplètes
+                        android.util.Log.d("OverviewFragment", "📦 Using fresh Firebase data directly: ${weekProducts.size} products")
+                        calculateAndDisplayStats(weekProducts)
+                        
+                        // Mettre à jour le ViewModel après pour les autres fragments
                         viewModel.setProducts(weekProducts)
                         
-                        // Maintenant que previousWeekProducts est chargé, recalculer les stats correctement
-                        calculateAndDisplayStats(weekProducts)
+                        android.util.Log.d("OverviewFragment", "✅ UI updated in ${System.currentTimeMillis() - uiStartTime}ms")
+                        android.util.Log.d("OverviewFragment", "🎉 Total loadDataForWeek completed in ${System.currentTimeMillis() - loadStartTime}ms")
                     }
                 }
                 
             } catch (e: Exception) {
+                android.util.Log.e("OverviewFragment", "❌ Error in loadDataForWeek: ${e.message}", e)
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
                         com.google.android.material.snackbar.Snackbar.make(
@@ -693,46 +793,68 @@ class OverviewFragment : Fragment() {
     private fun updateTopScaDisplay(products: List<com.nextjsclient.android.data.models.ScamarkProduct>, topScaCard: View?) {
         
         topScaCard?.let { card ->
+            android.util.Log.d("OverviewFragment", "🏆 Updating top products display with ${products.size} products")
             
-            // Top 1
-            if (products.isNotEmpty()) {
-                val product1 = products[0]
-                
-                val nameView = card.findViewById<TextView>(R.id.topSca1Name)
-                val detailsView = card.findViewById<TextView>(R.id.topSca1Details)
-                val scaView = card.findViewById<TextView>(R.id.topSca1Sca)
-                val containerView = card.findViewById<View>(R.id.topSca1)
-                
-                
-                nameView?.text = product1.productName.split(" ").take(3).joinToString(" ")
-                detailsView?.text = "${product1.supplier}"
-                scaView?.text = "${product1.totalScas} SCA"
-                containerView?.visibility = View.VISIBLE
-            } else {
-                card.findViewById<View>(R.id.topSca1)?.visibility = View.GONE
-            }
+            // Déterminer le type d'animation selon le contexte
+            val wasEmpty = card.findViewById<View>(R.id.topSca1)?.visibility != View.VISIBLE
             
-            // Top 2
-            if (products.size > 1) {
-                val product2 = products[1]
-                card.findViewById<TextView>(R.id.topSca2Name)?.text = product2.productName.split(" ").take(3).joinToString(" ")
-                card.findViewById<TextView>(R.id.topSca2Details)?.text = "${product2.supplier}"
-                card.findViewById<TextView>(R.id.topSca2Sca)?.text = "${product2.totalScas} SCA"
-                card.findViewById<View>(R.id.topSca2)?.visibility = View.VISIBLE
-            } else {
-                card.findViewById<View>(R.id.topSca2)?.visibility = View.GONE
-            }
+            // Mettre à jour les données d'abord (sans animation)
+            updateTopScaData(products, card)
             
-            // Top 3
-            if (products.size > 2) {
-                val product3 = products[2]
-                card.findViewById<TextView>(R.id.topSca3Name)?.text = product3.productName.split(" ").take(3).joinToString(" ")
-                card.findViewById<TextView>(R.id.topSca3Details)?.text = "${product3.supplier}"
-                card.findViewById<TextView>(R.id.topSca3Sca)?.text = "${product3.totalScas} SCA"
-                card.findViewById<View>(R.id.topSca3)?.visibility = View.VISIBLE
-            } else {
-                card.findViewById<View>(R.id.topSca3)?.visibility = View.GONE
+            // Choisir l'animation appropriée
+            if (wasEmpty && products.isNotEmpty()) {
+                // Première apparition - animation d'entrée expressive
+                android.util.Log.d("OverviewFragment", "🎬 Starting entrance animation for top products")
+                TopProductAnimator.animateTopProductsEntrance(products, card) {
+                    android.util.Log.d("OverviewFragment", "✨ Top products entrance animation completed")
+                }
+            } else if (products.isNotEmpty()) {
+                // Mise à jour - animation de pulsation subtile
+                android.util.Log.d("OverviewFragment", "🔄 Starting update animation for top products")
+                TopProductAnimator.animateTopProductsUpdate(products, card)
             }
+        }
+    }
+    
+    private fun updateTopScaData(products: List<com.nextjsclient.android.data.models.ScamarkProduct>, card: View) {
+        // Top 1
+        if (products.isNotEmpty()) {
+            val product1 = products[0]
+            
+            val nameView = card.findViewById<TextView>(R.id.topSca1Name)
+            val detailsView = card.findViewById<TextView>(R.id.topSca1Details)
+            val scaView = card.findViewById<TextView>(R.id.topSca1Sca)
+            val containerView = card.findViewById<View>(R.id.topSca1)
+            
+            nameView?.text = product1.productName.split(" ").take(3).joinToString(" ")
+            detailsView?.text = "${product1.supplier}"
+            // Le texte SCA sera animé par TopProductAnimator
+            scaView?.text = "0 SCA" // Valeur initiale pour l'animation
+            containerView?.visibility = View.VISIBLE
+        } else {
+            card.findViewById<View>(R.id.topSca1)?.visibility = View.GONE
+        }
+        
+        // Top 2
+        if (products.size > 1) {
+            val product2 = products[1]
+            card.findViewById<TextView>(R.id.topSca2Name)?.text = product2.productName.split(" ").take(3).joinToString(" ")
+            card.findViewById<TextView>(R.id.topSca2Details)?.text = "${product2.supplier}"
+            card.findViewById<TextView>(R.id.topSca2Sca)?.text = "0 SCA" // Pour l'animation
+            card.findViewById<View>(R.id.topSca2)?.visibility = View.VISIBLE
+        } else {
+            card.findViewById<View>(R.id.topSca2)?.visibility = View.GONE
+        }
+        
+        // Top 3
+        if (products.size > 2) {
+            val product3 = products[2]
+            card.findViewById<TextView>(R.id.topSca3Name)?.text = product3.productName.split(" ").take(3).joinToString(" ")
+            card.findViewById<TextView>(R.id.topSca3Details)?.text = "${product3.supplier}"
+            card.findViewById<TextView>(R.id.topSca3Sca)?.text = "0 SCA" // Pour l'animation
+            card.findViewById<View>(R.id.topSca3)?.visibility = View.VISIBLE
+        } else {
+            card.findViewById<View>(R.id.topSca3)?.visibility = View.GONE
         }
     }
     
@@ -872,6 +994,12 @@ class OverviewFragment : Fragment() {
     
     
     private fun calculateAndDisplayStats(products: List<com.nextjsclient.android.data.models.ScamarkProduct>) {
+        val startTime = System.currentTimeMillis()
+        android.util.Log.d("OverviewFragment", "📈 Starting calculateAndDisplayStats with ${products.size} products")
+        
+        // DEBUG: Analyser les fournisseurs présents dans les données
+        val supplierCounts = products.groupingBy { it.supplier.lowercase() }.eachCount()
+        android.util.Log.d("OverviewFragment", "🏢 Suppliers in data: $supplierCounts")
         
         // Appliquer le filtre fournisseur selon les préférences
         val filteredProducts = products.filter { product ->
@@ -882,11 +1010,18 @@ class OverviewFragment : Fragment() {
                 else -> true // Garder les autres fournisseurs inconnus
             }
         }
+        android.util.Log.d("OverviewFragment", "🔍 Filtered to ${filteredProducts.size} products (${System.currentTimeMillis() - startTime}ms)")
         
         
         // Séparer par fournisseur (après filtrage)
         val anecoopProducts = filteredProducts.filter { it.supplier.lowercase() == "anecoop" }
         val solagoraProducts = filteredProducts.filter { it.supplier.lowercase() == "solagora" }
+        
+        // IMPORTANT: Synchroniser les données pré-chargées avec les données filtrées utilisées pour les stats
+        // Cela assure que le Top SCA et les autres fonctionnalités utilisent les mêmes données
+        preloadedAnecoopProducts = anecoopProducts
+        preloadedSolagoraProducts = solagoraProducts
+        android.util.Log.d("OverviewFragment", "🔄 Synchronized preloaded data: ${anecoopProducts.size} anecoop, ${solagoraProducts.size} solagora")
         
         
         // Appliquer le même filtre à la semaine précédente
@@ -905,15 +1040,22 @@ class OverviewFragment : Fragment() {
         
         
         // Calculer les stats
+        android.util.Log.d("OverviewFragment", "🧮 Calculating stats...")
+        val statsStartTime = System.currentTimeMillis()
         val anecoopStats = calculateStatsForProducts(anecoopProducts, previousAnecoopProducts)
-        
         val solagoraStats = calculateStatsForProducts(solagoraProducts, previousSolagoraProducts)
-        
+        android.util.Log.d("OverviewFragment", "✅ Stats calculated in ${System.currentTimeMillis() - statsStartTime}ms")
+        android.util.Log.d("OverviewFragment", "📊 Anecoop: ${anecoopStats.totalProducts} products, ${anecoopStats.productsIn} in, ${anecoopStats.productsOut} out")
+        android.util.Log.d("OverviewFragment", "📊 Solagora: ${solagoraStats.totalProducts} products, ${solagoraStats.productsIn} in, ${solagoraStats.productsOut} out")
         
         // Mettre à jour les dashboards simultanément
+        android.util.Log.d("OverviewFragment", "🎨 Updating supplier dashboards...")
+        val updateStartTime = System.currentTimeMillis()
         updateSupplierDashboard("anecoop", anecoopStats)
         updateSupplierDashboard("solagora", solagoraStats)
+        android.util.Log.d("OverviewFragment", "✅ Dashboards updated in ${System.currentTimeMillis() - updateStartTime}ms")
         
+        android.util.Log.d("OverviewFragment", "🎉 calculateAndDisplayStats completed in ${System.currentTimeMillis() - startTime}ms")
     }
     
     private fun calculateStatsForProducts(

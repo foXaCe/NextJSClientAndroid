@@ -127,7 +127,7 @@
                     android:id="@+id/totalProductsValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="15"
+                    android:text="--"
                     android:textAppearance="?attr/textAppearanceDisplayMedium"
                     android:textStyle="bold"
                     android:textColor="@color/anecoop_primary"
@@ -198,7 +198,7 @@
                             android:id="@+id/productsInValue"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
+                            android:text="--"
                             android:textAppearance="?attr/textAppearanceHeadlineSmall"
                             android:textStyle="bold"
                             android:textColor="@color/stat_in_color" />
@@ -238,7 +238,7 @@
                             android:id="@+id/productsOutValue"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="3"
+                            android:text="--"
                             android:textAppearance="?attr/textAppearanceHeadlineSmall"
                             android:textStyle="bold"
                             android:textColor="@color/stat_out_color" />
@@ -280,7 +280,7 @@
                             android:id="@+id/productsPromoValue"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
+                            android:text="--"
                             android:textAppearance="?attr/textAppearanceHeadlineSmall"
                             android:textStyle="bold"
                             android:textColor="@color/stat_promo_color" />

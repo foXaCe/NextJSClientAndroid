@@ -251,7 +251,7 @@ class SettingsActivity : AppCompatActivity() {
             }
             
             override fun onDownloadProgress(progress: Int) {
-                binding.updateStatus.text = getString(R.string.download_progress, progress)
+                binding.updateStatus.text = getString(R.string.downloading_update)
                 binding.updateProgressBar.progress = progress
             }
             
@@ -783,8 +783,9 @@ class SettingsActivity : AppCompatActivity() {
     private fun startInstallationTimeout() {
         installationTimeoutHandler = Handler(Looper.getMainLooper())
         installationTimeoutHandler?.postDelayed({
-            // Si l'installation prend plus de 30 secondes, considérer qu'elle a échoué
-            if (downloadedFile != null) {
+            // Si l'installation prend plus de 2 minutes, considérer qu'elle a échoué
+            // Vérifier d'abord si l'installation n'est pas en cours dans les paramètres système
+            if (downloadedFile != null && !isInstallationInProgress()) {
                 binding.updateStatus.text = getString(R.string.installation_timeout)
                 binding.updateButton.text = getString(R.string.install_now)
                 binding.updateButton.visibility = View.VISIBLE
@@ -792,7 +793,19 @@ class SettingsActivity : AppCompatActivity() {
                 
                 Toast.makeText(this, getString(R.string.installation_timeout), Toast.LENGTH_LONG).show()
             }
-        }, 30000) // 30 secondes
+        }, 120000) // 2 minutes au lieu de 30 secondes
+    }
+    
+    private fun isInstallationInProgress(): Boolean {
+        return try {
+            // Vérifier si PackageInstaller est actif (installation en cours)
+            val packageManager = packageManager
+            val packageInstaller = packageManager.packageInstaller
+            val sessions = packageInstaller.allSessions
+            sessions.any { it.isActive }
+        } catch (e: Exception) {
+            false
+        }
     }
     
     private fun setupInstallationReceiver() {

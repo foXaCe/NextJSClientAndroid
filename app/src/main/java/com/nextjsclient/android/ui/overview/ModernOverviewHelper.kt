@@ -19,6 +19,9 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
      * Met à jour une card fournisseur moderne
      */
     fun updateSupplierCard(supplier: String, stats: ScamarkStats, isAnecoop: Boolean = true) {
+        val startTime = System.currentTimeMillis()
+        android.util.Log.d("ModernOverviewHelper", "🎨 Updating ${supplier.uppercase()} card...")
+        
         val binding = fragment.binding
         
         val cardId = if (isAnecoop) R.id.anecoopModernCard else R.id.solagoraModernCard
@@ -50,6 +53,8 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         
         // Configurer les actions
         setupCardActions(card, supplier, stats)
+        
+        android.util.Log.d("ModernOverviewHelper", "✅ ${supplier.uppercase()} card updated in ${System.currentTimeMillis() - startTime}ms")
     }
 
     /**
@@ -88,17 +93,84 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
      * Met à jour les valeurs numériques dans la card
      */
     private fun updateCardValues(card: View, stats: ScamarkStats) {
+        val startTime = System.currentTimeMillis()
+        // Détecter si c'est la première fois qu'on charge ces valeurs
+        val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)
+        val currentText = totalValue?.text.toString() ?: ""
+        val isFirstLoad = currentText == "--" || currentText.isEmpty()
+        
+        android.util.Log.d("ModernOverviewHelper", "📊 Updating card values - Current text: '$currentText', First load: $isFirstLoad")
+        
+        if (isFirstLoad) {
+            android.util.Log.d("ModernOverviewHelper", "🎭 Starting loading animations...")
+            // Première fois : démarrer avec l'animation de placeholder puis le comptage
+            startLoadingAnimations(card)
+            
+            // Démarrer les animations de comptage après un délai pour l'effet
+            card.postDelayed({
+                if (fragment.isAdded && fragment.context != null) {
+                    android.util.Log.d("ModernOverviewHelper", "🎬 Finishing loading animations...")
+                    finishLoadingAnimations(card, stats)
+                }
+            }, 800L) // Délai pour laisser l'animation de placeholder
+        } else {
+            android.util.Log.d("ModernOverviewHelper", "🔄 Animated value update...")
+            // Toujours utiliser l'animation pour le feedback visuel, même lors des mises à jour
+            updateValuesWithAnimation(card, stats)
+        }
+        
+        android.util.Log.d("ModernOverviewHelper", "✅ Card values setup in ${System.currentTimeMillis() - startTime}ms")
+    }
+    
+    private fun startLoadingAnimations(card: View) {
         // Total produits (stat principale)
         val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)
-        totalValue?.let { animateNumber(it, stats.totalProducts) }
+        totalValue?.let { com.nextjsclient.android.utils.CountUpAnimator.animateLoadingPlaceholder(it) }
         
         // Entrants
         val inValue = card.findViewById<TextView>(R.id.productsInValue)
-        inValue?.let { animateNumber(it, stats.productsIn) }
+        inValue?.let { com.nextjsclient.android.utils.CountUpAnimator.animateLoadingPlaceholder(it) }
         
         // Sortants
         val outValue = card.findViewById<TextView>(R.id.productsOutValue)
-        outValue?.let { animateNumber(it, stats.productsOut) }
+        outValue?.let { com.nextjsclient.android.utils.CountUpAnimator.animateLoadingPlaceholder(it) }
+        
+        // Promotions
+        val promoValue = card.findViewById<TextView>(R.id.productsPromoValue)
+        promoValue?.let { com.nextjsclient.android.utils.CountUpAnimator.animateLoadingPlaceholder(it) }
+    }
+    
+    private fun finishLoadingAnimations(card: View, stats: ScamarkStats) {
+        // Total produits avec slide-in et pulsation
+        val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)
+        totalValue?.let { 
+            com.nextjsclient.android.utils.CountUpAnimator.stopPlaceholderAndCountUp(
+                it, stats.totalProducts, 1000L, withPulse = true
+            )
+        }
+        
+        // Animation en cascade pour les autres valeurs
+        card.postDelayed({
+            if (fragment.isAdded && fragment.context != null) {
+                val inValue = card.findViewById<TextView>(R.id.productsInValue)
+                inValue?.let { 
+                    com.nextjsclient.android.utils.CountUpAnimator.stopPlaceholderAndCountUp(
+                        it, stats.productsIn, 800L, withPulse = false
+                    )
+                }
+            }
+        }, 200L)
+        
+        card.postDelayed({
+            if (fragment.isAdded && fragment.context != null) {
+                val outValue = card.findViewById<TextView>(R.id.productsOutValue)
+                outValue?.let { 
+                    com.nextjsclient.android.utils.CountUpAnimator.stopPlaceholderAndCountUp(
+                        it, stats.productsOut, 800L, withPulse = false
+                    )
+                }
+            }
+        }, 400L)
         
         // Promotions (conditionnelle)
         val promoCard = card.findViewById<MaterialCardView>(R.id.productsPromoCard)
@@ -106,13 +178,85 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         
         if (stats.totalPromos > 0) {
             promoCard?.visibility = View.VISIBLE
-            promoValue?.let { animateNumber(it, stats.totalPromos) }
+            card.postDelayed({
+                if (fragment.isAdded && fragment.context != null) {
+                    promoValue?.let { 
+                        com.nextjsclient.android.utils.CountUpAnimator.stopPlaceholderAndCountUp(
+                            it, stats.totalPromos, 600L, withPulse = false
+                        )
+                    }
+                }
+            }, 600L)
         } else {
             promoCard?.visibility = View.GONE
         }
         
-        // Indicateur de tendance
-        updateTrendIndicator(card, stats)
+        // Indicateur de tendance avec délai pour l'effet final
+        card.postDelayed({
+            // Vérifier que le fragment est toujours attaché avant de continuer
+            if (fragment.isAdded && fragment.context != null) {
+                updateTrendIndicator(card, stats)
+            }
+        }, 800L)
+    }
+    
+    private fun updateValuesWithAnimation(card: View, stats: ScamarkStats) {
+        // Total produits avec animation plus rapide
+        val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)
+        totalValue?.let { 
+            com.nextjsclient.android.utils.CountUpAnimator.animateCountUp(
+                it, stats.totalProducts, 500L
+            )
+        }
+        
+        // Animation en cascade rapide pour les autres valeurs
+        card.postDelayed({
+            if (fragment.isAdded && fragment.context != null) {
+                val inValue = card.findViewById<TextView>(R.id.productsInValue)
+                inValue?.let { 
+                    com.nextjsclient.android.utils.CountUpAnimator.animateCountUp(
+                        it, stats.productsIn, 400L
+                    )
+                }
+            }
+        }, 100L)
+        
+        card.postDelayed({
+            if (fragment.isAdded && fragment.context != null) {
+                val outValue = card.findViewById<TextView>(R.id.productsOutValue)
+                outValue?.let { 
+                    com.nextjsclient.android.utils.CountUpAnimator.animateCountUp(
+                        it, stats.productsOut, 400L
+                    )
+                }
+            }
+        }, 200L)
+        
+        // Promotions (conditionnelle)
+        val promoCard = card.findViewById<MaterialCardView>(R.id.productsPromoCard)
+        val promoValue = card.findViewById<TextView>(R.id.productsPromoValue)
+        
+        if (stats.totalPromos > 0) {
+            promoCard?.visibility = View.VISIBLE
+            card.postDelayed({
+                if (fragment.isAdded && fragment.context != null) {
+                    promoValue?.let { 
+                        com.nextjsclient.android.utils.CountUpAnimator.animateCountUp(
+                            it, stats.totalPromos, 300L
+                        )
+                    }
+                }
+            }, 300L)
+        } else {
+            promoCard?.visibility = View.GONE
+        }
+        
+        // Indicateur de tendance avec délai
+        card.postDelayed({
+            if (fragment.isAdded && fragment.context != null) {
+                updateTrendIndicator(card, stats)
+            }
+        }, 400L)
     }
 
     /**

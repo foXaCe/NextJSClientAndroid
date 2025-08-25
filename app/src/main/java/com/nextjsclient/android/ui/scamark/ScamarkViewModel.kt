@@ -258,7 +258,9 @@ class ScamarkViewModel : ViewModel() {
                 }
                 
             } catch (e: Exception) {
-                _error.postValue("Error loading more weeks: ${e.message}")
+                android.util.Log.w("ScamarkVM", "❌ Error loading more weeks: ${e.message}", e)
+                // Ne pas afficher l'erreur à l'utilisateur si c'est juste un échec de chargement de plus de semaines
+                // _error.postValue("Error loading more weeks: ${e.message}")
             } finally {
                 // Nettoyer les semaines en chargement
                 clearLoadingWeeks()
