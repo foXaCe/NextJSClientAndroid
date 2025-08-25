@@ -162,24 +162,14 @@ class SettingsActivity : AppCompatActivity() {
         // Affichage version simplifiée
         try {
             val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
-            val buildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
+            val actualBuildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
             
-            // Extraire uniquement la partie Build #XXX si disponible
-            binding.buildInfo.text = when {
-                versionDisplayName.contains("Build #") -> {
-                    // Extraire Build #XXX depuis "1.0.0 (Build #123)" -> "(#123)"
-                    val buildNumber = versionDisplayName.substringAfter("Build #").substringBefore(")")
-                    "(#$buildNumber)"
-                }
-                versionDisplayName.contains("-dev+") -> {
-                    // Pour les builds locaux, afficher le commit court
-                    val commit = versionDisplayName.substringAfter("-dev+").take(7)
-                    "($commit)"
-                }
-                else -> {
-                    "(#$buildNumber)"
-                }
-            }
+            // Log pour debug
+            android.util.Log.d("SettingsActivity", "versionDisplayName: $versionDisplayName")
+            android.util.Log.d("SettingsActivity", "actualBuildNumber: $actualBuildNumber")
+            
+            // Toujours afficher le vrai buildNumber depuis BuildConfig
+            binding.buildInfo.text = "(#$actualBuildNumber)"
             
         } catch (e: Exception) {
             binding.buildInfo.text = "(Build unknown)"
