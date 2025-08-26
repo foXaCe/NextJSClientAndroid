@@ -98,26 +98,66 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="16dp"
-        android:gravity="end"
         android:background="?attr/colorSurface">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/cancelButton"
-            android:layout_width="wrap_content"
+        <!-- Progress bar (hidden by default) -->
+        <LinearLayout
+            android:id="@+id/progressContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/update_button_later"
-            android:layout_marginEnd="8dp"
-            style="@style/Widget.Material3.Button.TextButton" />
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/installButton"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/progressText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Téléchargement en cours..."
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurface"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <ProgressBar
+                android:id="@+id/downloadProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:progress="0"
+                android:max="100" />
+
+        </LinearLayout>
+
+        <!-- Buttons row -->
+        <LinearLayout
+            android:id="@+id/buttonsContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/update_button_install"
-            app:icon="@drawable/ic_download"
-            style="@style/Widget.Material3.Button" />
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cancelButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="@string/update_button_later"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.Material3.Button.TextButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/installButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="2"
+                android:text="@string/update_button_install"
+                app:icon="@drawable/ic_download"
+                style="@style/Widget.Material3.Button" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

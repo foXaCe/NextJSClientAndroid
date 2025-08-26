@@ -9,6 +9,8 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import android.widget.TextView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import com.google.android.material.button.MaterialButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -498,8 +500,11 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
     
+    private var currentBottomSheetDialog: BottomSheetDialog? = null
+    
     private fun showUpdateBottomSheet(release: Release) {
         val bottomSheetDialog = BottomSheetDialog(this)
+        currentBottomSheetDialog = bottomSheetDialog
         val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_update, null)
         bottomSheetDialog.setContentView(bottomSheetView)
         
@@ -507,6 +512,10 @@ class SettingsActivity : AppCompatActivity() {
         val updateChangelog = bottomSheetView.findViewById<TextView>(R.id.updateChangelog)
         val cancelButton = bottomSheetView.findViewById<MaterialButton>(R.id.cancelButton)
         val installButton = bottomSheetView.findViewById<MaterialButton>(R.id.installButton)
+        val progressContainer = bottomSheetView.findViewById<LinearLayout>(R.id.progressContainer)
+        val progressText = bottomSheetView.findViewById<TextView>(R.id.progressText)
+        val downloadProgress = bottomSheetView.findViewById<ProgressBar>(R.id.downloadProgress)
+        val buttonsContainer = bottomSheetView.findViewById<LinearLayout>(R.id.buttonsContainer)
         
         // Formater le changelog (commits)
         val formattedChangelog = formatChangelog(release.body)
@@ -515,13 +524,79 @@ class SettingsActivity : AppCompatActivity() {
         // Configurer les boutons
         cancelButton.setOnClickListener {
             bottomSheetDialog.dismiss()
+            currentBottomSheetDialog = null
         }
         
         installButton.setOnClickListener {
-            bottomSheetDialog.dismiss()
+            // Ne pas fermer la bottom sheet, mais afficher le progrès
+            progressContainer?.visibility = View.VISIBLE
+            buttonsContainer?.visibility = View.GONE
+            progressText?.text = "Préparation du téléchargement..."
+            downloadProgress?.progress = 0
+            
+            // Configurer le listener pour cette session de téléchargement
+            updateManager.setUpdateListener(object : UpdateManager.UpdateListener {
+                override fun onUpdateChecking() {}
+                override fun onUpdateAvailable(release: Release) {}
+                override fun onUpToDate() {}
+                
+                override fun onDownloadStarted() {
+                    runOnUiThread {
+                        progressText?.text = "Téléchargement en cours..."
+                        downloadProgress?.progress = 0
+                    }
+                }
+                
+                override fun onDownloadProgress(progress: Int) {
+                    runOnUiThread {
+                        progressText?.text = "Téléchargement en cours... ($progress%)"
+                        downloadProgress?.progress = progress
+                    }
+                }
+                
+                override fun onDownloadCompleted(file: File) {
+                    runOnUiThread {
+                        progressText?.text = "Installation en cours..."
+                        downloadProgress?.progress = 100
+                    }
+                    // Lancer l'installation automatiquement
+                    updateManager.installUpdate(file)
+                }
+                
+                override fun onInstallationStarted() {
+                    runOnUiThread {
+                        progressText?.text = "Ouverture de l'installateur Android..."
+                        // Fermer la bottom sheet après un court délai
+                        progressText?.postDelayed({
+                            bottomSheetDialog.dismiss()
+                            currentBottomSheetDialog = null
+                            // Restaurer le listener principal
+                            setupUpdateManager()
+                        }, 1500)
+                    }
+                }
+                
+                override fun onError(message: String) {
+                    runOnUiThread {
+                        progressText?.text = "Erreur: $message"
+                        // Restaurer les boutons après 2 secondes
+                        progressText?.postDelayed({
+                            progressContainer?.visibility = View.GONE
+                            buttonsContainer?.visibility = View.VISIBLE
+                            // Restaurer le listener principal
+                            setupUpdateManager()
+                        }, 2000)
+                    }
+                }
+            })
+            
             // Démarrer le téléchargement
             updateManager.downloadUpdate(release)
         }
+        
+        // Empêcher la fermeture par glissement pendant le téléchargement
+        bottomSheetDialog.setCancelable(false)
+        bottomSheetDialog.setCanceledOnTouchOutside(false)
         
         bottomSheetDialog.show()
     }
