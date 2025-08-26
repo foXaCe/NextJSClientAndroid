@@ -29,7 +29,7 @@ class UpdateManager(private val context: Context) {
     companion object {
         private const val TAG = "UpdateManager"
         private const val GITHUB_API_URL = "https://api.github.com/repos/foXaCe/NextJSClientAndroid/releases"
-        // Test: commit pour vérifier la détection des mises à jour
+        // Test: interface de mise à jour améliorée avec progression
     }
     
     interface UpdateListener {
