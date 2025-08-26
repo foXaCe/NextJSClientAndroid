@@ -258,6 +258,13 @@ class SettingsActivity : AppCompatActivity() {
                 // L'utilisateur doit cliquer sur le bouton pour installer
             }
             
+            override fun onInstallationStarted() {
+                binding.updateStatus.text = getString(R.string.installation_in_progress)
+                binding.updateButton.visibility = View.GONE
+                binding.updateProgressBar.visibility = View.GONE
+                // Ne pas afficher d'erreur, l'installation est en cours
+            }
+            
             override fun onError(message: String) {
                 binding.updateStatus.text = message
                 binding.updateButton.visibility = View.GONE

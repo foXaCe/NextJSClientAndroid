@@ -65,6 +65,7 @@
     <string name="install_now">Install now</string>
     <string name="update_check_error">Check error</string>
     <string name="installation_timeout">Installation timeout - Try again</string>
+    <string name="installation_in_progress">Installation in progress...</string>
     <string name="installation_success">Installation successful</string>
     <string name="installation_failed">Installation failed - Please try again</string>
     <string name="apk_file_corrupted">APK file corrupted</string>

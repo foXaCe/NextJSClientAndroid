@@ -236,6 +236,7 @@
     <string name="install_now">Installer maintenant</string>
     <string name="update_check_error">Erreur de vérification</string>
     <string name="installation_timeout">Timeout d\'installation - Réessayer</string>
+    <string name="installation_in_progress">Installation en cours...</string>
     <string name="installation_success">Installation réussie</string>
     <string name="installation_failed">Erreur d\'installation</string>
     <string name="apk_file_corrupted">Fichier APK corrompu</string>

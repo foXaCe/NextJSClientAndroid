@@ -38,6 +38,7 @@ class UpdateManager(private val context: Context) {
         fun onDownloadStarted()
         fun onDownloadProgress(progress: Int)
         fun onDownloadCompleted(file: File)
+        fun onInstallationStarted()
         fun onError(message: String)
     }
     
@@ -634,6 +635,9 @@ class UpdateManager(private val context: Context) {
             Log.i(TAG, "📦 Lancement de l'installation...")
             Log.i(TAG, "⚠️ Si l'installation échoue, désinstallez d'abord l'app actuelle")
             
+            // Notifier que l'installation a commencé
+            listener?.onInstallationStarted()
+            
             context.startActivity(intent)
             Log.d(TAG, "✅ === FIN LANCEMENT INSTALLATION ===")
             
@@ -661,36 +665,36 @@ class UpdateManager(private val context: Context) {
     
     private fun isNewerVersion(@Suppress("UNUSED_PARAMETER") _current: String, @Suppress("UNUSED_PARAMETER") _latest: String, release: Release, @Suppress("UNUSED_PARAMETER") _assetNames: List<String>): Boolean {
         return try {
-            // UNIQUEMENT LES BUILDS GITHUB - pas de version locale
+            // Utiliser BUILD_NUMBER qui contient maintenant le nombre de commits
+            val currentBuildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
             
-            // Extraire le run number actuel (depuis #XX dans VERSION_DISPLAY_NAME)
-            val currentRunNumber = try {
-                val versionDisplayName = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME
-                if (versionDisplayName.contains("#")) {
-                    versionDisplayName
-                        .substringAfter("#")
-                        .substringBefore(")")
-                        .toIntOrNull() ?: 0
-                } else {
-                    0 // Pas un build GitHub
-                }
+            // Pour les builds locaux de développement
+            val isDevBuild = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME.contains("-dev")
+            
+            // Extraire le commit hash de la release GitHub
+            val releaseCommit = try {
+                val pattern = Regex("nightly-\\d{8}-([a-f0-9]{7})")
+                val match = pattern.find(release.tagName)
+                match?.groupValues?.get(1) ?: ""
             } catch (e: Exception) {
-                0
+                ""
             }
             
-            // Extraire le run number de la release GitHub
-            val latestRunNumber = try {
-                val pattern = Regex("run(\\d+)")
-                val match = pattern.find(release.name)
-                match?.groupValues?.get(1)?.toIntOrNull() ?: 0
-            } catch (e: Exception) {
-                0
+            // Obtenir le commit hash actuel
+            val currentCommit = com.nextjsclient.android.BuildConfig.COMMIT_HASH
+            
+            Log.d(TAG, "Version check - Current build: $currentBuildNumber, Dev: $isDevBuild")
+            Log.d(TAG, "Current commit: $currentCommit, Release commit: $releaseCommit")
+            
+            // Si c'est une build de dev et qu'on a le même commit, on est à jour
+            if (isDevBuild && currentCommit == releaseCommit) {
+                Log.d(TAG, "Same commit, no update needed")
+                return false
             }
             
-            Log.d(TAG, "Version check - Current: $currentRunNumber, Latest: $latestRunNumber")
-            
-            // Comparaison simple : plus récent = mise à jour disponible
-            return latestRunNumber > currentRunNumber
+            // Sinon, proposer la mise à jour seulement si c'est une build dev
+            // (les builds de production GitHub ne devraient jamais voir de mise à jour)
+            return isDevBuild && releaseCommit.isNotEmpty()
             
         } catch (e: Exception) {
             Log.e(TAG, "Error in version check", e)
