@@ -11,6 +11,7 @@ import android.widget.Toast
 import android.widget.TextView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.animation.ValueAnimator
 import com.google.android.material.button.MaterialButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -501,6 +502,7 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private var currentBottomSheetDialog: BottomSheetDialog? = null
+    private var progressAnimator: ValueAnimator? = null
     
     private fun showUpdateBottomSheet(release: Release) {
         val bottomSheetDialog = BottomSheetDialog(this)
@@ -549,15 +551,41 @@ class SettingsActivity : AppCompatActivity() {
                 
                 override fun onDownloadProgress(progress: Int) {
                     runOnUiThread {
-                        progressText?.text = "Téléchargement en cours... ($progress%)"
-                        downloadProgress?.progress = progress
+                        progressText?.text = "Téléchargement en cours... ($progress%) - ~${12}MB"
+                        
+                        // Animation fluide de la barre de progression
+                        val currentProgress = downloadProgress?.progress ?: 0
+                        if (progress > currentProgress) {
+                            progressAnimator?.cancel()
+                            progressAnimator = ValueAnimator.ofInt(currentProgress, progress).apply {
+                                duration = 300 // Animation de 300ms pour la fluidité
+                                interpolator = DecelerateInterpolator()
+                                addUpdateListener { animator ->
+                                    downloadProgress?.progress = animator.animatedValue as Int
+                                }
+                                start()
+                            }
+                        } else {
+                            downloadProgress?.progress = progress
+                        }
                     }
                 }
                 
                 override fun onDownloadCompleted(file: File) {
                     runOnUiThread {
-                        progressText?.text = "Installation en cours..."
-                        downloadProgress?.progress = 100
+                        progressText?.text = "Téléchargement terminé - Installation en cours..."
+                        
+                        // Animation finale vers 100%
+                        val currentProgress = downloadProgress?.progress ?: 0
+                        progressAnimator?.cancel()
+                        progressAnimator = ValueAnimator.ofInt(currentProgress, 100).apply {
+                            duration = 200
+                            interpolator = DecelerateInterpolator()
+                            addUpdateListener { animator ->
+                                downloadProgress?.progress = animator.animatedValue as Int
+                            }
+                            start()
+                        }
                     }
                     // Lancer l'installation automatiquement
                     updateManager.installUpdate(file)
@@ -568,6 +596,7 @@ class SettingsActivity : AppCompatActivity() {
                         progressText?.text = "Ouverture de l'installateur Android..."
                         // Fermer la bottom sheet après un court délai
                         progressText?.postDelayed({
+                            progressAnimator?.cancel()
                             bottomSheetDialog.dismiss()
                             currentBottomSheetDialog = null
                             // Restaurer le listener principal
@@ -581,6 +610,7 @@ class SettingsActivity : AppCompatActivity() {
                         progressText?.text = "Erreur: $message"
                         // Restaurer les boutons après 2 secondes
                         progressText?.postDelayed({
+                            progressAnimator?.cancel()
                             progressContainer?.visibility = View.GONE
                             buttonsContainer?.visibility = View.VISIBLE
                             // Restaurer le listener principal

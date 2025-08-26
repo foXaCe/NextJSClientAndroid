@@ -347,9 +347,10 @@ class UpdateManager(private val context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             var iterationCount = 0
+            var lastReportedProgress = 0
             
             while (true) {
-                delay(500) // Check every 500ms for better progress tracking
+                delay(200) // Check every 200ms for smoother progress tracking
                 iterationCount++
                 
                 Log.d(TAG, "🔄 Monitoring iteration #$iterationCount")
@@ -530,8 +531,13 @@ class UpdateManager(private val context: Context) {
                             if (bytesTotal > 0 && bytesTotal != -1L) {
                                 val progress = ((bytesDownloaded * 100) / bytesTotal).toInt().coerceIn(1, 100) // Au minimum 1% si on télécharge
                                 Log.d(TAG, "🏃 Download in progress: $progress% ($bytesDownloaded/$bytesTotal bytes)")
-                                withContext(Dispatchers.Main) {
-                                    listener?.onDownloadProgress(progress)
+                                
+                                // Ne notifier que si le progrès a changé d'au moins 1% pour éviter les spams
+                                if (progress != lastReportedProgress) {
+                                    lastReportedProgress = progress
+                                    withContext(Dispatchers.Main) {
+                                        listener?.onDownloadProgress(progress)
+                                    }
                                 }
                             } else {
                                 // Taille inconnue - estimer le progrès basé sur les bytes téléchargés
@@ -556,8 +562,13 @@ class UpdateManager(private val context: Context) {
                                 
                                 val sizeMB = String.format("%.1f", bytesDownloaded / 1024.0 / 1024.0)
                                 Log.d(TAG, "🏃 Download running, size unknown: ${sizeMB}MB downloaded (estimated $estimatedProgress%)")
-                                withContext(Dispatchers.Main) {
-                                    listener?.onDownloadProgress(estimatedProgress)
+                                
+                                // Ne notifier que si le progrès a changé pour éviter les spams
+                                if (estimatedProgress != lastReportedProgress) {
+                                    lastReportedProgress = estimatedProgress
+                                    withContext(Dispatchers.Main) {
+                                        listener?.onDownloadProgress(estimatedProgress)
+                                    }
                                 }
                             }
                         }
