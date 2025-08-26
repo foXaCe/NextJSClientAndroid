@@ -29,8 +29,8 @@ final def getBuildNumber = { ->
 final def ciBuild = System.getenv("CI") == "true"
 final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
 
-// Système de versionCode unifié - même logique pour local et GitHub
-final def buildNumber = getBuildNumber()  // Toujours basé sur le nombre de commits git
+// Système de versionCode - utilise GITHUB_RUN_NUMBER en CI, sinon nombre de commits
+final def buildNumber = ciBuild && ciRunNumber ? Integer.parseInt(ciRunNumber) : getBuildNumber()
 final def majorVersion = "1"
 final def minorVersion = "0"
 final def patchVersion = "0"
