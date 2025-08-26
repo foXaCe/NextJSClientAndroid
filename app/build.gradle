@@ -29,15 +29,15 @@ final def getBuildNumber = { ->
 final def ciBuild = System.getenv("CI") == "true"
 final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
 
-// Système de versionCode - utilise GITHUB_RUN_NUMBER en CI, sinon nombre de commits
-final def buildNumber = ciBuild && ciRunNumber ? Integer.parseInt(ciRunNumber) : getBuildNumber()
+// Système de versionCode - utilise toujours le nombre de commits pour cohérence
+final def buildNumber = getBuildNumber()
 final def majorVersion = "1"
 final def minorVersion = "0"
 final def patchVersion = "0"
 final def baseVersion = "${majorVersion}.${minorVersion}.${patchVersion}"
 def versionDisplayName
-if (ciBuild) {
-    versionDisplayName = "${baseVersion} (Build #${buildNumber})"
+if (ciBuild && ciRunNumber) {
+    versionDisplayName = "${baseVersion} (Build #${buildNumber}, CI run #${ciRunNumber})"
 } else {
     versionDisplayName = "${baseVersion}-dev+${buildCommit}"
 }
