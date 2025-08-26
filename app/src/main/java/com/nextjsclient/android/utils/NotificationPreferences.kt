@@ -13,7 +13,7 @@ class NotificationPreferences(context: Context) {
         private const val KEY_FCM_TOKEN = "fcm_token"
         
         // Valeurs par défaut
-        private const val DEFAULT_NOTIFICATIONS_ENABLED = true
+        private const val DEFAULT_NOTIFICATIONS_ENABLED = false
         private const val DEFAULT_IMPORT_SUCCESS_ENABLED = true
         private const val DEFAULT_IMPORT_ERROR_ENABLED = true
     }

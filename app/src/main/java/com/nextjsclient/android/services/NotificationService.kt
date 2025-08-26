@@ -54,15 +54,20 @@ class NotificationService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
         
+        Log.d(TAG, "=== MESSAGE FCM REÇU ===")
+        Log.d(TAG, "De: ${remoteMessage.from}")
+        Log.d(TAG, "Message ID: ${remoteMessage.messageId}")
+        Log.d(TAG, "Type: ${remoteMessage.messageType}")
+        Log.d(TAG, "Données: ${remoteMessage.data}")
+        Log.d(TAG, "Notification: ${remoteMessage.notification?.let { "title=${it.title}, body=${it.body}" }}")
+        
         // Vérifier si les notifications sont activées
         if (!notificationPreferences.areNotificationsEnabled()) {
-            Log.d(TAG, "Notifications désactivées, message ignoré")
+            Log.w(TAG, "Notifications désactivées dans les préférences, message ignoré")
             return
         }
         
-        Log.d(TAG, "Message reçu de: ${remoteMessage.from}")
-        
-        // Créer le channel de notification
+        // Créer le channel de notification (important !)
         createNotificationChannel()
         
         // Extraire les données
@@ -77,7 +82,8 @@ class NotificationService : FirebaseMessagingService() {
         // Afficher la notification
         showNotification(title, body, provider, type, status)
         
-        Log.d(TAG, "Notification affichée: $provider - $status")
+        Log.d(TAG, "Notification créée et affichée: $provider - $status")
+        Log.d(TAG, "=========================")
     }
     
     private fun createNotificationChannel() {
@@ -94,6 +100,10 @@ class NotificationService : FirebaseMessagingService() {
             val notificationManager: NotificationManager =
                 getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+            
+            Log.d(TAG, "✓ Canal de notification '$CHANNEL_ID' créé/vérifié")
+        } else {
+            Log.d(TAG, "✓ Canal de notification non requis (Android < 8)")
         }
     }
     

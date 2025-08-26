@@ -28,6 +28,7 @@ import com.nextjsclient.android.utils.SupplierPreferences
 import com.nextjsclient.android.utils.BiometricManager
 import com.nextjsclient.android.utils.LocaleManager
 import com.nextjsclient.android.utils.NotificationPreferences
+import com.nextjsclient.android.utils.NotificationDiagnostic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -56,6 +57,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var biometricManager: BiometricManager
     private lateinit var localeManager: LocaleManager
     private lateinit var notificationPreferences: NotificationPreferences
+    private lateinit var notificationDiagnostic: NotificationDiagnostic
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var pendingUpdate: Release? = null
     private var downloadedFile: File? = null
@@ -81,6 +83,7 @@ class SettingsActivity : AppCompatActivity() {
         biometricManager = BiometricManager(this)
         localeManager = LocaleManager(this)
         notificationPreferences = NotificationPreferences(this)
+        notificationDiagnostic = NotificationDiagnostic(this)
         
         setupWindowInsets()
         setupToolbar()
@@ -522,7 +525,7 @@ class SettingsActivity : AppCompatActivity() {
         // Click sur la section pour plus d'options
         binding.notificationsSection.setOnClickListener {
             animateClick(it)
-            showNotificationDetailsDialog()
+            showNotificationOptionsDialog()
         }
     }
     
@@ -571,6 +574,25 @@ class SettingsActivity : AppCompatActivity() {
             }
     }
     
+    private fun showNotificationOptionsDialog() {
+        val options = arrayOf(
+            "Paramètres détaillés",
+            "Diagnostic des notifications",
+            "Voir le token FCM"
+        )
+        
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.notification_settings_title))
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showNotificationDetailsDialog()
+                    1 -> runNotificationDiagnostic()
+                    2 -> showFCMTokenDialog()
+                }
+            }
+            .show()
+    }
+    
     private fun showNotificationDetailsDialog() {
         val items = arrayOf(
             getString(R.string.import_success_notifications_title),
@@ -583,7 +605,7 @@ class SettingsActivity : AppCompatActivity() {
         )
         
         MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.notification_settings_title))
+            .setTitle("Paramètres détaillés")
             .setMultiChoiceItems(items, checkedItems) { _, which, isChecked ->
                 when (which) {
                     0 -> notificationPreferences.setImportSuccessNotificationsEnabled(isChecked)
@@ -592,6 +614,66 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setPositiveButton(getString(R.string.ok_button), null)
             .show()
+    }
+    
+    private fun runNotificationDiagnostic() {
+        Toast.makeText(this, "Diagnostic en cours... Vérifiez les logs", Toast.LENGTH_LONG).show()
+        
+        // Créer le canal si nécessaire
+        notificationDiagnostic.createNotificationChannelIfNeeded()
+        
+        // Lancer le diagnostic
+        val result = notificationDiagnostic.runFullDiagnostic()
+        
+        // Afficher un résumé dans un dialog
+        val summary = buildString {
+            appendLine("🔍 DIAGNOSTIC DES NOTIFICATIONS")
+            appendLine("")
+            appendLine("Permission: ${if (result.hasNotificationPermission) "✅ OK" else "❌ Manquante"}")
+            appendLine("Canal: ${if (result.hasNotificationChannel) "✅ OK" else "❌ Manquant"}")
+            appendLine("Activées: ${if (result.notificationsEnabled) "✅ Oui" else "❌ Non"}")
+            appendLine("Token FCM: ${result.fcmTokenStatus}")
+            appendLine("Arrière-plan: ${if (result.canRunInBackground) "✅ OK" else "❌ Limité"}")
+            appendLine("")
+            if (result.isFullyFunctional()) {
+                appendLine("🟢 STATUT: Tout fonctionne")
+            } else {
+                appendLine("🔴 STATUT: Problèmes détectés")
+                appendLine("Vérifiez les logs pour plus de détails")
+            }
+        }
+        
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Diagnostic des notifications")
+            .setMessage(summary)
+            .setPositiveButton("OK", null)
+            .setNeutralButton("Réessayer abonnements") { _, _ ->
+                subscribeToNotificationTopics()
+                Toast.makeText(this, "Abonnements relancés", Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+    
+    private fun showFCMTokenDialog() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            val token = if (task.isSuccessful) {
+                task.result
+            } else {
+                "Erreur: ${task.exception?.message}"
+            }
+            
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Token FCM")
+                .setMessage("Token actuel:\n\n$token")
+                .setPositiveButton("Copier") { _, _ ->
+                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    val clip = android.content.ClipData.newPlainText("FCM Token", token)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(this, "Token copié", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Fermer", null)
+                .show()
+        }
     }
     
     companion object {
