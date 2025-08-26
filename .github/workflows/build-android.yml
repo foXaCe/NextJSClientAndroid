@@ -228,6 +228,12 @@ jobs:
         path: ./apks/
         merge-multiple: true
 
+    - name: Install aapt for APK inspection
+      run: |
+        # Install aapt using Android SDK manager
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0"
+        echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
+
     - name: Delete existing nightly release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -238,9 +244,12 @@ jobs:
           echo "✅ Ancienne release nightly supprimée"
         fi
         
-        # Supprimer le tag nightly existant s'il y en a un
-        if git tag | grep -q "^nightly$"; then
-          git push --delete origin nightly || true
+        # Supprimer le tag nightly local et distant s'il existe
+        if git show-ref --tags --quiet refs/tags/nightly; then
+          # Supprimer le tag distant
+          git push --delete origin nightly 2>/dev/null || true
+          # Supprimer le tag local
+          git tag -d nightly 2>/dev/null || true
           echo "✅ Ancien tag nightly supprimé"
         fi
 
