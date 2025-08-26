@@ -193,22 +193,23 @@ class SettingsActivity : AppCompatActivity() {
                 // Extraire la version depuis le nom de la release
                 val versionText = when {
                     release.name.contains("nightly", ignoreCase = true) -> {
-                        // Extraire la version depuis le nom (ex: "Version 1.2.3" depuis le nom)
-                        val versionPattern = Regex("Version\\s+([\\d.]+)")
-                        val versionMatch = versionPattern.find(release.name)
-                        val version = versionMatch?.groupValues?.get(1) ?: ""
+                        // Extraire le build number depuis le nom de la release
+                        // Format: "🌙 Nightly Build - 1.0.0 (Build #224, CI run #190) (Build 224) - nightly-20250826-xxx"
+                        val buildPattern = Regex("\\(Build #(\\d+)")
+                        val buildMatch = buildPattern.find(release.name)
+                        val buildNumber = buildMatch?.groupValues?.get(1) ?: ""
                         
-                        // Extraire le run number
-                        val runPattern = Regex("run(\\d+)")
-                        val runMatch = runPattern.find(release.name)
-                        val runNumber = runMatch?.groupValues?.get(1) ?: ""
+                        // Extraire aussi depuis le body si pas trouvé
+                        val bodyBuildPattern = Regex("🔢 Build Number:\\s*(\\d+)")
+                        val bodyBuildMatch = bodyBuildPattern.find(release.body)
+                        val bodyBuildNumber = bodyBuildMatch?.groupValues?.get(1) ?: ""
                         
-                        if (version.isNotEmpty() && runNumber.isNotEmpty()) {
-                            "Version $version (Build #$runNumber)"
-                        } else if (runNumber.isNotEmpty()) {
-                            "Build #$runNumber"
+                        val finalBuildNumber = buildNumber.ifEmpty { bodyBuildNumber }
+                        
+                        if (finalBuildNumber.isNotEmpty()) {
+                            "Build #$finalBuildNumber"
                         } else {
-                            release.tagName
+                            "Nightly Build"
                         }
                     }
                     else -> "Version ${release.tagName}"
