@@ -58,6 +58,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var localeManager: LocaleManager
     private lateinit var notificationPreferences: NotificationPreferences
     private lateinit var notificationDiagnostic: NotificationDiagnostic
+    private var diagnosticDialog: androidx.appcompat.app.AlertDialog? = null
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var pendingUpdate: Release? = null
     private var downloadedFile: File? = null
@@ -617,7 +618,10 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun runNotificationDiagnostic() {
-        Toast.makeText(this, "Diagnostic en cours... Vérifiez les logs", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Diagnostic en cours...", Toast.LENGTH_SHORT).show()
+        
+        // Fermer le dialog précédent s'il existe
+        diagnosticDialog?.dismiss()
         
         // Créer le canal si nécessaire
         notificationDiagnostic.createNotificationChannelIfNeeded()
@@ -626,38 +630,18 @@ class SettingsActivity : AppCompatActivity() {
         val preliminaryResult = notificationDiagnostic.runFullDiagnostic() { finalResult ->
             // Mettre à jour le dialog avec le résultat final
             runOnUiThread {
-                showDiagnosticResult(finalResult)
+                updateDiagnosticDialog(finalResult, true)
             }
         }
         
         // Afficher d'abord le résultat préliminaire
-        showDiagnosticResult(preliminaryResult)
+        showDiagnosticResult(preliminaryResult, false)
     }
     
-    private fun showDiagnosticResult(result: com.nextjsclient.android.utils.DiagnosticResult) {
-        val summary = buildString {
-            appendLine("🔍 DIAGNOSTIC DES NOTIFICATIONS")
-            appendLine("")
-            appendLine("Permission: ${if (result.hasNotificationPermission) "✅ OK" else "❌ Manquante"}")
-            appendLine("Canal: ${if (result.hasNotificationChannel) "✅ OK" else "❌ Manquant"}")
-            appendLine("Activées: ${if (result.notificationsEnabled) "✅ Oui" else "❌ Non"}")
-            appendLine("Token FCM: ${result.fcmTokenStatus}")
-            appendLine("Arrière-plan: ${if (result.canRunInBackground) "✅ OK" else "❌ Limité"}")
-            appendLine("")
-            if (result.isFullyFunctional()) {
-                appendLine("🟢 STATUT: Tout fonctionne parfaitement")
-                appendLine("L'app peut recevoir les notifications !")
-            } else {
-                appendLine("🔴 STATUT: En cours de vérification...")
-                if (result.fcmTokenStatus.contains("En cours")) {
-                    appendLine("Le token FCM est en cours de récupération")
-                } else {
-                    appendLine("Vérifiez les logs pour plus de détails")
-                }
-            }
-        }
+    private fun showDiagnosticResult(result: com.nextjsclient.android.utils.DiagnosticResult, isFinal: Boolean) {
+        val summary = buildDiagnosticSummary(result, isFinal)
         
-        MaterialAlertDialogBuilder(this)
+        diagnosticDialog = MaterialAlertDialogBuilder(this)
             .setTitle("Diagnostic des notifications")
             .setMessage(summary)
             .setPositiveButton("OK", null)
@@ -666,6 +650,42 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this, "Abonnements relancés", Toast.LENGTH_SHORT).show()
             }
             .show()
+    }
+    
+    private fun updateDiagnosticDialog(result: com.nextjsclient.android.utils.DiagnosticResult, isFinal: Boolean) {
+        diagnosticDialog?.let { dialog ->
+            val summary = buildDiagnosticSummary(result, isFinal)
+            
+            // Mettre à jour le message du dialog existant
+            dialog.setMessage(summary)
+        } ?: run {
+            // Si le dialog n'existe pas, le créer
+            showDiagnosticResult(result, isFinal)
+        }
+    }
+    
+    private fun buildDiagnosticSummary(result: com.nextjsclient.android.utils.DiagnosticResult, isFinal: Boolean): String {
+        return buildString {
+            appendLine("🔍 DIAGNOSTIC DES NOTIFICATIONS")
+            appendLine("")
+            appendLine("Permission: ${if (result.hasNotificationPermission) "✅ OK" else "❌ Manquante"}")
+            appendLine("Canal: ${if (result.hasNotificationChannel) "✅ OK" else "❌ Manquant"}")
+            appendLine("Activées: ${if (result.notificationsEnabled) "✅ Oui" else "❌ Non"}")
+            appendLine("Token FCM: ${result.fcmTokenStatus}")
+            appendLine("Arrière-plan: ${if (result.canRunInBackground) "✅ OK" else "❌ Limité"}")
+            appendLine("")
+            
+            if (result.isFullyFunctional() || (isFinal && result.fcmTokenStatus == "Valide")) {
+                appendLine("🟢 STATUT: Tout fonctionne parfaitement")
+                appendLine("L'app peut recevoir les notifications !")
+            } else if (!isFinal && result.fcmTokenStatus.contains("En cours")) {
+                appendLine("🔄 STATUT: Vérification en cours...")
+                appendLine("Récupération du token FCM...")
+            } else {
+                appendLine("🔴 STATUT: Problèmes détectés")
+                appendLine("Vérifiez les logs pour plus de détails")
+            }
+        }
     }
     
     private fun showFCMTokenDialog() {
