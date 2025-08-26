@@ -252,4 +252,30 @@
     <!-- Overview expressive -->
     <string name="week_progress_label">Progression de la semaine</string>
     
+    <!-- Notifications -->
+    <string name="notification_settings_title">Notifications</string>
+    <string name="notification_settings_summary">Gérer les préférences de notifications</string>
+    <string name="notifications_enabled_title">Activer les notifications</string>
+    <string name="notifications_enabled_summary">Recevoir des notifications sur les imports et mises à jour</string>
+    <string name="import_success_notifications_title">Succès d\'import</string>
+    <string name="import_success_notifications_summary">Notifier quand l\'import de données réussit</string>
+    <string name="import_error_notifications_title">Erreurs d\'import</string>
+    <string name="import_error_notifications_summary">Notifier quand l\'import de données échoue</string>
+    
+    <!-- Notification content -->
+    <string name="notification_channel_name">Notifications d\'import</string>
+    <string name="notification_channel_description">Notifications concernant les imports de données et mises à jour</string>
+    <string name="notification_default_title">Import terminé</string>
+    <string name="notification_default_body">Vérifiez les détails</string>
+    
+    <!-- Notification permissions -->
+    <string name="notification_permission_title">Activer les notifications</string>
+    <string name="notification_permission_message">Autoriser les notifications pour rester informé des imports et mises à jour système</string>
+    <string name="permission_granted">Permission accordée</string>
+    <string name="permission_denied">Permission refusée</string>
+    <string name="notifications_enabled">Notifications activées</string>
+    <string name="notifications_disabled">Notifications désactivées</string>
+    <string name="notifications_enabled_status">Activées</string>
+    <string name="ok_button">OK</string>
+    
 </resources>
