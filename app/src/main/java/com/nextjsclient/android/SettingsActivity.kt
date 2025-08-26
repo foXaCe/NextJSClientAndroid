@@ -622,10 +622,19 @@ class SettingsActivity : AppCompatActivity() {
         // Créer le canal si nécessaire
         notificationDiagnostic.createNotificationChannelIfNeeded()
         
-        // Lancer le diagnostic
-        val result = notificationDiagnostic.runFullDiagnostic()
+        // Lancer le diagnostic avec callback pour le résultat final
+        val preliminaryResult = notificationDiagnostic.runFullDiagnostic() { finalResult ->
+            // Mettre à jour le dialog avec le résultat final
+            runOnUiThread {
+                showDiagnosticResult(finalResult)
+            }
+        }
         
-        // Afficher un résumé dans un dialog
+        // Afficher d'abord le résultat préliminaire
+        showDiagnosticResult(preliminaryResult)
+    }
+    
+    private fun showDiagnosticResult(result: com.nextjsclient.android.utils.DiagnosticResult) {
         val summary = buildString {
             appendLine("🔍 DIAGNOSTIC DES NOTIFICATIONS")
             appendLine("")
@@ -636,10 +645,15 @@ class SettingsActivity : AppCompatActivity() {
             appendLine("Arrière-plan: ${if (result.canRunInBackground) "✅ OK" else "❌ Limité"}")
             appendLine("")
             if (result.isFullyFunctional()) {
-                appendLine("🟢 STATUT: Tout fonctionne")
+                appendLine("🟢 STATUT: Tout fonctionne parfaitement")
+                appendLine("L'app peut recevoir les notifications !")
             } else {
-                appendLine("🔴 STATUT: Problèmes détectés")
-                appendLine("Vérifiez les logs pour plus de détails")
+                appendLine("🔴 STATUT: En cours de vérification...")
+                if (result.fcmTokenStatus.contains("En cours")) {
+                    appendLine("Le token FCM est en cours de récupération")
+                } else {
+                    appendLine("Vérifiez les logs pour plus de détails")
+                }
             }
         }
         

@@ -20,7 +20,7 @@ class NotificationDiagnostic(private val context: Context) {
     private val notificationPreferences = NotificationPreferences(context)
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     
-    fun runFullDiagnostic(): DiagnosticResult {
+    fun runFullDiagnostic(callback: ((DiagnosticResult) -> Unit)? = null): DiagnosticResult {
         Log.d(TAG, "=== DIAGNOSTIC COMPLET DES NOTIFICATIONS ===")
         
         val result = DiagnosticResult()
@@ -34,16 +34,22 @@ class NotificationDiagnostic(private val context: Context) {
         // 3. Vérifier les préférences
         result.notificationsEnabled = checkNotificationPreferences()
         
-        // 4. Vérifier le token FCM
-        result.fcmTokenStatus = checkFCMToken()
+        // 4. Vérifier le token FCM (asynchrone)
+        checkFCMTokenAsync { tokenStatus ->
+            result.fcmTokenStatus = tokenStatus
+            
+            // 5. Vérifier les topics
+            checkTopicSubscriptions()
+            
+            // 6. Vérifier le background
+            result.canRunInBackground = checkBackgroundPermissions()
+            
+            logDiagnosticSummary(result)
+            callback?.invoke(result)
+        }
         
-        // 5. Vérifier les topics
-        checkTopicSubscriptions()
-        
-        // 6. Vérifier le background
-        result.canRunInBackground = checkBackgroundPermissions()
-        
-        logDiagnosticSummary(result)
+        // Retourner un résultat provisoire
+        result.fcmTokenStatus = "En cours..."
         return result
     }
     
@@ -97,34 +103,31 @@ class NotificationDiagnostic(private val context: Context) {
         return enabled
     }
     
-    private fun checkFCMToken(): String {
-        var tokenStatus = "En cours..."
-        
+    private fun checkFCMTokenAsync(callback: (String) -> Unit) {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
+            val tokenStatus = if (!task.isSuccessful) {
                 val error = task.exception?.message ?: "Erreur inconnue"
                 Log.e(TAG, "✗ Token FCM: ERREUR - $error")
-                tokenStatus = "Erreur: $error"
-                return@addOnCompleteListener
-            }
-            
-            val token = task.result
-            Log.d(TAG, "✓ Token FCM actuel: ${token.take(20)}...${token.takeLast(10)}")
-            Log.d(TAG, "  - Token complet: $token")
-            tokenStatus = "Valide"
-            
-            // Vérifier si le token sauvé correspond
-            val savedToken = notificationPreferences.getFcmToken()
-            if (savedToken == token) {
-                Log.d(TAG, "✓ Token sauvé correspond au token actuel")
+                "Erreur: $error"
             } else {
-                Log.w(TAG, "⚠ Token sauvé différent du token actuel")
-                Log.d(TAG, "  - Sauvé: ${savedToken.take(20)}...")
-                Log.d(TAG, "  - Actuel: ${token.take(20)}...")
+                val token = task.result
+                Log.d(TAG, "✓ Token FCM actuel: ${token.take(20)}...${token.takeLast(10)}")
+                Log.d(TAG, "  - Token complet: $token")
+                
+                // Vérifier si le token sauvé correspond
+                val savedToken = notificationPreferences.getFcmToken()
+                if (savedToken == token) {
+                    Log.d(TAG, "✓ Token sauvé correspond au token actuel")
+                } else {
+                    Log.w(TAG, "⚠ Token sauvé différent du token actuel")
+                    Log.d(TAG, "  - Sauvé: ${savedToken.take(20)}...")
+                    Log.d(TAG, "  - Actuel: ${token.take(20)}...")
+                }
+                "Valide"
             }
+            
+            callback(tokenStatus)
         }
-        
-        return tokenStatus
     }
     
     private fun checkTopicSubscriptions() {
@@ -210,6 +213,6 @@ data class DiagnosticResult(
                hasNotificationChannel && 
                notificationsEnabled && 
                canRunInBackground &&
-               fcmTokenStatus == "Valide"
+               (fcmTokenStatus == "Valide" || fcmTokenStatus.contains("En cours"))
     }
 }
