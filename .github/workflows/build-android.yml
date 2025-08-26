@@ -208,6 +208,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Generate version info
       id: version
@@ -216,6 +218,8 @@ jobs:
         echo "BUILD_TIME=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
         echo "COMMIT_HASH=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
         echo "RUN_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
+        # Calculer le nombre de commits comme le fait l'app
+        echo "BUILD_NUMBER=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
 
     - name: Download APK artifacts
       uses: actions/download-artifact@v4
@@ -257,10 +261,10 @@ jobs:
         # Générer le changelog depuis les derniers commits
         CHANGELOG=$(git log --oneline -5 --pretty=format:"- %s" | head -5)
         
-        # Renommer l'APK avec le numéro de run (style Lawnchair)
+        # Renommer l'APK avec le numéro de build basé sur les commits
         if [ -f ./apks/app-release.apk ]; then
-          mv ./apks/app-release.apk "./apks/NextJSClient-run${{ steps.version.outputs.RUN_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk"
-          echo "✅ APK renommé avec run number"
+          mv ./apks/app-release.apk "./apks/NextJSClient-build${{ steps.version.outputs.BUILD_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk"
+          echo "✅ APK renommé avec build number (commits: ${{ steps.version.outputs.BUILD_NUMBER }})"
         fi
         
         # Créer la release nightly avec HEREDOC
@@ -270,7 +274,7 @@ jobs:
         **📱 Version:** $APK_VERSION  
         **📅 Build Time:** ${{ steps.version.outputs.BUILD_TIME }}  
         **🔍 Commit:** ${{ steps.version.outputs.COMMIT_HASH }}  
-        **🔢 Run Number:** ${{ steps.version.outputs.RUN_NUMBER }}  
+        **🔢 Build Number:** ${{ steps.version.outputs.BUILD_NUMBER }} (Run #${{ steps.version.outputs.RUN_NUMBER }})  
         **🌟 Branch:** main
         
         ### 📋 Dernières Modifications
@@ -283,7 +287,7 @@ jobs:
         4. Profitez des dernières fonctionnalités !
         
         ### 📦 APK Disponible
-        - **NextJSClient-run${{ steps.version.outputs.RUN_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk**: Version release signée avec certificat de production
+        - **NextJSClient-build${{ steps.version.outputs.BUILD_NUMBER }}-${{ steps.version.outputs.COMMIT_HASH }}.apk**: Version release signée avec certificat de production
         EOF
         
         gh release create nightly \

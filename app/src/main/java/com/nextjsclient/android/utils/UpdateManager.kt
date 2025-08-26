@@ -663,13 +663,54 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private fun isNewerVersion(@Suppress("UNUSED_PARAMETER") _current: String, @Suppress("UNUSED_PARAMETER") _latest: String, release: Release, @Suppress("UNUSED_PARAMETER") _assetNames: List<String>): Boolean {
+    private fun isNewerVersion(@Suppress("UNUSED_PARAMETER") _current: String, @Suppress("UNUSED_PARAMETER") _latest: String, release: Release, assetNames: List<String>): Boolean {
         return try {
             // Utiliser BUILD_NUMBER qui contient maintenant le nombre de commits
             val currentBuildNumber = com.nextjsclient.android.BuildConfig.BUILD_NUMBER
             
             // Pour les builds locaux de développement
             val isDevBuild = com.nextjsclient.android.BuildConfig.VERSION_DISPLAY_NAME.contains("-dev")
+            
+            // Extraire le numéro de build depuis le nom de l'APK dans les assets
+            // Formats attendus: NextJSClient-build221-9096b91.apk (nouveau) ou NextJSClient-run187-9096b91.apk (ancien)
+            var releaseBuildNumber = -1
+            for (assetName in assetNames) {
+                if (assetName.endsWith(".apk")) {
+                    // Pattern pour le nouveau format avec build number basé sur les commits
+                    val buildNumberPattern = Regex("NextJSClient-build(\\d+)-[a-f0-9]{7}\\.apk")
+                    var match = buildNumberPattern.find(assetName)
+                    
+                    // Si pas trouvé, essayer l'ancien format avec run number (pour compatibilité)
+                    if (match == null) {
+                        val runNumberPattern = Regex("NextJSClient-run(\\d+)-[a-f0-9]{7}\\.apk")
+                        match = runNumberPattern.find(assetName)
+                    }
+                    
+                    if (match != null) {
+                        releaseBuildNumber = match.groupValues[1].toIntOrNull() ?: -1
+                        Log.d(TAG, "Extracted release build number from asset name: $releaseBuildNumber from $assetName")
+                        break
+                    }
+                }
+            }
+            
+            // Si on n'a pas trouvé de numéro dans le nom du fichier, essayer depuis le body de la release
+            if (releaseBuildNumber == -1) {
+                // Essayer d'abord le nouveau format avec Build Number
+                var bodyPattern = Regex("🔢 Build Number:\\s*(\\d+)")
+                var bodyMatch = bodyPattern.find(release.body)
+                
+                // Si pas trouvé, essayer l'ancien format avec Run Number
+                if (bodyMatch == null) {
+                    bodyPattern = Regex("🔢 Run Number:\\s*(\\d+)")
+                    bodyMatch = bodyPattern.find(release.body)
+                }
+                
+                if (bodyMatch != null) {
+                    releaseBuildNumber = bodyMatch.groupValues[1].toIntOrNull() ?: -1
+                    Log.d(TAG, "Extracted release build number from body: $releaseBuildNumber")
+                }
+            }
             
             // Extraire le commit hash de la release GitHub
             val releaseCommit = try {
@@ -683,18 +724,34 @@ class UpdateManager(private val context: Context) {
             // Obtenir le commit hash actuel
             val currentCommit = com.nextjsclient.android.BuildConfig.COMMIT_HASH
             
-            Log.d(TAG, "Version check - Current build: $currentBuildNumber, Dev: $isDevBuild")
-            Log.d(TAG, "Current commit: $currentCommit, Release commit: $releaseCommit")
+            Log.d(TAG, "=== VERSION COMPARISON ===")
+            Log.d(TAG, "Current build number: $currentBuildNumber")
+            Log.d(TAG, "Release build number: $releaseBuildNumber")
+            Log.d(TAG, "Current commit: $currentCommit")
+            Log.d(TAG, "Release commit: $releaseCommit") 
+            Log.d(TAG, "Is dev build: $isDevBuild")
             
-            // Si c'est une build de dev et qu'on a le même commit, on est à jour
-            if (isDevBuild && currentCommit == releaseCommit) {
-                Log.d(TAG, "Same commit, no update needed")
-                return false
+            // Si on a trouvé un numéro de build dans la release
+            if (releaseBuildNumber > 0) {
+                // Comparer les numéros de build
+                // La release est plus récente si son numéro de build est supérieur
+                val isNewer = releaseBuildNumber > currentBuildNumber
+                Log.d(TAG, "Build number comparison: $releaseBuildNumber > $currentBuildNumber = $isNewer")
+                return isNewer
+            } else {
+                // Fallback: si on n'a pas de numéro de build, comparer les commits
+                Log.d(TAG, "No build number found in release, falling back to commit comparison")
+                
+                // Si c'est une build de dev et qu'on a le même commit, on est à jour
+                if (isDevBuild && currentCommit == releaseCommit) {
+                    Log.d(TAG, "Same commit, no update needed")
+                    return false
+                }
+                
+                // Sinon, proposer la mise à jour seulement si c'est une build dev
+                // et que le commit est différent
+                return isDevBuild && releaseCommit.isNotEmpty() && currentCommit != releaseCommit
             }
-            
-            // Sinon, proposer la mise à jour seulement si c'est une build dev
-            // (les builds de production GitHub ne devraient jamais voir de mise à jour)
-            return isDevBuild && releaseCommit.isNotEmpty()
             
         } catch (e: Exception) {
             Log.e(TAG, "Error in version check", e)
