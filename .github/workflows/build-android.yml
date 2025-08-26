@@ -300,3 +300,4 @@ jobs:
         echo "🎉 Build et release nightly terminés avec succès !"
         echo "📱 APKs disponibles dans les artifacts et la release nightly"
         echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/nightly"
+        echo "🔢 Build number utilisé: basé sur l'historique Git complet"
