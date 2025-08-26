@@ -250,4 +250,30 @@
     <!-- Overview expressive -->
     <string name="week_progress_label">Progression de la semaine</string>
     
+    <!-- Notifications -->
+    <string name="notification_settings_title">Notifications</string>
+    <string name="notification_settings_summary">Manage notification preferences</string>
+    <string name="notifications_enabled_title">Enable notifications</string>
+    <string name="notifications_enabled_summary">Receive notifications about imports and updates</string>
+    <string name="import_success_notifications_title">Import success</string>
+    <string name="import_success_notifications_summary">Notify when data import succeeds</string>
+    <string name="import_error_notifications_title">Import errors</string>
+    <string name="import_error_notifications_summary">Notify when data import fails</string>
+    
+    <!-- Notification content -->
+    <string name="notification_channel_name">Import Notifications</string>
+    <string name="notification_channel_description">Notifications about data imports and updates</string>
+    <string name="notification_default_title">Import completed</string>
+    <string name="notification_default_body">Check the details</string>
+    
+    <!-- Notification permissions -->
+    <string name="notification_permission_title">Enable notifications</string>
+    <string name="notification_permission_message">Allow notifications to stay updated about imports and system updates</string>
+    <string name="permission_granted">Permission granted</string>
+    <string name="permission_denied">Permission denied</string>
+    <string name="notifications_enabled">Notifications enabled</string>
+    <string name="notifications_disabled">Notifications disabled</string>
+    <string name="notifications_enabled_status">Enabled</string>
+    <string name="ok_button">OK</string>
+    
 </resources>

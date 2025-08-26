@@ -27,6 +27,7 @@ import com.nextjsclient.android.utils.Release
 import com.nextjsclient.android.utils.SupplierPreferences
 import com.nextjsclient.android.utils.BiometricManager
 import com.nextjsclient.android.utils.LocaleManager
+import com.nextjsclient.android.utils.NotificationPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,6 +40,11 @@ import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.Context
+import android.Manifest
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.firebase.messaging.FirebaseMessaging
 
 class SettingsActivity : AppCompatActivity() {
     
@@ -49,6 +55,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var supplierPreferences: SupplierPreferences
     private lateinit var biometricManager: BiometricManager
     private lateinit var localeManager: LocaleManager
+    private lateinit var notificationPreferences: NotificationPreferences
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var pendingUpdate: Release? = null
     private var downloadedFile: File? = null
@@ -73,6 +80,7 @@ class SettingsActivity : AppCompatActivity() {
         supplierPreferences = SupplierPreferences(this)
         biometricManager = BiometricManager(this)
         localeManager = LocaleManager(this)
+        notificationPreferences = NotificationPreferences(this)
         
         setupWindowInsets()
         setupToolbar()
@@ -81,6 +89,7 @@ class SettingsActivity : AppCompatActivity() {
         setupUpdateManager()
         setupSupplierPreferences()
         setupBiometric()
+        setupNotifications()
         setupLanguageSelector()
         updateUI()
         animateViews()
@@ -464,6 +473,154 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton(getString(R.string.cancel_button), null)
             .show()
+    }
+    
+    private fun setupNotifications() {
+        // Initialiser l'état du switch
+        binding.notificationsSwitch.isChecked = notificationPreferences.areNotificationsEnabled()
+        
+        // Mettre à jour le status
+        updateNotificationStatus()
+        
+        // Listener pour le switch principal
+        binding.notificationsSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                // Vérifier et demander la permission si nécessaire
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        // Demander la permission
+                        ActivityCompat.requestPermissions(
+                            this,
+                            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                            NOTIFICATION_PERMISSION_REQUEST_CODE
+                        )
+                        return@setOnCheckedChangeListener
+                    }
+                }
+                
+                // Activer les notifications
+                notificationPreferences.setNotificationsEnabled(true)
+                
+                // Obtenir le token FCM et l'enregistrer
+                initFirebaseMessaging()
+                
+                Toast.makeText(this, getString(R.string.notifications_enabled), Toast.LENGTH_SHORT).show()
+                
+            } else {
+                // Désactiver les notifications
+                notificationPreferences.setNotificationsEnabled(false)
+                Toast.makeText(this, getString(R.string.notifications_disabled), Toast.LENGTH_SHORT).show()
+            }
+            
+            updateNotificationStatus()
+        }
+        
+        // Click sur la section pour plus d'options
+        binding.notificationsSection.setOnClickListener {
+            animateClick(it)
+            showNotificationDetailsDialog()
+        }
+    }
+    
+    private fun updateNotificationStatus() {
+        val enabled = notificationPreferences.areNotificationsEnabled()
+        
+        binding.notificationStatus.text = if (enabled) {
+            getString(R.string.notifications_enabled_status)
+        } else {
+            getString(R.string.notification_settings_summary)
+        }
+    }
+    
+    private fun initFirebaseMessaging() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("SettingsActivity", "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
+            
+            // Token récupéré avec succès
+            val token = task.result
+            Log.d("SettingsActivity", "FCM Token: $token")
+            
+            // Sauvegarder le token
+            notificationPreferences.saveFcmToken(token)
+            
+            // S'abonner aux topics
+            subscribeToNotificationTopics()
+        }
+    }
+    
+    private fun subscribeToNotificationTopics() {
+        FirebaseMessaging.getInstance().subscribeToTopic("import-success")
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("SettingsActivity", "Subscribed to import-success topic")
+                }
+            }
+        
+        FirebaseMessaging.getInstance().subscribeToTopic("import-error")
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("SettingsActivity", "Subscribed to import-error topic")
+                }
+            }
+    }
+    
+    private fun showNotificationDetailsDialog() {
+        val items = arrayOf(
+            getString(R.string.import_success_notifications_title),
+            getString(R.string.import_error_notifications_title)
+        )
+        
+        val checkedItems = booleanArrayOf(
+            notificationPreferences.areImportSuccessNotificationsEnabled(),
+            notificationPreferences.areImportErrorNotificationsEnabled()
+        )
+        
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.notification_settings_title))
+            .setMultiChoiceItems(items, checkedItems) { _, which, isChecked ->
+                when (which) {
+                    0 -> notificationPreferences.setImportSuccessNotificationsEnabled(isChecked)
+                    1 -> notificationPreferences.setImportErrorNotificationsEnabled(isChecked)
+                }
+            }
+            .setPositiveButton(getString(R.string.ok_button), null)
+            .show()
+    }
+    
+    companion object {
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 123
+    }
+    
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        
+        when (requestCode) {
+            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permission accordée
+                    notificationPreferences.setNotificationsEnabled(true)
+                    binding.notificationsSwitch.isChecked = true
+                    initFirebaseMessaging()
+                    updateNotificationStatus()
+                    Toast.makeText(this, getString(R.string.permission_granted), Toast.LENGTH_SHORT).show()
+                } else {
+                    // Permission refusée
+                    binding.notificationsSwitch.isChecked = false
+                    Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
     
     private fun checkForUpdates() {

@@ -150,6 +150,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-firestore-ktx'
     implementation 'com.google.firebase:firebase-storage-ktx'
     implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
     
     // Force newer BouncyCastle version to avoid 1.79 corruption bug
     configurations.all {
@@ -187,6 +188,9 @@ dependencies {
     
     // HTTP requests for update checks
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    
+    // JSON parsing for notifications
+    implementation 'com.google.code.gson:gson:2.10.1'
     
     // Biometric authentication
     implementation 'androidx.biometric:biometric:1.1.0'
