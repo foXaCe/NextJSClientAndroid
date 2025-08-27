@@ -498,7 +498,6 @@ class FirebaseRepository {
         
         
         // 4. Traitement et enrichissement
-        android.util.Log.d("FirebaseRepo", "🔄 Processing ${allDecisions.size} decisions into products...")
         val processStartTime = System.currentTimeMillis()
         
         val finalProducts = allDecisions.map { decision ->
@@ -556,7 +555,6 @@ class FirebaseRepository {
         }
         
         val sortedProducts = finalProducts.sortedBy { it.productName }
-        android.util.Log.d("FirebaseRepo", "✅ Products processed in ${System.currentTimeMillis() - processStartTime}ms, count=${sortedProducts.size}")
         
         // Mettre en cache si c'est la semaine actuelle
         if (year == currentYear && week == currentWeek) {

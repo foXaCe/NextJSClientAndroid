@@ -149,25 +149,63 @@
         android:visibility="gone"
         android:alpha="0.95">
 
+        <!-- Material 3 Expressif Overview Loader -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center_horizontal">
 
-            <ProgressBar
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:indeterminateTint="?attr/colorPrimary" />
+            <!-- Loader expressif spécialisé pour Overview -->
+            <FrameLayout
+                android:layout_width="96dp"
+                android:layout_height="96dp">
+                
+                <!-- Outer pulse ring -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/overviewLoaderOuter"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:indeterminate="true"
+                    app:indicatorColor="?attr/colorTertiary"
+                    app:trackColor="@android:color/transparent"
+                    app:indicatorSize="96dp"
+                    app:trackThickness="1dp"
+                    app:indicatorTrackGapSize="0dp"
+                    android:alpha="0.3"
+                    style="@style/Widget.Material3.CircularProgressIndicator" />
+                
+                <!-- Middle ring -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/overviewLoaderMiddle"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    app:indicatorColor="?attr/colorPrimaryContainer"
+                    app:trackColor="?attr/colorOutlineVariant"
+                    app:indicatorSize="72dp"
+                    app:trackThickness="3dp"
+                    app:indicatorTrackGapSize="12dp"
+                    android:alpha="0.6"
+                    style="@style/Widget.Material3.CircularProgressIndicator" />
+                
+                <!-- Main central loader -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/overviewLoaderMain"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:trackColor="?attr/colorSurfaceVariant"
+                    app:indicatorSize="48dp"
+                    app:trackThickness="4dp"
+                    app:indicatorTrackGapSize="6dp"
+                    style="@style/Widget.Material3.CircularProgressIndicator" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/loading"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginTop="16dp" />
+            </FrameLayout>
 
         </LinearLayout>
 

@@ -128,9 +128,45 @@ class MainActivity : AppCompatActivity() {
         // Apply initial theme
         applySupplierTheme(currentSupplier)
         
-        // Vérifier l'authentification biométrique si activée (première fois seulement)
+        // OPTIMISATION: Preload agressif des deux fournisseurs au démarrage
         if (savedInstanceState == null) {
+            preloadAllSuppliersOnStartup()
             checkBiometricAuthentication()
+        }
+    }
+    
+    /**
+     * OPTIMISATION: Preload agressif de tous les fournisseurs au démarrage
+     */
+    private fun preloadAllSuppliersOnStartup() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
+                val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                val week = getCurrentISOWeek()
+                
+                // Preload parallèle des deux fournisseurs
+                val anecoopJob = launch {
+                    if (supplierPreferences.isAnecoopEnabled) {
+                        repository.getAvailableWeeks("anecoop")
+                        repository.getWeekDecisions(year, week, "anecoop")
+                    }
+                }
+                
+                val solagoraJob = launch {
+                    if (supplierPreferences.isSolagoraEnabled) {
+                        repository.getAvailableWeeks("solagora")
+                        repository.getWeekDecisions(year, week, "solagora")
+                    }
+                }
+                
+                // Attendre que tout soit terminé
+                anecoopJob.join()
+                solagoraJob.join()
+                
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Error in preload: ${e.message}")
+            }
         }
     }
     
@@ -150,8 +186,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 
                 if (isOtherEnabled) {
-                    android.util.Log.d("MainActivity", "📦 Preloading data for $otherSupplier in background...")
-                    
                     // Précharger les données via le repository pour remplir le cache
                     val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
                     val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
@@ -160,8 +194,6 @@ class MainActivity : AppCompatActivity() {
                     // Précharger les semaines et les données
                     repository.getAvailableWeeks(otherSupplier)
                     repository.getWeekDecisions(year, week, otherSupplier)
-                    
-                    android.util.Log.d("MainActivity", "✅ Preload completed for $otherSupplier")
                 }
             } catch (e: Exception) {
                 android.util.Log.e("MainActivity", "Error preloading: ${e.message}")
@@ -381,7 +413,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun switchToSupplier(supplier: String) {
-        android.util.Log.d("MainActivity", "🔄 Switching to supplier: $supplier")
         currentSupplier = supplier
         
         // Précharger l'autre fournisseur en arrière-plan
@@ -396,16 +427,22 @@ class MainActivity : AppCompatActivity() {
                 val filter = preloadedFilters[supplier]
                 if (filter != null) {
                     putString("filter", filter)
+                    // NE PAS supprimer le filtre ici - le Fragment le supprimera après utilisation
+                } else {
+                    // Pas de filtre = navigation normale, nettoyer les données préchargées filtrées
+                    if (preloadedData.containsKey(supplier)) {
+                        preloadedData.remove(supplier)
+                    }
                 }
                 
                 // Note: Les données préchargées seront chargées directement dans le ViewModel
             }
         }
         
-        
         supportFragmentManager.beginTransaction()
             .replace(R.id.nav_host_fragment, scamarkFragment)
-            .commitNow()
+            .setReorderingAllowed(true) // OPTIMISATION: Allow state loss pour performance
+            .commit() // OPTIMISATION: commit() asynchrone au lieu de commitNow() synchrone
         
         // Show toolbar with no title
         supportActionBar?.show()
@@ -524,6 +561,9 @@ class MainActivity : AppCompatActivity() {
                 // IMPORTANT: Appliquer le filtre AVANT de charger les données
                 viewModel.setProductFilter(filter)
                 viewModel.setPreloadedData(supplier, products, weeks)
+                
+                // MAINTENANT supprimer le filtre après utilisation
+                preloadedFilters.remove(supplier)
             } else {
                 viewModel.setPreloadedData(supplier, products, weeks)
             }

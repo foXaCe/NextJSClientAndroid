@@ -123,33 +123,63 @@
         android:focusable="true"
         android:elevation="4dp">
 
+        <!-- Material 3 Expressif Loader -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center_horizontal">
 
-            <!-- Circular Progress Indicator Material 3 -->
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:indeterminate="true"
-                app:indicatorColor="?attr/colorPrimary"
-                app:trackColor="?attr/colorSurfaceVariant"
-                app:indicatorSize="56dp"
-                app:trackThickness="6dp"
-                app:indicatorInset="0dp"
-                style="@style/Widget.Material3.CircularProgressIndicator" />
+            <!-- Loader expressif avec animation Material 3 -->
+            <FrameLayout
+                android:layout_width="80dp"
+                android:layout_height="80dp">
+                
+                <!-- Background pulse animation -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/loaderBackground"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:indeterminate="true"
+                    app:indicatorColor="?attr/colorPrimaryContainer"
+                    app:trackColor="@android:color/transparent"
+                    app:indicatorSize="80dp"
+                    app:trackThickness="2dp"
+                    app:indicatorTrackGapSize="0dp"
+                    android:alpha="0.4"
+                    style="@style/Widget.Material3.CircularProgressIndicator" />
+                
+                <!-- Main loader avec couleurs dynamiques -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/loaderMain"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:trackColor="?attr/colorOutlineVariant"
+                    app:indicatorSize="64dp"
+                    app:trackThickness="5dp"
+                    app:indicatorTrackGapSize="8dp"
+                    style="@style/Widget.Material3.CircularProgressIndicator" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/loading"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:layout_marginTop="12dp"
-                android:alpha="0.7" />
+                <!-- Inner accent -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/loaderAccent"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    app:indicatorColor="?attr/colorSecondary"
+                    app:trackColor="@android:color/transparent"
+                    app:indicatorSize="32dp"
+                    app:trackThickness="3dp"
+                    app:indicatorTrackGapSize="4dp"
+                    android:alpha="0.8"
+                    style="@style/Widget.Material3.CircularProgressIndicator" />
+
+            </FrameLayout>
 
         </LinearLayout>
 

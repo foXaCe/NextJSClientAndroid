@@ -27,6 +27,21 @@ class ScamarkViewModel : ViewModel() {
     private val _allProducts = MutableLiveData<List<ScamarkProduct>>()
     val products: LiveData<List<ScamarkProduct>> = _products
     
+    // Données complètes NON filtrées pour les calculs de totaux (aperçu)
+    private val _allProductsUnfiltered = MutableLiveData<List<ScamarkProduct>>()
+    val allProductsUnfiltered: LiveData<List<ScamarkProduct>> = _allProductsUnfiltered
+    
+    /**
+     * Helper pour mettre à jour les données en gardant une copie non filtrée pour les totaux
+     */
+    private fun setAllProducts(products: List<ScamarkProduct>, keepUnfilteredBackup: Boolean = true) {
+        _allProducts.value = products
+        if (keepUnfilteredBackup) {
+            // Garder une copie complète pour les calculs de totaux (aperçu)
+            _allProductsUnfiltered.value = products
+        }
+    }
+    
     private val _stats = MutableLiveData<ScamarkStats>()
     val stats: LiveData<ScamarkStats> = _stats
     
@@ -123,13 +138,11 @@ class ScamarkViewModel : ViewModel() {
      * Charge les semaines disponibles pour une année spécifique
      */
     fun loadAvailableWeeksForYear(supplier: String = "all", year: Int) {
-        android.util.Log.d("ScamarkVM", "📅 loadAvailableWeeksForYear: supplier=$supplier, year=$year")
         
         viewModelScope.launch {
             try {
                 val startTime = System.currentTimeMillis()
                 val weeks = repository.getAvailableWeeksForYear(supplier, year)
-                android.util.Log.d("ScamarkVM", "✅ Weeks for year loaded in ${System.currentTimeMillis() - startTime}ms, count=${weeks.size}")
                 
                 // Fusionner avec les semaines existantes
                 val existingWeeks = _availableWeeks.value ?: emptyList()
@@ -148,20 +161,17 @@ class ScamarkViewModel : ViewModel() {
      * Charge les semaines disponibles
      */
     fun loadAvailableWeeks(supplier: String = _selectedSupplier.value ?: "all") {
-        android.util.Log.d("ScamarkVM", "📅 loadAvailableWeeks: supplier=$supplier")
         
         viewModelScope.launch {
             _isLoadingWeeks.value = true
             val startTime = System.currentTimeMillis()
             
             try {
-                android.util.Log.d("ScamarkVM", "⏳ Starting to load weeks from repository...")
                 // Utiliser Dispatchers.IO pour les opérations réseau/cache
                 val weeks = withContext(Dispatchers.IO) {
                     repository.getAvailableWeeks(supplier)
                 }
                 
-                android.util.Log.d("ScamarkVM", "✅ Available weeks loaded in ${System.currentTimeMillis() - startTime}ms, count=${weeks.size}")
                 _availableWeeks.value = weeks
                 clearLoadingWeeks() // Nettoyer les semaines en chargement après mise à jour
                 
@@ -197,7 +207,6 @@ class ScamarkViewModel : ViewModel() {
         val supplier = _selectedSupplier.value ?: "all"
         val currentWeeks = _availableWeeks.value ?: emptyList()
         
-        android.util.Log.d("ScamarkVM", "📅 loadMoreWeeks: supplier=$supplier, currentCount=${currentWeeks.size}")
         
         // Marquer les prochaines semaines comme "en chargement"
         markWeeksAsLoading()
@@ -206,7 +215,6 @@ class ScamarkViewModel : ViewModel() {
             _isLoadingMoreWeeks.postValue(true)
             // val startTime = System.currentTimeMillis() // Unused variable
             try {
-                android.util.Log.d("ScamarkVM", "⏳ Loading more weeks...")
                 // Calculer la semaine de départ pour l'extension en tenant compte de l'année
                 val startWeek = oldestWeekLoaded ?: 1
                 val startYear = oldestYearLoaded ?: Calendar.getInstance().get(Calendar.YEAR)
@@ -311,13 +319,10 @@ class ScamarkViewModel : ViewModel() {
                 val cachedProducts = weekDataCache[cacheKey]
                 
                 val products = if (cachedProducts != null) {
-                    android.util.Log.d("ScamarkVM", "💾 Using cached data for $cacheKey")
                     cachedProducts
                 } else {
-                    android.util.Log.d("ScamarkVM", "🌐 Loading from Firebase for $cacheKey")
                     val loadStartTime = System.currentTimeMillis()
                     val loadedProducts = repository.getWeekDecisions(year, week, supplier)
-                    android.util.Log.d("ScamarkVM", "✅ Firebase load completed in ${System.currentTimeMillis() - loadStartTime}ms, products=${loadedProducts.size}")
                     
                     // Mettre en cache
                     weekDataCache[cacheKey] = loadedProducts
@@ -361,7 +366,6 @@ class ScamarkViewModel : ViewModel() {
         
         if (cachedProducts != null) {
             // Utilisation du cache - assigner directement sans requête réseau
-            android.util.Log.d("ScamarkVM", "💾 loadWeekData: Using cache for $cacheKey, products=${cachedProducts.size}")
             
             // IMPORTANT: S'assurer que le loading est désactivé pour le cache
             _isLoading.value = false
@@ -382,20 +386,16 @@ class ScamarkViewModel : ViewModel() {
         // PAS DE CACHE: Activer loading et charger depuis repository
         loadWeekDataJob = viewModelScope.launch {
             _isLoadingWeekChange.value = true
-            val startTime = System.currentTimeMillis()
             
             try {
-                android.util.Log.d("ScamarkVM", "🌐 loadWeekData: Loading from Firebase for $cacheKey")
                 val products = repository.getWeekDecisions(year, week, supplier)
-                android.util.Log.d("ScamarkVM", "✅ Week data loaded in ${System.currentTimeMillis() - startTime}ms, products=${products.size}")
                 
                 // Mettre en cache
                 weekDataCache[cacheKey] = products
                 
-                android.util.Log.d("ScamarkVM", "📊 Calculating stats...")
                 val stats = calculateStatsFromProducts(products)
                 
-                _allProducts.value = products
+                setAllProducts(products, keepUnfilteredBackup = true)
                 _stats.value = stats
                 
                 // Charger les produits de la semaine précédente pour comparaison
@@ -408,7 +408,6 @@ class ScamarkViewModel : ViewModel() {
                 _error.value = "Erreur lors du chargement: ${e.message}"
             } finally {
                 _isLoadingWeekChange.value = false
-                
             }
         }
     }
@@ -436,14 +435,17 @@ class ScamarkViewModel : ViewModel() {
     /**
      * Change le fournisseur sélectionné
      */
-    fun selectSupplier(supplier: String) {
-        android.util.Log.d("ScamarkVM", "🔄 selectSupplier: $supplier (current: ${_selectedSupplier.value})")
+    fun selectSupplier(supplier: String, resetFilter: Boolean = false) {
         if (_selectedSupplier.value != supplier) {
-            val startTime = System.currentTimeMillis()
-            // IMPORTANT: Vider immédiatement toutes les listes pour éviter l'affichage flash
+            // IMPORTANT: Vider immédiatement toutes les listes pour éviter l'affichage flash ET le mélange de fournisseurs
             _allProducts.value = emptyList()
             _products.value = emptyList()
-            _productFilter.value = "all"
+            // Réinitialiser aussi les données de la semaine précédente pour éviter le mélange
+            previousWeekProducts = emptyList()
+            // Réinitialiser le filtre SEULEMENT si explicitement demandé
+            if (resetFilter) {
+                _productFilter.value = "all"
+            }
             _searchQuery.value = ""
             _searchSuggestions.value = emptyList()
             
@@ -456,20 +458,17 @@ class ScamarkViewModel : ViewModel() {
             
             // IMPORTANT: Définir le nouveau fournisseur
             _selectedSupplier.value = supplier
-            android.util.Log.d("ScamarkVM", "⏳ Starting parallel load: weeks + data")
             
             // Charger en parallèle pour améliorer les performances
             viewModelScope.launch {
                 // Délai très court pour permettre à l'UI de se mettre à jour avant le chargement
-                kotlinx.coroutines.delay(50)
+                kotlinx.coroutines.delay(10) // OPTIMISATION: Réduit de 50ms à 10ms
                 
                 // Lancer les deux chargements en parallèle
                 val weeksDeferred = async(Dispatchers.IO) { 
-                    android.util.Log.d("ScamarkVM", "🌐 Loading weeks in parallel...")
-                    repository.getAvailableWeeks(supplier) 
+                    repository.getAvailableWeeks(supplier)
                 }
                 val dataDeferred = async(Dispatchers.IO) { 
-                    android.util.Log.d("ScamarkVM", "🌐 Loading week data in parallel...")
                     val year = _selectedYear.value ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
                     val week = _selectedWeek.value ?: getCurrentISOWeek()
                     repository.getWeekDecisions(year, week, supplier)
@@ -479,8 +478,6 @@ class ScamarkViewModel : ViewModel() {
                 try {
                     val weeks = weeksDeferred.await()
                     val products = dataDeferred.await()
-                    
-                    android.util.Log.d("ScamarkVM", "✅ Parallel load completed in ${System.currentTimeMillis() - startTime}ms")
                     
                     // Mettre à jour les données de manière atomique
                     withContext(Dispatchers.Main) {
@@ -505,16 +502,13 @@ class ScamarkViewModel : ViewModel() {
                         )
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("ScamarkVM", "❌ Error in parallel load: ${e.message}")
                     _error.value = "Erreur lors du chargement: ${e.message}"
                 } finally {
                     // Petit délai avant de masquer le loader pour éviter le clignotement
-                    kotlinx.coroutines.delay(100)
+                    kotlinx.coroutines.delay(25) // OPTIMISATION: Réduit de 100ms à 25ms
                     _isLoading.value = false
                 }
             }
-            
-            android.util.Log.d("ScamarkVM", "🚀 Supplier switch initiated in ${System.currentTimeMillis() - startTime}ms")
         }
     }
     
@@ -674,15 +668,39 @@ class ScamarkViewModel : ViewModel() {
         val allProducts = _allProducts.value ?: emptyList()
         val query = _searchQuery.value?.lowercase() ?: ""
         val filter = _productFilter.value ?: "all"
+        val currentSupplier = _selectedSupplier.value ?: "all"
         
         var filtered = allProducts
         
+        // IMPORTANT: Filtrer par fournisseur EN PREMIER pour éviter le mélange
+        if (currentSupplier != "all") {
+            val beforeSupplierFilter = filtered.size
+            filtered = filtered.filter { it.supplier.lowercase() == currentSupplier.lowercase() }
+        }
+        
         // Appliquer le filtre de type
         filtered = when (filter) {
-            "promo" -> filtered.filter { it.isPromo }
-            "entrants" -> filterEntrants(filtered)
-            "sortants" -> filterSortants(filtered)
-            else -> filtered
+            "promo" -> {
+                filtered.filter { it.isPromo }
+            }
+            "entrants" -> {
+                val result = filterEntrants(filtered)
+                result
+            }
+            "sortants" -> {
+                // Si nous avons des données préchargées, elles sont DÉJÀ les sortants
+                val result = if (filtered.isNotEmpty() && previousWeekProducts.isEmpty()) {
+                    // Données préchargées depuis l'aperçu - les produits sont déjà les sortants
+                    filtered
+                } else {
+                    // Navigation normale - calculer les sortants depuis previousWeekProducts
+                    filterSortants(filtered)
+                }
+                result
+            }
+            else -> {
+                filtered
+            }
         }
         
         // Appliquer la recherche textuelle avec recherche partielle par mots
@@ -930,7 +948,7 @@ class ScamarkViewModel : ViewModel() {
         // Nettoyer le cache MainActivity pour éviter la persistance des filtres
         clearMainActivityCache(activity)
         
-        // Réinitialiser le filtre à "all" pour afficher tous les produits
+        // CORRECTION: Réinitialiser le filtre lors du refresh pour revenir à l'affichage normal
         _productFilter.value = "all"
         
         // Réinitialiser la recherche
@@ -1137,18 +1155,17 @@ class ScamarkViewModel : ViewModel() {
         val currentFilter = _productFilter.value
         
         if (currentFilter == "sortants" && products.isNotEmpty()) {
-            // Les produits reçus sont DÉJÀ les sortants filtrés depuis OverviewFragment
-            // On les met directement dans _products sans passer par filterProducts
-            android.util.Log.d("ScamarkVM", "📤 Setting sortants products directly, count=${products.size}")
-            _allProducts.value = emptyList() // Pas de produits "all"
-            _products.value = products // Directement les sortants
+            // Les produits reçus sont les sortants (produits de la semaine précédente)
+            // On les met dans _allProducts et on laisse le filtrage normal fonctionner
+            setAllProducts(products, keepUnfilteredBackup = false) // Pas de backup pour les données filtrées
+            _products.value = products // Directement les sortants pour l'affichage immédiat
             
-            // Ne PAS appeler filterProducts() pour les sortants, ils sont déjà filtrés
-            return // Sortir sans appeler filterProducts()
+            // Appliquer filterProducts() pour que les couleurs soient correctes
+            filterProducts()
+            return
         } else if (currentFilter == "entrants" && products.isNotEmpty()) {
             // Les produits reçus sont DÉJÀ les entrants filtrés depuis OverviewFragment
             // On les met directement dans _products sans passer par filterProducts
-            android.util.Log.d("ScamarkVM", "📥 Setting entrants products directly, count=${products.size}")
             _allProducts.value = emptyList() // Pas de produits "all"
             _products.value = products // Directement les entrants
             
@@ -1175,18 +1192,31 @@ class ScamarkViewModel : ViewModel() {
      */
     /**
      * Méthode pour définir directement les produits (utilisée par OverviewFragment)
+     * CORRECTION: Remet le ViewModel dans un état propre pour l'aperçu
      */
     fun setProducts(productsList: List<ScamarkProduct>) {
+        
+        // IMPORTANT: Remettre le ViewModel dans un état propre pour l'aperçu
+        _selectedSupplier.value = "all"
+        _productFilter.value = "all"
+        _searchQuery.value = ""
+        _isClientSearchMode.value = false
+        _searchSuggestions.value = emptyList()
+        
+        // Nettoyer les données de comparaison
+        previousWeekProducts = emptyList()
+        
+        // Définir les produits
         _allProducts.value = productsList
         _products.value = productsList
-        filterProducts()
+        
+        // Pas de filtrage nécessaire car on vient de tout remettre à "all"
     }
     
     /**
      * Force le rechargement spécifique à un fournisseur
      */
-    fun forceReloadSupplierData(supplier: String) {
-        android.util.Log.d("ScamarkVM", "🔄 forceReloadSupplierData: $supplier")
+    fun forceReloadSupplierData(supplier: String, resetFilter: Boolean = false) {
         
         // IMPORTANT: Vider immédiatement toutes les listes pour éviter l'affichage flash
         _allProducts.value = emptyList()
@@ -1194,7 +1224,10 @@ class ScamarkViewModel : ViewModel() {
         
         // Réinitialiser les produits de la semaine précédente car on change de contexte
         previousWeekProducts = emptyList()
-        _productFilter.value = "all"
+        // Réinitialiser le filtre SEULEMENT si explicitement demandé
+        if (resetFilter) {
+            _productFilter.value = "all"
+        }
         _searchQuery.value = ""
         _searchSuggestions.value = emptyList()
         

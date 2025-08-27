@@ -230,7 +230,6 @@ class CountUpAnimator {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
                     // Vérifier si l'animation doit continuer (tag non null = continue)
                     val shouldContinue = textView.tag != null
-                    android.util.Log.d("CountUpAnimator", "⬇️ Up phase ended - shouldContinue: $shouldContinue, tag: ${textView.tag}")
                     if (shouldContinue) {
                         val downAnimator = ValueAnimator.ofInt(maxValue, 0)
                         downAnimator.duration = halfDuration
@@ -245,13 +244,10 @@ class CountUpAnimator {
                             override fun onAnimationEnd(animation: android.animation.Animator) {
                                 // Vérifier encore si l'animation doit continuer
                                 val shouldContinueDown = textView.tag != null
-                                android.util.Log.d("CountUpAnimator", "⬇️ Down phase ended - shouldContinue: $shouldContinueDown, tag: ${textView.tag}")
                                 if (shouldContinueDown) {
-                                    android.util.Log.d("CountUpAnimator", "🔄 Starting new cycle...")
                                     // Redémarrer un nouveau cycle
                                     startContinuousCycle(textView, maxValue, cycleDuration, prefix, suffix)
                                 } else {
-                                    android.util.Log.d("CountUpAnimator", "🛑 Cycle stopped - no tag")
                                 }
                             }
                         })
@@ -284,7 +280,6 @@ class CountUpAnimator {
             val currentText = textView.text.toString()
             val currentValue = currentText.replace(prefix, "").replace(suffix, "").toIntOrNull() ?: 0
             
-            android.util.Log.d("CountUpAnimator", "🛑 Stopping continuous animation - current: $currentValue, target: $finalValue")
             
             // Transition fluide vers la vraie valeur
             val transitionAnimator = ValueAnimator.ofInt(currentValue, finalValue)
@@ -298,7 +293,6 @@ class CountUpAnimator {
             
             transitionAnimator.addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
-                    android.util.Log.d("CountUpAnimator", "✅ Transition completed to: $finalValue")
                 }
             })
             
@@ -407,7 +401,6 @@ class CountUpAnimator {
             
             // Marquer l'animator dans le tag pour pouvoir l'arrêter
             textView.tag = animator
-            android.util.Log.d("CountUpAnimator", "🚀 Starting progressive animation 0 → $targetValue over ${duration}ms")
             animator.start()
         }
     }

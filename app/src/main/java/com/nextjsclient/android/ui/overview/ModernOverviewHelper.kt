@@ -19,9 +19,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
      * Met à jour une card fournisseur moderne
      */
     fun updateSupplierCard(supplier: String, stats: ScamarkStats, isAnecoop: Boolean = true, comingFromContinuousAnimation: Boolean = false) {
-        val startTime = System.currentTimeMillis()
-        android.util.Log.d("ModernOverviewHelper", "🎨 Updating ${supplier.uppercase()} card...")
-        
         val binding = fragment.binding
         
         val cardId = if (isAnecoop) R.id.anecoopModernCard else R.id.solagoraModernCard
@@ -54,7 +51,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         // Configurer les actions
         setupCardActions(card, supplier, stats)
         
-        android.util.Log.d("ModernOverviewHelper", "✅ ${supplier.uppercase()} card updated in ${System.currentTimeMillis() - startTime}ms")
     }
 
     /**
@@ -93,13 +89,9 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
      * Met à jour les valeurs numériques dans la card
      */
     private fun updateCardValues(card: View, stats: ScamarkStats, comingFromContinuousAnimation: Boolean = false) {
-        val startTime = System.currentTimeMillis()
-        android.util.Log.d("ModernOverviewHelper", "📊 Updating card values with simple animations...")
-        
         // Animation simple depuis la valeur actuelle (probablement 0) vers la vraie valeur
         updateValuesWithSimpleAnimation(card, stats)
         
-        android.util.Log.d("ModernOverviewHelper", "✅ Card values setup in ${System.currentTimeMillis() - startTime}ms")
     }
     
     private fun startLoadingAnimations(card: View) {
@@ -181,7 +173,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
     }
     
     private fun updateValuesWithCountUpFromEstimated(card: View, stats: ScamarkStats) {
-        android.util.Log.d("ModernOverviewHelper", "🎯 Updating from estimated to real values...")
         
         // Obtenir les valeurs actuelles (estimées) des TextViews pour faire une transition fluide
         val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)
@@ -193,12 +184,9 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         val currentIn = inValue?.text?.toString()?.toIntOrNull() ?: 0
         val currentOut = outValue?.text?.toString()?.toIntOrNull() ?: 0
         
-        android.util.Log.d("ModernOverviewHelper", "🔍 Current values before transition: total=$currentTotal, in=$currentIn, out=$currentOut")
-        android.util.Log.d("ModernOverviewHelper", "🎯 Target values: total=${stats.totalProducts}, in=${stats.productsIn}, out=${stats.productsOut}")
         
         // Arrêter l'animation continue et transitionner vers les vraies valeurs
         totalValue?.let { 
-            android.util.Log.d("ModernOverviewHelper", "🎯 Calling stopContinuousAndTransitionTo for total: $currentTotal → ${stats.totalProducts}")
             com.nextjsclient.android.utils.CountUpAnimator.stopContinuousAndTransitionTo(
                 it, stats.totalProducts
             )
@@ -253,12 +241,10 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
     }
     
     private fun updateValuesWithAnimation(card: View, stats: ScamarkStats) {
-        android.util.Log.d("ModernOverviewHelper", "🔄 Using regular animation update (not transition from continuous)")
         
         // Total produits avec animation plus rapide
         val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)
         val currentTotal = totalValue?.text?.toString()?.toIntOrNull() ?: 0
-        android.util.Log.d("ModernOverviewHelper", "🔄 Regular animation: $currentTotal → ${stats.totalProducts}")
         
         totalValue?.let { 
             com.nextjsclient.android.utils.CountUpAnimator.animateCountUp(
@@ -317,7 +303,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
     }
     
     private fun updateValuesWithSimpleAnimation(card: View, stats: ScamarkStats) {
-        android.util.Log.d("ModernOverviewHelper", "✨ Simple animations from current values to real values")
         
         // Total produits avec pulsation
         val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)

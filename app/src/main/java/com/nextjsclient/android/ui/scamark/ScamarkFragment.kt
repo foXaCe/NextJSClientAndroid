@@ -38,11 +38,8 @@ class ScamarkFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        android.util.Log.d("ScamarkFragment", "🔄 onViewCreated - Starting fragment initialization")
-        
         // Read supplier parameter from arguments
         val supplierFromArgs = arguments?.getString("supplier")
-        android.util.Log.d("ScamarkFragment", "🏷 Supplier from args: $supplierFromArgs")
         
         if (supplierFromArgs != null) {
             // Vérifier si on vient de l'aperçu avec une semaine spécifique
@@ -52,9 +49,9 @@ class ScamarkFragment : Fragment() {
             if (navigationWeekInfo != null) {
                 // Navigation depuis l'aperçu avec une semaine spécifique
                 val (year, week) = navigationWeekInfo
-                android.util.Log.d("ScamarkFragment", "📍 Navigation from overview: year=$year, week=$week")
                 viewModel.selectSupplier(supplierFromArgs)
                 viewModel.selectWeek(year, week)
+                
                 // Nettoyer les informations de navigation après utilisation
                 mainActivity.clearPreloadedCache()
             } else {
@@ -62,43 +59,37 @@ class ScamarkFragment : Fragment() {
                 val hasDataFromOverview = mainActivity?.hasPreloadedDataFor(supplierFromArgs) == true
                 
                 if (hasDataFromOverview && mainActivity != null) {
-                    android.util.Log.d("ScamarkFragment", "📦 Loading preloaded data from overview for $supplierFromArgs")
                     // Charger d'abord les données préchargées
                     mainActivity.loadPreloadedDataToViewModel(supplierFromArgs, viewModel)
                 } else {
                     // Pas de données préchargées, navigation normale
+                    // Déterminer si on doit réinitialiser le filtre
+                    val filterFromArgs = arguments?.getString("filter")
+                    val shouldResetFilter = filterFromArgs == null // Réinitialiser seulement si aucun filtre n'est passé
+                    
                     if (viewModel.selectedSupplier.value == supplierFromArgs) {
-                        android.util.Log.d("ScamarkFragment", "🔄 Same supplier, forcing reload")
-                        viewModel.forceReloadSupplierData(supplierFromArgs)
+                        viewModel.forceReloadSupplierData(supplierFromArgs, shouldResetFilter)
                     } else {
-                        android.util.Log.d("ScamarkFragment", "🆕 New supplier, selecting: $supplierFromArgs")
-                        viewModel.selectSupplier(supplierFromArgs)
+                        viewModel.selectSupplier(supplierFromArgs, shouldResetFilter)
                     }
-                }
-                
-                // Vérifier s'il y a un filtre à appliquer depuis les arguments
-                val filterFromArgs = arguments?.getString("filter")
-                if (filterFromArgs != null && !hasDataFromOverview) {
-                    // Seulement appliquer le filtre s'il n'y a PAS de données préchargées
-                    // Car les données préchargées sont déjà filtrées dans MainActivity.loadPreloadedDataToViewModel
-                    android.util.Log.d("ScamarkFragment", "🔍 Setting filter from args: $filterFromArgs")
-                    viewModel.setProductFilter(filterFromArgs)
-                } else if (filterFromArgs != null && hasDataFromOverview) {
-                    android.util.Log.d("ScamarkFragment", "⚠️ Skipping duplicate filter application - preloaded data already filtered")
+                    
+                    // Appliquer le filtre s'il y en a un
+                    if (filterFromArgs != null) {
+                        viewModel.setProductFilter(filterFromArgs)
+                    }
                 }
             }
         } else {
-            viewModel.selectSupplier("all")
+            viewModel.selectSupplier("all", true) // Réinitialiser le filtre quand on navigue vers "all"
         }
         
-        android.util.Log.d("ScamarkFragment", "🔧 Setting up UI components...")
         setupRecyclerView()
         setupWeekSpinner()
         setupSearchSuggestions()
         observeViewModel()
         setupSwipeRefresh()
         setupFab()
-        android.util.Log.d("ScamarkFragment", "✅ Fragment initialization complete")
+        setupExpressiveLoader()
     }
     
     private fun setupRecyclerView() {
@@ -252,6 +243,64 @@ class ScamarkFragment : Fragment() {
     private val MIN_LOADER_DURATION = 250L // Durée minimale d'affichage du loader en ms
     private var loaderAnimator: android.animation.ValueAnimator? = null
     
+    private fun updateSwipeRefreshForSupplier(supplier: String?) {
+        val swipeRefresh = binding.root.findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(R.id.swipeRefresh)
+        
+        // Récupérer la couleur de surface adaptative depuis le thème
+        val typedValue = android.util.TypedValue()
+        requireContext().theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, typedValue, true)
+        val adaptiveSurfaceColor = typedValue.data
+        
+        swipeRefresh?.apply {
+            // Couleurs adaptées au fournisseur
+            when (supplier?.lowercase()) {
+                "anecoop" -> {
+                    setColorSchemeResources(
+                        R.color.anecoop_primary,
+                        R.color.anecoop_secondary,
+                        R.color.md_theme_light_tertiary
+                    )
+                    setProgressBackgroundColorSchemeColor(adaptiveSurfaceColor)
+                }
+                "solagora" -> {
+                    setColorSchemeResources(
+                        R.color.solagora_primary,
+                        R.color.solagora_secondary,
+                        R.color.md_theme_light_tertiary
+                    )
+                    setProgressBackgroundColorSchemeColor(adaptiveSurfaceColor)
+                }
+                else -> {
+                    // Couleurs par défaut
+                    setColorSchemeResources(
+                        R.color.md_theme_light_primary,
+                        R.color.md_theme_light_secondary,
+                        R.color.md_theme_light_tertiary
+                    )
+                    setProgressBackgroundColorSchemeColor(adaptiveSurfaceColor)
+                }
+            }
+        }
+    }
+
+    private fun setupExpressiveLoader() {
+        val loadingOverlay = binding.loadingOverlay
+        val loaderBackground = loadingOverlay.findViewById<com.google.android.material.progressindicator.CircularProgressIndicator>(R.id.loaderBackground)
+        val loaderAccent = loadingOverlay.findViewById<com.google.android.material.progressindicator.CircularProgressIndicator>(R.id.loaderAccent)
+        
+        // Animation de pulse pour le background
+        loaderBackground?.let { loader ->
+            val pulseAnimation = android.view.animation.AnimationUtils.loadAnimation(context, R.anim.loader_pulse)
+            loader.startAnimation(pulseAnimation)
+        }
+        
+        // Animation inverse pour l'accent
+        loaderAccent?.let { loader ->
+            val reverseAnimation = android.view.animation.AnimationUtils.loadAnimation(context, R.anim.loader_rotate_reverse)
+            loader.startAnimation(reverseAnimation)
+        }
+    }
+
     private fun observeViewModel() {
         viewModel.products.observe(viewLifecycleOwner) { products ->
             // Animation fluide pour l'apparition des produits
@@ -260,9 +309,12 @@ class ScamarkFragment : Fragment() {
         
         
         // Observer les changements de fournisseur pour activer les animations
-        viewModel.selectedSupplier.observe(viewLifecycleOwner) { _ ->
+        viewModel.selectedSupplier.observe(viewLifecycleOwner) { supplier ->
             // Activer les animations d'entrée pour les nouveaux éléments seulement
             productsAdapter.enableEntranceAnimations()
+            
+            // Met à jour les couleurs du SwipeRefresh selon le fournisseur
+            updateSwipeRefreshForSupplier(supplier)
         }
         
         // Observer le state de loading pour réinitialiser l'adapter
@@ -389,12 +441,23 @@ class ScamarkFragment : Fragment() {
             viewModel.refresh()
         }
         
-        // Configurer les couleurs Material 3
-        swipeRefresh?.setColorSchemeResources(
-            com.google.android.material.R.color.m3_sys_color_dynamic_light_primary,
-            com.google.android.material.R.color.m3_sys_color_dynamic_light_secondary,
-            com.google.android.material.R.color.m3_sys_color_dynamic_light_tertiary
-        )
+        // Configuration Material 3 expressif pour le pull-to-refresh
+        swipeRefresh?.apply {
+            setColorSchemeResources(
+                R.color.md_theme_light_primary,
+                R.color.md_theme_light_secondary, 
+                R.color.md_theme_light_tertiary,
+                R.color.md_theme_light_primary
+            )
+            
+            // Améliorer les paramètres visuels avec couleur adaptative
+            val typedValue = android.util.TypedValue()
+            requireContext().theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, typedValue, true)
+            setProgressBackgroundColorSchemeColor(typedValue.data)
+            setSlingshotDistance(100) // Distance plus courte pour les pages fournisseurs
+            setProgressViewOffset(false, -10, 70) // Position ajustée
+            setSize(androidx.swiperefreshlayout.widget.SwipeRefreshLayout.DEFAULT) // Taille normale
+        }
     }
     
     private fun setupSearchSuggestions() {
