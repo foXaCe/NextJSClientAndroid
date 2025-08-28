@@ -938,14 +938,10 @@ class SettingsActivity : AppCompatActivity() {
         val formattedCommits = mutableListOf<String>()
         
         for (commit in commits) {
-            // Formater chaque commit avec le hash, auteur et message
-            val formattedDate = formatCommitDate(commit.date)
-            val commitHeader = "📝 ${commit.sha} • ${commit.author} • $formattedDate"
+            // Juste le message du commit, sans métadonnées
             val commitMessage = commit.message.lines().first() // Première ligne du message
             val commitBody = commit.message.lines().drop(1).filter { it.trim().isNotEmpty() }
             
-            formattedCommits.add(commitHeader)
-            formattedCommits.add("")
             formattedCommits.add(commitMessage)
             
             // Ajouter le corps du commit s'il existe
@@ -956,8 +952,6 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
             
-            formattedCommits.add("")
-            formattedCommits.add("─────────────────────────────")
             formattedCommits.add("")
         }
         
