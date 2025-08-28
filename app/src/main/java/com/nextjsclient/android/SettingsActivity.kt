@@ -195,6 +195,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.androidVersion.text = getString(R.string.api_format, android.os.Build.VERSION.SDK_INT)
         binding.firebaseVersion.text = getString(R.string.firebase_text)
         binding.materialVersion.text = getString(R.string.material_text)
+        // Test commit pour vérifier le nouveau système de changelog
     }
     
     private fun setupUpdateManager() {
