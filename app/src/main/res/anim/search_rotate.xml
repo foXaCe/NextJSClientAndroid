@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Mouvement de la loupe comme si on la tenait par la poignée et qu'on bougeait le bout -->
+    <translate
+        android:fromXDelta="0%"
+        android:toXDelta="3%"
+        android:fromYDelta="0%"
+        android:toYDelta="0%"
+        android:duration="100"
+        android:interpolator="@android:interpolator/accelerate_decelerate"
+        android:repeatCount="5"
+        android:repeatMode="reverse"
+        android:fillAfter="false" />
+        
+    <!-- Légère rotation pour simuler le mouvement naturel -->
+    <rotate
+        android:fromDegrees="0"
+        android:toDegrees="3"
+        android:pivotX="80%"
+        android:pivotY="80%"
+        android:duration="100"
+        android:interpolator="@android:interpolator/accelerate_decelerate"
+        android:repeatCount="5"
+        android:repeatMode="reverse"
+        android:fillAfter="false" />
+        
+</set>

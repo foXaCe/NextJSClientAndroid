@@ -128,6 +128,30 @@
     </style>
     
     
+    <!-- Search Input Theme for Material 3 Expressive -->
+    <style name="SearchInputTheme" parent="Theme.NextJSClient">
+        <item name="colorPrimary">?attr/colorPrimary</item>
+        <item name="colorOnSurface">?attr/colorOnSurface</item>
+        <item name="colorOnSurfaceVariant">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Expressive Search Bar style -->
+    <style name="Widget.App.SearchBar" parent="Widget.Material3.SearchBar">
+        <item name="android:elevation">6dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.ExtraLarge</item>
+        <item name="backgroundTint">?attr/colorSurfaceContainerHigh</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <!-- Expressive Button style -->
+    <style name="Widget.App.Button.IconButton.Expressive" parent="Widget.Material3.Button.IconButton.Filled.Tonal">
+        <item name="android:elevation">3dp</item>
+        <item name="backgroundTint">?attr/colorSecondaryContainer</item>
+        <item name="iconTint">?attr/colorOnSecondaryContainer</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
+    </style>
+    
     <!-- Splash Screen Theme -->
     <style name="Theme.App.SplashScreen" parent="Theme.NextJSClient">
         <item name="android:windowBackground">@drawable/splash_screen_custom</item>

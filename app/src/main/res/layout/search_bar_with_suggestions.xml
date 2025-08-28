@@ -7,46 +7,43 @@
     android:orientation="vertical"
     android:visibility="gone">
 
-    <!-- Barre de recherche -->
+    <!-- Barre de recherche Material 3 Expressive -->
     <com.google.android.material.card.MaterialCardView 
         android:id="@+id/searchBarCard"
-        android:layout_width="match_parent"
+        android:layout_width="360dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="3dp"
-        app:strokeWidth="0dp">
+        android:layout_marginHorizontal="16dp"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="6dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="?attr/colorOutline"
+        android:stateListAnimator="@animator/search_bar_elevation"
+        android:clickable="true"
+        android:focusable="true">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="64dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:background="?attr/colorSurfaceContainerHigh">
+            android:paddingHorizontal="20dp"
+            android:background="@drawable/search_bar_background"
+            android:clipToPadding="false">
 
-            <!-- Back/Close button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/searchBackButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                style="@style/Widget.Material3.Button.IconButton"
-                app:icon="@drawable/ic_arrow_left"
-                app:iconTint="?attr/colorOnSurface"
-                app:iconSize="24dp"
-                android:contentDescription="@string/close_search" />
-
-            <!-- Search input -->
+            <!-- Search input expressive -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/searchInputLayout"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
+                android:layout_marginEnd="12dp"
                 style="@style/Widget.Material3.TextInputLayout.FilledBox"
                 app:boxBackgroundMode="none"
-                app:hintEnabled="false">
+                app:hintEnabled="false"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="0dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/searchInput"
@@ -54,75 +51,62 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/search_hint"
                     android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant"
                     android:imeOptions="actionSearch"
                     android:inputType="text"
                     android:maxLines="1"
-                    android:background="@android:color/transparent" />
+                    android:background="@android:color/transparent"
+                    android:paddingVertical="16dp"
+                    android:textStyle="normal" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Clear button -->
+            <!-- Clear button expressive -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/searchClearButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
                 app:icon="@drawable/ic_close"
-                app:iconTint="?attr/colorOnSurfaceVariant"
-                app:iconSize="20dp"
+                app:iconTint="?attr/colorOnSecondaryContainer"
+                app:iconSize="24dp"
+                app:backgroundTint="?attr/colorSecondaryContainer"
+                app:cornerRadius="24dp"
                 android:visibility="gone"
+                android:stateListAnimator="@animator/button_elevation"
                 android:contentDescription="@string/clear_search" />
 
-            <!-- Search/Loading indicator -->
-            <FrameLayout
-                android:layout_width="40dp"
-                android:layout_height="40dp">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/searchActionButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    style="@style/Widget.Material3.Button.IconButton"
-                    app:icon="@drawable/ic_search"
-                    app:iconTint="?attr/colorPrimary"
-                    app:iconSize="24dp"
-                    android:contentDescription="@string/launch_search" />
-
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/searchProgress"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="center"
-                    android:indeterminate="true"
-                    app:indicatorSize="24dp"
-                    app:trackThickness="2dp"
-                    android:visibility="gone" />
-
-            </FrameLayout>
 
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Liste des suggestions -->
+    <!-- Liste des suggestions Material 3 Expressive -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/suggestionsCard"
-        android:layout_width="match_parent"
+        android:layout_width="600dp"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="4dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
-        app:strokeWidth="0dp"
-        android:visibility="gone">
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="?attr/colorOutlineVariant"
+        android:visibility="gone"
+        android:stateListAnimator="@animator/suggestions_elevation">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/suggestionsList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:maxHeight="300dp"
-            android:paddingVertical="4dp"
-            android:clipToPadding="false" />
+            android:maxHeight="400dp"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="4dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="none" />
 
     </com.google.android.material.card.MaterialCardView>
 

@@ -477,9 +477,10 @@ class ScamarkFragment : Fragment() {
             val searchInput = searchContainer?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
             val suggestionsCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.suggestionsCard)
             
-            // Mettre à jour le texte de recherche immédiatement
-            searchInput?.setText(suggestion.text)
-            searchInput?.setSelection(suggestion.text.length)
+            // Mettre à jour le texte de recherche avec seulement les 2 premiers mots
+            val limitedText = suggestion.text.split(" ").take(2).joinToString(" ")
+            searchInput?.setText(limitedText)
+            searchInput?.setSelection(limitedText.length)
             
             // Masquer les suggestions
             suggestionsCard?.visibility = View.GONE
@@ -746,9 +747,7 @@ class ScamarkFragment : Fragment() {
         val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
         val searchBarCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.searchBarCard)
         val searchInput = searchBarCard?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
-        val searchBackButton = searchBarCard?.findViewById<View>(R.id.searchBackButton)
         val searchClearButton = searchBarCard?.findViewById<View>(R.id.searchClearButton)
-        val searchActionButton = searchBarCard?.findViewById<View>(R.id.searchActionButton)
         
         
         if (searchContainer?.visibility == View.VISIBLE) {
@@ -756,7 +755,7 @@ class ScamarkFragment : Fragment() {
             closeSearchMode(weekSelector, searchContainer, searchInput)
         } else {
             // Ouvrir la recherche
-            openSearchMode(weekSelector, searchContainer, searchInput, searchBackButton, searchClearButton, searchActionButton)
+            openSearchMode(weekSelector, searchContainer, searchInput, searchClearButton)
         }
     }
     
@@ -764,9 +763,7 @@ class ScamarkFragment : Fragment() {
         weekSelector: View?,
         searchContainer: LinearLayout?,
         searchInput: com.google.android.material.textfield.TextInputEditText?,
-        searchBackButton: View?,
-        searchClearButton: View?,
-        searchActionButton: View?
+        searchClearButton: View?
     ) {
         // Animation de disparition du sélecteur de semaine
         weekSelector?.animate()
@@ -786,10 +783,9 @@ class ScamarkFragment : Fragment() {
                         .setDuration(300)
                         .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .withEndAction {
-                            // Focus sur le champ de recherche et ouvrir le clavier
+                            // Focus sur le champ de recherche SANS ouvrir le clavier automatiquement
                             searchInput?.requestFocus()
-                            val imm = context?.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
-                            imm?.showSoftInput(searchInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                            // Le clavier s'ouvrira seulement quand l'utilisateur clique dans le champ
                         }
                         .start()
                 }
@@ -797,14 +793,11 @@ class ScamarkFragment : Fragment() {
             ?.start()
         
         // Setup des listeners
-        searchBackButton?.setOnClickListener {
-            toggleSearchMode()
-        }
-        
         searchClearButton?.setOnClickListener {
             searchInput?.setText("")
             searchClearButton.visibility = View.GONE
         }
+        
         
         searchInput?.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -816,9 +809,7 @@ class ScamarkFragment : Fragment() {
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
         
-        searchActionButton?.setOnClickListener {
-            performSearch(searchInput?.text?.toString())
-        }
+        // Plus de searchActionButton - la recherche se fait automatiquement via TextWatcher
         
         searchInput?.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <objectAnimator
+            android:propertyName="elevation"
+            android:duration="100"
+            android:valueTo="8"
+            android:valueType="floatType" />
+    </item>
+    <item android:state_enabled="true">
+        <objectAnimator
+            android:propertyName="elevation"
+            android:duration="150"
+            android:valueTo="3"
+            android:valueType="floatType" />
+    </item>
+    <item>
+        <objectAnimator
+            android:propertyName="elevation"
+            android:duration="150"
+            android:valueTo="0"
+            android:valueType="floatType" />
+    </item>
+</selector>

@@ -532,19 +532,125 @@ class MainActivity : AppCompatActivity() {
         invalidateOptionsMenu()
     }
     
+    private fun animateSearchIcon() {
+        android.util.Log.d("MainActivity", "=== animateSearchIcon() called ===")
+        
+        // Trouver l'icône de recherche dans la BottomNavigationView
+        val bottomNav = binding.bottomNavigation
+        android.util.Log.d("MainActivity", "BottomNavigation found: ${bottomNav != null}")
+        
+        // Méthode plus simple : animer toute l'icône directement
+        try {
+            // Trouver l'index de l'item recherche
+            var searchIndex = -1
+            for (i in 0 until bottomNav.menu.size()) {
+                if (bottomNav.menu.getItem(i).itemId == R.id.navigation_search) {
+                    searchIndex = i
+                    break
+                }
+            }
+            
+            android.util.Log.d("MainActivity", "Search index found: $searchIndex")
+            
+            if (searchIndex >= 0) {
+                val menuView = bottomNav.getChildAt(0) as? com.google.android.material.bottomnavigation.BottomNavigationMenuView
+                android.util.Log.d("MainActivity", "MenuView found: ${menuView != null}")
+                
+                if (menuView != null && searchIndex < menuView.childCount) {
+                    val searchItemView = menuView.getChildAt(searchIndex) as? com.google.android.material.bottomnavigation.BottomNavigationItemView
+                    android.util.Log.d("MainActivity", "SearchItemView found: ${searchItemView != null}")
+                    
+                    // Chercher l'icône dans l'item
+                    val iconView = searchItemView?.findViewById<android.widget.ImageView>(com.google.android.material.R.id.icon)
+                    android.util.Log.d("MainActivity", "IconView found: ${iconView != null}")
+                    
+                    if (iconView != null) {
+                        // Essayer d'utiliser l'AnimatedVectorDrawable
+                        try {
+                            val animatedDrawable = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_search_animated_vector)
+                            if (animatedDrawable is android.graphics.drawable.AnimatedVectorDrawable) {
+                                iconView.setImageDrawable(animatedDrawable)
+                                animatedDrawable.start()
+                                android.util.Log.d("MainActivity", "AnimatedVectorDrawable started")
+                                
+                                // Remettre l'icône normale après l'animation
+                                iconView.postDelayed({
+                                    iconView.setImageResource(R.drawable.ic_search)
+                                }, 1000)
+                                
+                                return
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("MainActivity", "AnimatedVectorDrawable failed: ${e.message}")
+                        }
+                        
+                        // Fallback: animation XML classique
+                        val rotateAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.search_rotate)
+                        iconView.startAnimation(rotateAnimation)
+                        
+                        android.util.Log.d("MainActivity", "Search loupe fallback animation started")
+                        return
+                    } else {
+                        // Fallback sur l'item complet
+                        searchItemView?.animate()
+                            ?.rotation(360f)
+                            ?.setDuration(400)
+                            ?.setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                            ?.withEndAction {
+                                searchItemView.rotation = 0f
+                                android.util.Log.d("MainActivity", "Search icon animation completed on item")
+                            }
+                            ?.start()
+                        
+                        android.util.Log.d("MainActivity", "Search icon animation started on item")
+                        return
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Could not animate search icon: ${e.message}", e)
+        }
+        
+        // Fallback: animation sur toute la bottomNav
+        android.util.Log.d("MainActivity", "Using fallback animation")
+        bottomNav.animate()
+            .rotation(15f)
+            .setDuration(100)
+            .withEndAction {
+                bottomNav.animate()
+                    .rotation(-15f)
+                    .setDuration(100)
+                    .withEndAction {
+                        bottomNav.animate()
+                            .rotation(0f)
+                            .setDuration(100)
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
+    }
+    
     private fun triggerSearch() {
+        android.util.Log.d("MainActivity", "=== triggerSearch() called ===")
         
         // Obtenir le fragment actuel
         val currentFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+        android.util.Log.d("MainActivity", "Current fragment: ${currentFragment?.javaClass?.simpleName}")
         
         when (currentFragment) {
             is ScamarkFragment -> {
+                android.util.Log.d("MainActivity", "Triggering search on ScamarkFragment")
                 // On est sur une page fournisseur, activer le mode recherche
                 currentFragment.toggleSearchMode()
             }
             is OverviewFragment -> {
+                android.util.Log.d("MainActivity", "Triggering search on OverviewFragment")
                 // On est sur la page overview, activer la recherche globale
                 currentFragment.toggleSearchMode()
+            }
+            else -> {
+                android.util.Log.w("MainActivity", "Unknown fragment type: ${currentFragment?.javaClass?.simpleName}")
             }
         }
     }
