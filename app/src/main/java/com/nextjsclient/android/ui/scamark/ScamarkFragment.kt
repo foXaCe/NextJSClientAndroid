@@ -315,6 +315,12 @@ class ScamarkFragment : Fragment() {
             
             // Met à jour les couleurs du SwipeRefresh selon le fournisseur
             updateSwipeRefreshForSupplier(supplier)
+            
+            // Mettre à jour les couleurs du FAB si il est configuré
+            if (fabSetupDone) {
+                val scrollToTopFab = binding.root.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.scrollToTopFab)
+                scrollToTopFab?.let { updateFabColors(it) }
+            }
         }
         
         // Observer le state de loading pour réinitialiser l'adapter
@@ -508,8 +514,182 @@ class ScamarkFragment : Fragment() {
         }
     }
 
+    private var fabSetupDone = false
+    
     private fun setupFab() {
-        // TODO: Implémenter le FAB si nécessaire
+        if (fabSetupDone) {
+            android.util.Log.d("FAB", "setupFab() already done, skipping")
+            return
+        }
+        
+        android.util.Log.d("FAB", "=== setupFab() called for first time ===")
+        val scrollToTopFab = binding.root.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.scrollToTopFab)
+        val nestedScrollView = binding.root.findViewById<androidx.core.widget.NestedScrollView>(R.id.nestedScrollView)
+        
+        if (scrollToTopFab == null) {
+            android.util.Log.e("FAB", "ERROR: scrollToTopFab is null!")
+            return
+        }
+        
+        // Masquer par défaut - apparaîtra avec le scroll
+        scrollToTopFab.visibility = View.GONE
+        scrollToTopFab.elevation = 16f
+        scrollToTopFab.isClickable = true
+        scrollToTopFab.isFocusable = true
+        android.util.Log.d("FAB", "FAB setup - hidden by default")
+        
+        // Appliquer les couleurs selon le fournisseur
+        updateFabColors(scrollToTopFab)
+        
+        // Click listener
+        scrollToTopFab.setOnClickListener {
+            nestedScrollView?.smoothScrollTo(0, 0)
+            android.util.Log.d("FAB", "FAB clicked - scrolling to top")
+        }
+        
+        // Logique de scroll avec logs détaillés pour debug
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                
+                val layoutManager = recyclerView.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager
+                val firstVisibleItem = layoutManager?.findFirstVisibleItemPosition() ?: 0
+                val itemCount = recyclerView.adapter?.itemCount ?: 0
+                
+                android.util.Log.d("FAB", "SCROLL EVENT: dy=$dy, firstVisible=$firstVisibleItem, itemCount=$itemCount, fabVisible=${scrollToTopFab.visibility == View.VISIBLE}")
+                
+                if (dy < -10 && firstVisibleItem > 3 && scrollToTopFab.visibility == View.GONE) {
+                    android.util.Log.d("FAB", "Showing FAB - scrolling UP")
+                    scrollToTopFab.visibility = View.VISIBLE
+                    scrollToTopFab.animate().scaleX(1f).scaleY(1f).setDuration(200).start()
+                } else if ((dy > 10 || firstVisibleItem <= 2) && scrollToTopFab.visibility == View.VISIBLE) {
+                    android.util.Log.d("FAB", "Hiding FAB")
+                    scrollToTopFab.animate().scaleX(0f).scaleY(0f).setDuration(150).withEndAction {
+                        scrollToTopFab.visibility = View.GONE
+                        scrollToTopFab.scaleX = 1f
+                        scrollToTopFab.scaleY = 1f
+                    }.start()
+                }
+            }
+            
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                val stateText = when(newState) {
+                    RecyclerView.SCROLL_STATE_IDLE -> "IDLE"
+                    RecyclerView.SCROLL_STATE_DRAGGING -> "DRAGGING"
+                    RecyclerView.SCROLL_STATE_SETTLING -> "SETTLING"
+                    else -> "UNKNOWN"
+                }
+                android.util.Log.d("FAB", "SCROLL STATE: $stateText")
+            }
+        })
+        
+        // Utiliser le NestedScrollView pour la logique du FAB (c'est lui qui scroll vraiment)
+        nestedScrollView?.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            val dy = scrollY - oldScrollY
+            android.util.Log.d("FAB", "NESTED SCROLL: scrollY=$scrollY, dy=$dy, fabVisible=${scrollToTopFab.visibility == View.VISIBLE}")
+            
+            // Logique FAB basée sur le NestedScrollView avec animations Material 3
+            if (dy < -30 && scrollY > 500 && scrollToTopFab.visibility == View.GONE) {
+                android.util.Log.d("FAB", "Showing FAB - scrolling UP in NestedScrollView")
+                
+                // Animation d'apparition expressive
+                scrollToTopFab.visibility = View.VISIBLE
+                scrollToTopFab.scaleX = 0.3f
+                scrollToTopFab.scaleY = 0.3f
+                scrollToTopFab.alpha = 0f
+                
+                scrollToTopFab.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .alpha(1f)
+                    .setDuration(300)
+                    .setInterpolator(android.view.animation.OvershootInterpolator(1.5f))
+                    .start()
+                    
+            } else if ((dy > 30 || scrollY <= 100) && scrollToTopFab.visibility == View.VISIBLE) {
+                android.util.Log.d("FAB", "Hiding FAB - scrolling DOWN or at top")
+                
+                // Animation de disparition fluide
+                scrollToTopFab.animate()
+                    .scaleX(0.3f)
+                    .scaleY(0.3f)
+                    .alpha(0f)
+                    .setDuration(200)
+                    .setInterpolator(android.view.animation.AccelerateInterpolator(1.5f))
+                    .withEndAction {
+                        scrollToTopFab.visibility = View.GONE
+                        scrollToTopFab.scaleX = 1f
+                        scrollToTopFab.scaleY = 1f
+                        scrollToTopFab.alpha = 1f
+                    }
+                    .start()
+            }
+        }
+        
+        fabSetupDone = true
+        android.util.Log.d("FAB", "=== setupFab() complete ===")
+    }
+    
+    private fun updateFabColors(fab: com.google.android.material.floatingactionbutton.FloatingActionButton) {
+        val supplier = viewModel.selectedSupplier.value
+        android.util.Log.d("FAB", "Updating FAB colors for supplier: $supplier")
+        
+        val blackColor = androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.black)
+        
+        when (supplier?.lowercase()) {
+            "anecoop" -> {
+                val anecoopGreen = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.anecoop_primary)
+                fab.backgroundTintList = android.content.res.ColorStateList.valueOf(blackColor)
+                fab.imageTintList = android.content.res.ColorStateList.valueOf(anecoopGreen)
+                android.util.Log.d("FAB", "Set Anecoop colors - black background, green arrow")
+            }
+            "solagora" -> {
+                val solagoraOrange = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.solagora_primary)
+                fab.backgroundTintList = android.content.res.ColorStateList.valueOf(blackColor)
+                fab.imageTintList = android.content.res.ColorStateList.valueOf(solagoraOrange)
+                android.util.Log.d("FAB", "Set Solagora colors - black background, orange arrow")
+            }
+            else -> {
+                // Couleurs par défaut
+                val primaryColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.md_theme_light_primary)
+                val onPrimaryColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.md_theme_light_onPrimary)
+                fab.backgroundTintList = android.content.res.ColorStateList.valueOf(primaryColor)
+                fab.imageTintList = android.content.res.ColorStateList.valueOf(onPrimaryColor)
+                android.util.Log.d("FAB", "Set default colors")
+            }
+        }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        android.util.Log.d("FAB", "=== onResume() - checking FAB state ===")
+        val scrollToTopFab = binding.root.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.scrollToTopFab)
+        android.util.Log.d("FAB", "FAB in onResume - found: ${scrollToTopFab != null}, visibility: ${scrollToTopFab?.visibility}")
+    }
+    
+    private fun showFab(fab: com.google.android.material.floatingactionbutton.FloatingActionButton) {
+        fab.visibility = View.VISIBLE
+        fab.scaleX = 0f
+        fab.scaleY = 0f
+        fab.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(200)
+            .setInterpolator(android.view.animation.OvershootInterpolator(1.2f))
+            .start()
+    }
+    
+    private fun hideFab(fab: com.google.android.material.floatingactionbutton.FloatingActionButton) {
+        fab.animate()
+            .scaleX(0f)
+            .scaleY(0f)
+            .setDuration(150)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                fab.visibility = View.GONE
+            }
+            .start()
     }
     
     private fun showProductDetail(product: com.nextjsclient.android.data.models.ScamarkProduct) {

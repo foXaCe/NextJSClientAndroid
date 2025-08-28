@@ -33,6 +33,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.content.Context
+import com.nextjsclient.android.data.repository.FirebaseRepository
+import com.nextjsclient.android.data.models.UserProfile
+import android.content.SharedPreferences
 
 class MainActivity : AppCompatActivity() {
     
@@ -92,6 +95,9 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
+        
+        // Récupérer et appliquer le profil utilisateur à la première connexion
+        checkAndApplyUserProfile()
         
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -220,6 +226,74 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }
+    }
+    
+    /**
+     * Vérifie si c'est la première connexion de l'utilisateur et applique son profil
+     */
+    private fun checkAndApplyUserProfile() {
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val isProfileApplied = prefs.getBoolean("profile_applied_${auth.currentUser?.email}", false)
+        
+        // Si le profil n'a jamais été appliqué pour cet utilisateur
+        if (!isProfileApplied) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val userEmail = auth.currentUser?.email
+                    if (userEmail != null) {
+                        val repository = FirebaseRepository()
+                        val userProfile = repository.getUserProfile(userEmail)
+                        
+                        if (userProfile != null) {
+                            // Appliquer les préférences selon le profil
+                            runOnUiThread {
+                                applyUserProfile(userProfile)
+                                
+                                // Marquer le profil comme appliqué
+                                prefs.edit().putBoolean("profile_applied_$userEmail", true).apply()
+                                
+                                android.util.Log.d("MainActivity", "✅ Profil utilisateur appliqué: ${userProfile.prenom} ${userProfile.nom}")
+                                android.util.Log.d("MainActivity", "📦 Anecoop: ${userProfile.anecoop}, Solagora: ${userProfile.solagora}")
+                            }
+                        } else {
+                            android.util.Log.w("MainActivity", "⚠️ Aucun profil trouvé pour: $userEmail")
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "❌ Erreur lors de la récupération du profil: ${e.message}", e)
+                }
+            }
+        } else {
+            android.util.Log.d("MainActivity", "ℹ️ Profil déjà appliqué pour: ${auth.currentUser?.email}")
+        }
+    }
+    
+    /**
+     * Applique les préférences fournisseur selon le profil utilisateur
+     */
+    private fun applyUserProfile(profile: UserProfile) {
+        // Mettre à jour les préférences fournisseur selon le profil
+        supplierPreferences.isAnecoopEnabled = profile.anecoop
+        supplierPreferences.isSolagoraEnabled = profile.solagora
+        
+        // Si un seul fournisseur est activé, le définir comme fournisseur par défaut
+        when {
+            profile.anecoop && !profile.solagora -> {
+                // Seul Anecoop est activé
+                currentSupplier = "anecoop"
+            }
+            !profile.anecoop && profile.solagora -> {
+                // Seul Solagora est activé
+                currentSupplier = "solagora"
+            }
+            profile.anecoop && profile.solagora -> {
+                // Les deux sont activés, garder le défaut
+                currentSupplier = "anecoop"
+            }
+        }
+        
+        // Mettre à jour la visibilité de la navigation
+        updateNavigationVisibility()
     }
     
     override fun onResume() {

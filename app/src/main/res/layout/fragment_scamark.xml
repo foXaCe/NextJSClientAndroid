@@ -17,6 +17,7 @@
             android:layout_height="match_parent">
 
             <androidx.core.widget.NestedScrollView
+                android:id="@+id/nestedScrollView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:fillViewport="true">
@@ -184,5 +185,20 @@
         </LinearLayout>
 
     </FrameLayout>
+
+    <!-- Scroll to Top FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/scrollToTopFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_keyboard_arrow_up"
+        android:visibility="gone"
+        android:contentDescription="@string/scroll_to_top"
+        app:fabSize="mini"
+        app:backgroundTint="@android:color/black"
+        app:tint="@color/anecoop_primary"
+        style="@style/Widget.Material3.FloatingActionButton.Primary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

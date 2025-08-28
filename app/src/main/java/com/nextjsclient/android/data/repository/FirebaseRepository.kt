@@ -629,6 +629,28 @@ class FirebaseRepository {
         return 1 + ((firstThursday - calendar.timeInMillis) / (7 * 24 * 60 * 60 * 1000)).toInt()
     }
     
+    /**
+     * Récupère le profil d'un utilisateur commercial depuis Firebase
+     */
+    suspend fun getUserProfile(email: String): UserProfile? {
+        return try {
+            val snapshot = firestore.collection(UserProfile.COLLECTION_NAME)
+                .whereEqualTo("email", email)
+                .limit(1)
+                .get()
+                .await()
+            
+            if (snapshot.documents.isNotEmpty()) {
+                snapshot.documents[0].toObject(UserProfile::class.java)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FirebaseRepository", "Error fetching user profile: ${e.message}", e)
+            null
+        }
+    }
+    
     // Scafel Articles
     fun getScafelArticles(): Flow<List<ScafelArticle>> = callbackFlow {
         val listener = firestore.collection("scafel_articles")
