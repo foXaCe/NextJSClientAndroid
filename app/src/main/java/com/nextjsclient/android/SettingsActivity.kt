@@ -792,8 +792,12 @@ class SettingsActivity : AppCompatActivity() {
         val downloadProgress = bottomSheetView.findViewById<ProgressBar>(R.id.downloadProgress)
         val buttonsContainer = bottomSheetView.findViewById<LinearLayout>(R.id.buttonsContainer)
         
-        // Formater le changelog (commits)
-        val formattedChangelog = formatChangelog(release.body)
+        // Formater le changelog avec les vrais commits
+        val formattedChangelog = if (release.commits.isNotEmpty()) {
+            formatCommitsChangelog(release.commits)
+        } else {
+            formatChangelog(release.body)
+        }
         updateChangelog.text = formattedChangelog
         
         // Configurer les boutons
@@ -907,40 +911,16 @@ class SettingsActivity : AppCompatActivity() {
     private fun formatChangelog(body: String): String {
         if (body.isBlank()) return getString(R.string.update_fallback_changelog)
         
+        // Retourner le texte complet des commits avec juste un nettoyage minimal
         val lines = body.split("\n")
         val formattedLines = mutableListOf<String>()
-        var skipSection = false
         
         for (line in lines) {
             val trimmedLine = line.trim()
             
-            // Ignorer les sections indésirables
-            if (trimmedLine.startsWith("🔍") || trimmedLine.startsWith("🔢") || 
-                trimmedLine.startsWith("🌟") || trimmedLine.startsWith("📱") || 
-                trimmedLine.startsWith("📦") || trimmedLine.contains("Installation") ||
-                trimmedLine.contains("Sources inconnues") || trimmedLine.contains("APK Disponible") ||
-                trimmedLine.contains("Commit:") || trimmedLine.contains("Run Number:") ||
-                trimmedLine.contains("Branch:") || trimmedLine.contains("Build Time:") ||
-                trimmedLine.contains("Version:") || trimmedLine.contains(".apk")) {
-                skipSection = true
-                continue
-            }
-            
-            // Réinitialiser après une ligne vide
-            if (trimmedLine.isEmpty()) {
-                skipSection = false
-                continue
-            }
-            
-            // Ajouter seulement les vraies modifications
-            if (!skipSection && trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
-                // Ajouter une puce si ce n'est pas déjà fait
-                val formatted = if (trimmedLine.startsWith("•") || trimmedLine.startsWith("-") || trimmedLine.startsWith("*")) {
-                    "• ${trimmedLine.substring(1).trim()}"
-                } else {
-                    "• $trimmedLine"
-                }
-                formattedLines.add(formatted)
+            // Ignorer seulement les lignes complètement vides
+            if (trimmedLine.isNotEmpty()) {
+                formattedLines.add(trimmedLine)
             }
         }
         
@@ -948,6 +928,56 @@ class SettingsActivity : AppCompatActivity() {
             formattedLines.joinToString("\n")
         } else {
             getString(R.string.update_fallback_detailed)
+        }
+    }
+    
+    private fun formatCommitsChangelog(commits: List<com.nextjsclient.android.utils.CommitInfo>): String {
+        if (commits.isEmpty()) return getString(R.string.update_fallback_changelog)
+        
+        val formattedCommits = mutableListOf<String>()
+        
+        for (commit in commits) {
+            // Formater chaque commit avec le hash, auteur et message
+            val formattedDate = formatCommitDate(commit.date)
+            val commitHeader = "📝 ${commit.sha} • ${commit.author} • $formattedDate"
+            val commitMessage = commit.message.lines().first() // Première ligne du message
+            val commitBody = commit.message.lines().drop(1).filter { it.trim().isNotEmpty() }
+            
+            formattedCommits.add(commitHeader)
+            formattedCommits.add("")
+            formattedCommits.add(commitMessage)
+            
+            // Ajouter le corps du commit s'il existe
+            if (commitBody.isNotEmpty()) {
+                formattedCommits.add("")
+                commitBody.forEach { line ->
+                    formattedCommits.add(line)
+                }
+            }
+            
+            formattedCommits.add("")
+            formattedCommits.add("─────────────────────────────")
+            formattedCommits.add("")
+        }
+        
+        return formattedCommits.joinToString("\n")
+    }
+    
+    private fun formatCommitDate(dateString: String): String {
+        return try {
+            // Parse la date ISO 8601 du commit
+            val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault())
+            inputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            
+            val date = inputFormat.parse(dateString) ?: return dateString
+            
+            // Format français court
+            val outputFormat = java.text.SimpleDateFormat("d MMM HH:mm", java.util.Locale.FRENCH)
+            outputFormat.timeZone = java.util.TimeZone.getTimeZone("Europe/Paris")
+            
+            outputFormat.format(date)
+        } catch (e: Exception) {
+            dateString.substring(0, minOf(10, dateString.length)) // Fallback: juste la date
         }
     }
     

@@ -21,7 +21,15 @@ data class Release(
     val name: String,
     val body: String,
     val downloadUrl: String,
-    val publishedAt: String
+    val publishedAt: String,
+    val commits: List<CommitInfo> = emptyList()
+)
+
+data class CommitInfo(
+    val sha: String,
+    val message: String,
+    val author: String,
+    val date: String
 )
 
 class UpdateManager(private val context: Context) {
@@ -174,7 +182,10 @@ class UpdateManager(private val context: Context) {
                         assetNames.add(asset.getString("name"))
                     }
                     
-                    val release = Release(tagName, name, body, downloadUrl, publishedAt)
+                    // Récupérer les commits entre la version actuelle et la dernière
+                    val commits = getCommitsBetweenVersions(currentVersion, tagName)
+                    
+                    val release = Release(tagName, name, body, downloadUrl, publishedAt, commits)
                     val isNewer = isNewerVersion(currentVersion, latestVersion, release, assetNames)
                     Log.d(TAG, "Is newer version available: $isNewer")
                     
@@ -672,6 +683,67 @@ class UpdateManager(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get current version", e)
             "1.Dev.(unknown)"
+        }
+    }
+    
+    private suspend fun getCommitsBetweenVersions(currentVersion: String, latestTag: String): List<CommitInfo> {
+        return try {
+            // Obtenir le commit hash actuel depuis BuildConfig
+            val currentCommit = com.nextjsclient.android.BuildConfig.COMMIT_HASH
+            
+            if (currentCommit.isBlank()) {
+                Log.w(TAG, "Current commit hash is blank, cannot fetch commits")
+                return emptyList()
+            }
+            
+            // Récupérer les commits depuis l'API GitHub
+            val commitsUrl = "https://api.github.com/repos/foXaCe/NextJSClientAndroid/compare/$currentCommit...HEAD"
+            Log.d(TAG, "Fetching commits from: $commitsUrl")
+            
+            val url = URL(commitsUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+            
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val response = connection.inputStream.bufferedReader().use { it.readText() }
+                val compareData = JSONObject(response)
+                
+                val commitsArray = compareData.optJSONArray("commits")
+                if (commitsArray != null) {
+                    val commits = mutableListOf<CommitInfo>()
+                    
+                    for (i in 0 until commitsArray.length()) {
+                        val commit = commitsArray.getJSONObject(i)
+                        val commitData = commit.getJSONObject("commit")
+                        val author = commitData.getJSONObject("author")
+                        
+                        val commitInfo = CommitInfo(
+                            sha = commit.getString("sha").substring(0, 7), // 7 premiers caractères
+                            message = commitData.getString("message"),
+                            author = author.getString("name"),
+                            date = author.getString("date")
+                        )
+                        commits.add(commitInfo)
+                    }
+                    
+                    Log.d(TAG, "Found ${commits.size} commits between $currentCommit and HEAD")
+                    return commits
+                } else {
+                    Log.w(TAG, "No commits array in response")
+                }
+            } else {
+                Log.e(TAG, "Failed to fetch commits: ${connection.responseCode}")
+            }
+            
+            connection.disconnect()
+            emptyList()
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching commits: ${e.message}", e)
+            emptyList()
         }
     }
     
