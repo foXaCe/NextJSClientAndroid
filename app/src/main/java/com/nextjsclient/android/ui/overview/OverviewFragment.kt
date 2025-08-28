@@ -414,9 +414,11 @@ class OverviewFragment : Fragment() {
     private fun loadDataForWeek(year: Int, week: Int) {
         // Éviter les appels multiples simultanés
         if (isLoadingData) {
+            android.util.Log.d("OverviewFragment", "⚠️ loadDataForWeek already in progress, skipping")
             return
         }
         
+        android.util.Log.d("OverviewFragment", "📥 loadDataForWeek called for year: $year, week: $week")
         isLoadingData = true
         val loadStartTime = System.currentTimeMillis()
         
@@ -458,6 +460,8 @@ class OverviewFragment : Fragment() {
                     if (_binding != null && isAdded) {
                         val uiStartTime = System.currentTimeMillis()
                         
+                        android.util.Log.d("OverviewFragment", "✅ Data loaded - ${weekProducts.size} products for week $week/$year")
+                        
                         // Pas besoin d'arrêter des animations (il n'y en a pas)
                         
                         // IMPORTANT: Utiliser directement les weekProducts chargés depuis Firebase
@@ -467,6 +471,8 @@ class OverviewFragment : Fragment() {
                         // Mettre à jour le ViewModel après pour les autres fragments
                         viewModel.setProducts(weekProducts)
                         
+                        // Désactiver le refresh indicator
+                        binding.swipeRefresh.isRefreshing = false
                     }
                 }
                 
@@ -475,6 +481,9 @@ class OverviewFragment : Fragment() {
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
                         // Pas d'animations à arrêter en cas d'erreur non plus
+                        
+                        // Désactiver le refresh indicator même en cas d'erreur
+                        binding.swipeRefresh.isRefreshing = false
                         
                         com.google.android.material.snackbar.Snackbar.make(
                             binding.root,
@@ -533,6 +542,12 @@ class OverviewFragment : Fragment() {
             alpha = 0.5f
             setOnClickListener {
                 if (isClickable) {
+                    // Retour haptique léger
+                    it.performHapticFeedback(
+                        android.view.HapticFeedbackConstants.VIRTUAL_KEY,
+                        android.view.HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
+                    
                     // Animation de pulsation du bouton
                     animate()
                         .scaleX(1.3f)
@@ -562,6 +577,12 @@ class OverviewFragment : Fragment() {
             alpha = 0.5f
             setOnClickListener {
                 if (isClickable) {
+                    // Retour haptique léger
+                    it.performHapticFeedback(
+                        android.view.HapticFeedbackConstants.VIRTUAL_KEY,
+                        android.view.HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
+                    
                     // Animation de pulsation du bouton
                     animate()
                         .scaleX(1.3f)
@@ -1212,22 +1233,57 @@ class OverviewFragment : Fragment() {
             
             // Action de refresh
             setOnRefreshListener {
+                android.util.Log.d("OverviewFragment", "🔄 Pull refresh started")
+                
                 // Activer le loader immédiatement
                 isRefreshing = true
+                
+                // IMPORTANT: Forcer l'arrêt du chargement en cours
+                isLoadingData = false
                 
                 // Réinitialiser l'état du top SCA
                 if (isShowingTopSca) {
                     hideTopSca()
                 }
                 
+                // Vider les caches locaux pour forcer un rechargement complet
+                android.util.Log.d("OverviewFragment", "📦 Clearing all caches")
+                preloadedAnecoopProducts = emptyList()
+                preloadedSolagoraProducts = emptyList()
+                preloadedAnecoopWeeks = emptyList()
+                preloadedSolagoraWeeks = emptyList()
+                previousWeekProducts = emptyList()
+                
+                // Réinitialiser les filtres
+                viewModel.setProductFilter("all")
+                viewModel.selectSupplier("all", resetFilter = true)
+                
                 // Réinitialiser à la semaine actuelle
                 val calendar = java.util.Calendar.getInstance()
                 val currentYear = calendar.get(java.util.Calendar.YEAR)
                 val currentWeek = getCurrentISOWeek()
-                viewModel.selectWeek(currentYear, currentWeek)
                 
-                // Rafraîchir les données
-                viewModel.refresh()
+                val selectedWeekBefore = viewModel.selectedWeek.value
+                val selectedYearBefore = viewModel.selectedYear.value
+                android.util.Log.d("OverviewFragment", "📅 Before refresh - Year: $selectedYearBefore, Week: $selectedWeekBefore")
+                android.util.Log.d("OverviewFragment", "📅 Setting to current - Year: $currentYear, Week: $currentWeek")
+                
+                // NE PAS appeler viewModel.selectWeek() pour éviter de déclencher l'observer
+                // qui chargerait les mauvaises données
+                
+                // Mettre à jour l'affichage immédiatement
+                updateWeekDisplay(currentYear, currentWeek)
+                updateWeekNumberDisplay()
+                
+                // Charger directement les données pour la semaine actuelle
+                android.util.Log.d("OverviewFragment", "🔄 Loading data for week $currentWeek/$currentYear")
+                loadDataForWeek(currentYear, currentWeek)
+                
+                // Mettre à jour le ViewModel APRÈS le chargement pour éviter les conflits
+                viewModel.viewModelScope.launch {
+                    kotlinx.coroutines.delay(100) // Petit délai pour s'assurer que loadDataForWeek a démarré
+                    viewModel.selectWeek(currentYear, currentWeek)
+                }
             }
         }
     }
@@ -1412,9 +1468,11 @@ class OverviewFragment : Fragment() {
     private fun calculateAndDisplayStats(products: List<com.nextjsclient.android.data.models.ScamarkProduct>) {
         // Éviter les appels multiples simultanés
         if (isCalculatingStats) {
+            android.util.Log.d("OverviewFragment", "⚠️ calculateAndDisplayStats already in progress, skipping")
             return
         }
         
+        android.util.Log.d("OverviewFragment", "📊 calculateAndDisplayStats called with ${products.size} products")
         isCalculatingStats = true
         val startTime = System.currentTimeMillis()
         
