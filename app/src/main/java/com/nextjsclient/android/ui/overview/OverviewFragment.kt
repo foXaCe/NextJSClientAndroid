@@ -1185,6 +1185,11 @@ class OverviewFragment : Fragment() {
             // Le texte SCA sera animé par TopProductAnimator
             scaView?.text = "0 SCA" // Valeur initiale pour l'animation
             containerView?.visibility = View.VISIBLE
+            
+            // Ajouter click listener pour naviguer vers le fournisseur avec le produit filtré
+            containerView?.setOnClickListener {
+                navigateToSupplierWithProduct(product1)
+            }
         } else {
             card.findViewById<View>(R.id.topSca1)?.visibility = View.GONE
         }
@@ -1192,10 +1197,16 @@ class OverviewFragment : Fragment() {
         // Top 2
         if (products.size > 1) {
             val product2 = products[1]
+            val containerView2 = card.findViewById<View>(R.id.topSca2)
             card.findViewById<TextView>(R.id.topSca2Name)?.text = product2.productName.split(" ").take(3).joinToString(" ")
             card.findViewById<TextView>(R.id.topSca2Details)?.text = "${product2.supplier}"
             card.findViewById<TextView>(R.id.topSca2Sca)?.text = "0 SCA" // Pour l'animation
-            card.findViewById<View>(R.id.topSca2)?.visibility = View.VISIBLE
+            containerView2?.visibility = View.VISIBLE
+            
+            // Ajouter click listener pour le top 2
+            containerView2?.setOnClickListener {
+                navigateToSupplierWithProduct(product2)
+            }
         } else {
             card.findViewById<View>(R.id.topSca2)?.visibility = View.GONE
         }
@@ -1203,13 +1214,28 @@ class OverviewFragment : Fragment() {
         // Top 3
         if (products.size > 2) {
             val product3 = products[2]
+            val containerView3 = card.findViewById<View>(R.id.topSca3)
             card.findViewById<TextView>(R.id.topSca3Name)?.text = product3.productName.split(" ").take(3).joinToString(" ")
             card.findViewById<TextView>(R.id.topSca3Details)?.text = "${product3.supplier}"
             card.findViewById<TextView>(R.id.topSca3Sca)?.text = "0 SCA" // Pour l'animation
-            card.findViewById<View>(R.id.topSca3)?.visibility = View.VISIBLE
+            containerView3?.visibility = View.VISIBLE
+            
+            // Ajouter click listener pour le top 3
+            containerView3?.setOnClickListener {
+                navigateToSupplierWithProduct(product3)
+            }
         } else {
             card.findViewById<View>(R.id.topSca3)?.visibility = View.GONE
         }
+    }
+    
+    private fun navigateToSupplierWithProduct(product: com.nextjsclient.android.data.models.ScamarkProduct) {
+        // Naviguer vers la page du fournisseur avec le produit filtré
+        val supplier = product.supplier.lowercase()
+        val productName = product.productName
+        
+        // Utiliser MainActivity pour naviguer avec filtre
+        (activity as? MainActivity)?.navigateToSupplierWithFilter(supplier, productName)
     }
     
     

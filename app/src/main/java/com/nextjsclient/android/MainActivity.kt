@@ -532,6 +532,26 @@ class MainActivity : AppCompatActivity() {
         invalidateOptionsMenu()
     }
     
+    /**
+     * Navigue vers une page fournisseur avec un produit spécifique filtré
+     */
+    fun navigateToSupplierWithFilter(supplier: String, productName: String) {
+        // Sauvegarder le filtre dans le cache
+        preloadedFilters[supplier] = productName
+        
+        // Naviguer vers le fournisseur
+        when (supplier) {
+            "anecoop" -> {
+                binding.bottomNavigation.selectedItemId = R.id.navigation_anecoop
+                switchToSupplier("anecoop")
+            }
+            "solagora" -> {
+                binding.bottomNavigation.selectedItemId = R.id.navigation_solagora
+                switchToSupplier("solagora")
+            }
+        }
+    }
+    
     private fun animateSearchIcon() {
         android.util.Log.d("MainActivity", "=== animateSearchIcon() called ===")
         
