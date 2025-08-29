@@ -698,8 +698,24 @@ class ScamarkViewModel : ViewModel() {
                 }
                 result
             }
-            else -> {
+            "all" -> {
                 filtered
+            }
+            else -> {
+                // Si le filtre n'est pas un type prédéfini, c'est un nom de produit spécifique
+                // Chercher le produit exact ou les produits qui correspondent partiellement
+                val filterLower = filter.lowercase()
+                filtered.filter { product ->
+                    val productNameLower = product.productName.lowercase()
+                    // Recherche exacte ou partielle sur le nom du produit
+                    productNameLower == filterLower || 
+                    productNameLower.contains(filterLower) ||
+                    // Recherche dans les infos article si disponibles
+                    product.articleInfo?.let { article ->
+                        val nomLower = article.nom.lowercase()
+                        nomLower == filterLower || nomLower.contains(filterLower)
+                    } == true
+                }
             }
         }
         
