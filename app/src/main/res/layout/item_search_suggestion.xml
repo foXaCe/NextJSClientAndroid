@@ -43,7 +43,8 @@
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurface"
                 android:ellipsize="end"
-                android:maxLines="1" />
+                android:maxLines="2"
+                android:lineSpacingMultiplier="1.1" />
 
             <!-- Texte secondaire (type: Client SCA, Produit, etc.) -->
             <TextView
@@ -52,6 +53,8 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:visibility="gone" />
 
         </LinearLayout>
@@ -61,13 +64,16 @@
             android:id="@+id/suggestionCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:background="@drawable/badge_background"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp"
-            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="3dp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textColor="?attr/colorOnPrimary"
             android:text="12"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:minWidth="24dp"
+            android:gravity="center" />
 
     </LinearLayout>
 
