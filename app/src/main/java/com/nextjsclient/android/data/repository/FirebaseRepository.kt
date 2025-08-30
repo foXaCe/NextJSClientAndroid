@@ -945,4 +945,88 @@ class FirebaseRepository {
         }
     }
     
+    /**
+     * Récupère l'historique des ruptures pour un produit spécifique
+     */
+    suspend fun getRuptureHistoryForProduct(codeProduit: String, supplier: String): List<RuptureHistory> {
+        return try {
+            val ruptureHistory = mutableListOf<RuptureHistory>()
+            
+            // Requête sur la collection ruptures-history
+            val snapshot = firestore.collection("ruptures-history")
+                .whereEqualTo("supplier", supplier.lowercase())
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(50) // Limiter aux 50 dernières entrées
+                .get()
+                .await()
+            
+            for (document in snapshot.documents) {
+                val data = document.data ?: continue
+                
+                val products = (data["products"] as? List<Map<String, Any>>) ?: continue
+                
+                // Vérifier si ce produit est présent dans cette rupture
+                val hasProduct = products.any { productMap ->
+                    (productMap["codeProduit"] as? String) == codeProduit
+                }
+                
+                if (hasProduct) {
+                    val ruptureEntry = RuptureHistory(
+                        date = data["date"] as? String ?: "",
+                        supplier = data["supplier"] as? String ?: "",
+                        time = data["time"] as? String ?: "",
+                        timestamp = (data["timestamp"] as? Number)?.toLong() ?: 0L,
+                        week = (data["week"] as? Number)?.toInt() ?: 0,
+                        year = (data["year"] as? Number)?.toInt() ?: 0,
+                        ruptureCount = (data["ruptureCount"] as? Number)?.toInt() ?: 0,
+                        totalMissing = (data["totalMissing"] as? Number)?.toInt() ?: 0,
+                        products = products.mapNotNull { productMap ->
+                            parseRuptureProduct(productMap)
+                        }
+                    )
+                    ruptureHistory.add(ruptureEntry)
+                }
+            }
+            
+            ruptureHistory
+            
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    /**
+     * Parse un produit de rupture depuis les données Firebase
+     */
+    private fun parseRuptureProduct(productMap: Map<String, Any>): RuptureProduct? {
+        return try {
+            val scasAffectedList = (productMap["scasAffected"] as? List<Map<String, Any>>) ?: emptyList()
+            val approvisionneurMap = productMap["approvisionneur"] as? Map<String, Any> ?: emptyMap()
+            
+            RuptureProduct(
+                codeProduit = productMap["codeProduit"] as? String ?: "",
+                productName = productMap["productName"] as? String ?: "",
+                category = productMap["category"] as? String ?: "",
+                stockDisponible = (productMap["stockDisponible"] as? Number)?.toInt() ?: 0,
+                totalMissing = (productMap["totalMissing"] as? Number)?.toInt() ?: 0,
+                approvisionneur = Approvisionneur(
+                    nom = approvisionneurMap["nom"] as? String ?: "",
+                    prenom = approvisionneurMap["prenom"] as? String ?: "",
+                    email = approvisionneurMap["email"] as? String ?: ""
+                ),
+                scasAffected = scasAffectedList.map { scaMap ->
+                    ScaAffected(
+                        codeClient = scaMap["codeClient"] as? String ?: "",
+                        clientName = scaMap["clientName"] as? String ?: "",
+                        quantityAvailable = (scaMap["quantityAvailable"] as? Number)?.toInt() ?: 0,
+                        quantityCommanded = (scaMap["quantityCommanded"] as? Number)?.toInt() ?: 0,
+                        quantityMissing = (scaMap["quantityMissing"] as? Number)?.toInt() ?: 0
+                    )
+                }
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
 }

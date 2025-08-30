@@ -82,6 +82,12 @@
             android:theme="@style/Theme.NextJSClient"
             android:parentActivityName=".MainActivity" />
             
+        <activity
+            android:name=".RuptureHistoryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.NextJSClient"
+            android:parentActivityName=".ProductDetailActivity" />
+            
         <!-- Firebase Messaging Service -->
         <service
             android:name=".services.NotificationService"

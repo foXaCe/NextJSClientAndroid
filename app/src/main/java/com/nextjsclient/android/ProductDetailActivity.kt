@@ -158,6 +158,11 @@ class ProductDetailActivity : AppCompatActivity() {
         binding.copyEanButton.setOnClickListener {
             copyToClipboard(binding.productEan.text.toString(), "EAN copié")
         }
+        
+        // Setup rupture history button
+        binding.ruptureHistoryButton.setOnClickListener {
+            openRuptureHistory()
+        }
     }
     
     private fun setupClientsList() {
@@ -658,5 +663,22 @@ class ProductDetailActivity : AppCompatActivity() {
         }
         
         return 1 + ((firstThursday - calendar.timeInMillis) / (7 * 24 * 60 * 60 * 1000)).toInt()
+    }
+    
+    /**
+     * Ouvre l'écran d'historique des ruptures pour ce produit
+     */
+    private fun openRuptureHistory() {
+        val productCode = intent.getStringExtra(EXTRA_PRODUCT_CODE) ?: return
+        val supplier = intent.getStringExtra(EXTRA_SUPPLIER) ?: return
+        val productName = intent.getStringExtra(EXTRA_PRODUCT_NAME) ?: return
+        
+        // Créer une nouvelle activité qui contiendra le fragment des ruptures
+        val intent = Intent(this, RuptureHistoryActivity::class.java).apply {
+            putExtra("codeProduit", productCode)
+            putExtra("supplier", supplier)
+            putExtra("productName", productName)
+        }
+        startActivity(intent)
     }
 }
