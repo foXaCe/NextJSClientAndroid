@@ -85,9 +85,8 @@
     <!-- Liste des suggestions Material 3 Expressive -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/suggestionsCard"
-        android:layout_width="600dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
         android:layout_marginHorizontal="16dp"
         app:cardCornerRadius="24dp"
