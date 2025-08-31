@@ -37,6 +37,8 @@ class RuptureHistoryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        android.util.Log.d("RuptureHistoryActivity", "=== DÉBUT onCreate ===")
+        
         binding = ActivityRuptureHistoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
@@ -45,14 +47,23 @@ class RuptureHistoryActivity : AppCompatActivity() {
         val supplier = intent.getStringExtra("supplier") ?: ""
         val productName = intent.getStringExtra("productName") ?: ""
         
+        android.util.Log.d("RuptureHistoryActivity", "Paramètres reçus via Intent:")
+        android.util.Log.d("RuptureHistoryActivity", "  - codeProduit: '$codeProduit'")
+        android.util.Log.d("RuptureHistoryActivity", "  - supplier: '$supplier'")
+        android.util.Log.d("RuptureHistoryActivity", "  - productName: '$productName'")
+        
         // Ajouter le fragment
         if (savedInstanceState == null) {
+            android.util.Log.d("RuptureHistoryActivity", "Création du fragment RupturesDetailFragment...")
             val fragment = RupturesDetailFragment.newInstance(codeProduit, supplier, productName)
             
             supportFragmentManager.beginTransaction()
                 .replace(binding.fragmentContainer.id, fragment)
                 .commit()
+            android.util.Log.d("RuptureHistoryActivity", "Fragment ajouté avec succès")
         }
+        
+        android.util.Log.d("RuptureHistoryActivity", "=== FIN onCreate ===")
         
         // Gérer le bouton retour avec l'approche moderne
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

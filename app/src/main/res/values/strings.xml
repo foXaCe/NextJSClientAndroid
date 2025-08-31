@@ -221,15 +221,25 @@
     <string name="rupture_history_subtitle">View past ruptures for this product</string>
     <string name="no_ruptures_found">No ruptures found</string>
     <string name="no_ruptures_description">This product has no rupture history</string>
-    <string name="week_format">Week %d/%d</string>
+    <string name="date_time_separator">at</string>
+    <string name="error_loading_rupture_history">Error loading data: %s</string>
+    <string name="week_format" formatted="false">Week %d/%d</string>
     <string name="missing_label">Missing</string>
     <string name="products_count_label">Products</string>
     <string name="product_details_title">Product details</string>
     <string name="available_stock_label">Available stock</string>
     <string name="supplier_label">Supplier</string>
+    <string name="commanded_short">Cmd</string>
+    <string name="available_short">Avail</string>
+    <string name="missing_short">Miss</string>
     <string name="scas_affected_title">Affected SCAs</string>
     <string name="no_scas_affected">No SCAs affected</string>
     <string name="undefined_supplier">Undefined</string>
+    <string name="rupture_summary_title">Rupture Summary</string>
+    <string name="period_since_october">Since October 1st</string>
+    <string name="total_ruptures_label">Total\nRuptures</string>
+    <string name="delivery_stats_label">Command vs Delivered</string>
+    <string name="delivery_rate_label">Delivery Rate</string>
     
     <!-- Filter messages -->
     <string name="filter_incoming_message">🟢 Showing incoming products • Pull down to refresh</string>

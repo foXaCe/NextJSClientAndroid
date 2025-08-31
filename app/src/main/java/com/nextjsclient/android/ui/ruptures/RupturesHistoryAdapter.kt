@@ -33,12 +33,11 @@ class RupturesHistoryAdapter : ListAdapter<RuptureHistory, RupturesHistoryAdapte
         
         fun bind(rupture: RuptureHistory) {
             // Date et heure
-            binding.dateText.text = "${rupture.date} à ${rupture.time}"
+            binding.dateText.text = "${rupture.date} ${binding.root.context.getString(R.string.date_time_separator)} ${rupture.time}"
             binding.weekText.text = binding.root.context.getString(R.string.week_format, rupture.week, rupture.year)
             
             // Statistiques globales
             binding.totalMissingText.text = "${rupture.totalMissing}"
-            binding.ruptureCountText.text = "${rupture.ruptureCount}"
             
             // Trouver le produit spécifique dans cette rupture
             val currentProduct = rupture.products.find { it.codeProduit.isNotEmpty() }
@@ -77,13 +76,17 @@ class RupturesHistoryAdapter : ListAdapter<RuptureHistory, RupturesHistoryAdapte
             
             // Gérer l'expansion/contraction
             var isExpanded = false
-            binding.expandButton.setOnClickListener {
+            val toggleExpansion = {
                 isExpanded = !isExpanded
                 binding.expandedContent.visibility = if (isExpanded) View.VISIBLE else View.GONE
                 binding.expandButton.setIconResource(
                     if (isExpanded) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down
                 )
             }
+            
+            // Rendre toute la carte cliquable
+            binding.root.setOnClickListener { toggleExpansion() }
+            binding.expandButton.setOnClickListener { toggleExpansion() }
         }
     }
 }

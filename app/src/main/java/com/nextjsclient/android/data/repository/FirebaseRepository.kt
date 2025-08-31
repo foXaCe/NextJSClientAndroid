@@ -948,49 +948,235 @@ class FirebaseRepository {
      */
     suspend fun getRuptureHistoryForProduct(codeProduit: String, supplier: String): List<RuptureHistory> {
         return try {
+            android.util.Log.d("RuptureHistory", "=== DÉBUT getRuptureHistoryForProduct ===")
+            android.util.Log.d("RuptureHistory", "Recherche pour codeProduit: '$codeProduit', supplier: '$supplier'")
+            
             val ruptureHistory = mutableListOf<RuptureHistory>()
             
-            // Requête sur la collection ruptures-history
-            val snapshot = firestore.collection("ruptures-history")
-                .whereEqualTo("supplier", supplier.lowercase())
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(50) // Limiter aux 50 dernières entrées
+            // Requête directe sur le document du produit spécifique
+            android.util.Log.d("RuptureHistory", "Tentative de lecture du document: ruptures-history/$codeProduit")
+            val docSnapshot = firestore.collection("ruptures-history")
+                .document(codeProduit)
                 .get()
                 .await()
             
-            for (document in snapshot.documents) {
-                val data = document.data ?: continue
-                
-                @Suppress("UNCHECKED_CAST")
-                val products = (data["products"] as? List<Map<String, Any>>) ?: continue
-                
-                // Vérifier si ce produit est présent dans cette rupture
-                val hasProduct = products.any { productMap ->
-                    (productMap["codeProduit"] as? String) == codeProduit
-                }
-                
-                if (hasProduct) {
-                    val ruptureEntry = RuptureHistory(
-                        date = data["date"] as? String ?: "",
-                        supplier = data["supplier"] as? String ?: "",
-                        time = data["time"] as? String ?: "",
-                        timestamp = (data["timestamp"] as? Number)?.toLong() ?: 0L,
-                        week = (data["week"] as? Number)?.toInt() ?: 0,
-                        year = (data["year"] as? Number)?.toInt() ?: 0,
-                        ruptureCount = (data["ruptureCount"] as? Number)?.toInt() ?: 0,
-                        totalMissing = (data["totalMissing"] as? Number)?.toInt() ?: 0,
-                        products = products.mapNotNull { productMap ->
-                            parseRuptureProduct(productMap)
-                        }
-                    )
-                    ruptureHistory.add(ruptureEntry)
-                }
+            android.util.Log.d("RuptureHistory", "Document existe: ${docSnapshot.exists()}")
+            if (!docSnapshot.exists()) {
+                android.util.Log.w("RuptureHistory", "Aucun document trouvé pour le code produit: $codeProduit")
+                return emptyList()
             }
             
-            ruptureHistory
+            val data = docSnapshot.data
+            android.util.Log.d("RuptureHistory", "Données du document: ${data?.keys}")
+            if (data == null) {
+                android.util.Log.w("RuptureHistory", "Données du document null")
+                return emptyList()
+            }
+            
+            // Note: Le supplier n'est pas au niveau racine du document, 
+            // mais dans chaque rupture individuelle - on filtrera plus tard
+            
+            @Suppress("UNCHECKED_CAST")
+            val ruptures = (data["ruptures"] as? List<Map<String, Any>>) ?: emptyList()
+            android.util.Log.d("RuptureHistory", "Nombre de ruptures trouvées: ${ruptures.size}")
+            
+            // Parser chaque rupture
+            for ((index, ruptureMap) in ruptures.withIndex()) {
+                android.util.Log.d("RuptureHistory", "--- Parsing rupture $index ---")
+                android.util.Log.d("RuptureHistory", "Rupture keys: ${ruptureMap.keys}")
+                
+                // Vérifier le fournisseur au niveau de chaque rupture
+                val ruptureSupplier = ruptureMap["supplier"] as? String
+                android.util.Log.d("RuptureHistory", "Supplier de cette rupture: '$ruptureSupplier', recherché: '$supplier'")
+                
+                if (ruptureSupplier?.lowercase() != supplier.lowercase()) {
+                    android.util.Log.d("RuptureHistory", "Rupture ignorée, fournisseur ne correspond pas")
+                    continue
+                }
+                
+                val timestamp = (ruptureMap["timestamp"] as? com.google.firebase.Timestamp)?.toDate()?.time ?: 0L
+                val annee = (ruptureMap["annee"] as? Number)?.toInt() ?: 0
+                val semaine = (ruptureMap["semaine"] as? Number)?.toInt() ?: 0
+                val reportId = ruptureMap["reportId"] as? String ?: ""
+                
+                android.util.Log.d("RuptureHistory", "Timestamp: $timestamp, Année: $annee, Semaine: $semaine")
+                
+                @Suppress("UNCHECKED_CAST")
+                val scas = (ruptureMap["scas"] as? List<Map<String, Any>>) ?: emptyList()
+                android.util.Log.d("RuptureHistory", "Nombre de SCAs: ${scas.size}")
+                
+                // Calculer les totaux
+                var totalCommande = 0
+                var totalLivre = 0
+                var totalManquant = 0
+                
+                val scasAffected = scas.map { scaMap ->
+                    val quantiteCommande = (scaMap["quantiteCommande"] as? Number)?.toInt() ?: 0
+                    val quantiteLivre = (scaMap["quantiteLivre"] as? Number)?.toInt() ?: 0
+                    val quantiteManquant = (scaMap["quantiteManquant"] as? Number)?.toInt() ?: 0
+                    
+                    totalCommande += quantiteCommande
+                    totalLivre += quantiteLivre
+                    totalManquant += quantiteManquant
+                    
+                    ScaAffected(
+                        codeClient = scaMap["codeClient"] as? String ?: "",
+                        clientName = scaMap["clientName"] as? String ?: "",
+                        quantityCommanded = quantiteCommande,
+                        quantityAvailable = quantiteLivre,
+                        quantityMissing = quantiteManquant
+                    )
+                }
+                
+                val ruptureProduct = RuptureProduct(
+                    codeProduit = codeProduit,
+                    productName = data["productName"] as? String ?: "",
+                    category = data["category"] as? String ?: "",
+                    stockDisponible = totalLivre, // Le stock disponible = total livré
+                    totalMissing = totalManquant,
+                    scasAffected = scasAffected
+                )
+                
+                val ruptureEntry = RuptureHistory(
+                    date = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                        .format(java.util.Date(timestamp)),
+                    time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        .format(java.util.Date(timestamp)),
+                    supplier = supplier,
+                    timestamp = timestamp,
+                    week = semaine,
+                    year = annee,
+                    ruptureCount = 1,
+                    totalMissing = totalManquant,
+                    products = listOf(ruptureProduct)
+                )
+                
+                ruptureHistory.add(ruptureEntry)
+            }
+            
+            android.util.Log.d("RuptureHistory", "Nombre total d'entrées créées: ${ruptureHistory.size}")
+            
+            // Trier par timestamp décroissant
+            val sortedHistory = ruptureHistory.sortedByDescending { it.timestamp }
+            android.util.Log.d("RuptureHistory", "=== FIN getRuptureHistoryForProduct (succès) ===")
+            sortedHistory
             
         } catch (e: Exception) {
+            android.util.Log.e("RuptureHistory", "Erreur lors de la récupération de l'historique: ${e.message}", e)
+            android.util.Log.d("RuptureHistory", "=== FIN getRuptureHistoryForProduct (erreur) ===")
             emptyList()
+        }
+    }
+    
+    /**
+     * Calcule les statistiques de rupture pour un produit depuis octobre
+     */
+    suspend fun getRuptureSummaryForProduct(codeProduit: String, supplier: String): RuptureSummary {
+        return try {
+            android.util.Log.d("RuptureHistory", "=== DÉBUT getRuptureSummaryForProduct ===")
+            android.util.Log.d("RuptureHistory", "Paramètres: codeProduit='$codeProduit', supplier='$supplier'")
+            
+            // Requête directe sur le document du produit spécifique
+            val docSnapshot = firestore.collection("ruptures-history")
+                .document(codeProduit)
+                .get()
+                .await()
+            
+            if (!docSnapshot.exists()) {
+                android.util.Log.w("RuptureHistory", "Document non trouvé pour codeProduit: $codeProduit")
+                return RuptureSummary()
+            }
+            
+            val data = docSnapshot.data
+            if (data == null) {
+                android.util.Log.w("RuptureHistory", "Data null pour le document")
+                return RuptureSummary()
+            }
+            
+            @Suppress("UNCHECKED_CAST")
+            val ruptures = (data["ruptures"] as? List<Map<String, Any>>) ?: emptyList()
+            android.util.Log.d("RuptureHistory", "Nombre total de ruptures dans le document: ${ruptures.size}")
+            
+            // Filtrer les ruptures depuis le 1er octobre 2024 (année fixe car nous sommes en 2025)
+            val octoberStart = java.util.Calendar.getInstance().apply {
+                set(java.util.Calendar.YEAR, 2024)
+                set(java.util.Calendar.MONTH, java.util.Calendar.OCTOBER)
+                set(java.util.Calendar.DAY_OF_MONTH, 1)
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            
+            android.util.Log.d("RuptureHistory", "Seuil octobre (timestamp): $octoberStart")
+            android.util.Log.d("RuptureHistory", "Seuil octobre (date): ${java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date(octoberStart))}")
+            
+            var totalRuptures = 0
+            var totalCommanded = 0
+            var totalDelivered = 0
+            var totalMissing = 0
+            
+            for ((index, ruptureMap) in ruptures.withIndex()) {
+                android.util.Log.d("RuptureHistory", "--- Analyse rupture $index ---")
+                
+                // Vérifier le fournisseur
+                val ruptureSupplier = ruptureMap["supplier"] as? String
+                android.util.Log.d("RuptureHistory", "Supplier de cette rupture: '$ruptureSupplier', recherché: '$supplier'")
+                if (ruptureSupplier?.lowercase() != supplier.lowercase()) {
+                    android.util.Log.d("RuptureHistory", "Rupture ignorée: supplier ne correspond pas")
+                    continue
+                }
+                
+                // Vérifier la date
+                val timestamp = (ruptureMap["timestamp"] as? com.google.firebase.Timestamp)?.toDate()?.time ?: 0L
+                android.util.Log.d("RuptureHistory", "Timestamp rupture: $timestamp, seuil octobre: $octoberStart")
+                if (timestamp < octoberStart) {
+                    android.util.Log.d("RuptureHistory", "Rupture ignorée: trop ancienne")
+                    continue
+                }
+                
+                totalRuptures++
+                android.util.Log.d("RuptureHistory", "Rupture retenue! Total ruptures: $totalRuptures")
+                
+                @Suppress("UNCHECKED_CAST")
+                val scas = (ruptureMap["scas"] as? List<Map<String, Any>>) ?: emptyList()
+                android.util.Log.d("RuptureHistory", "Nombre de SCAs dans cette rupture: ${scas.size}")
+                
+                for ((scaIndex, scaMap) in scas.withIndex()) {
+                    val commanded = (scaMap["quantiteCommande"] as? Number)?.toInt() ?: 0
+                    val delivered = (scaMap["quantiteLivre"] as? Number)?.toInt() ?: 0
+                    val missing = (scaMap["quantiteManquant"] as? Number)?.toInt() ?: 0
+                    
+                    android.util.Log.d("RuptureHistory", "SCA $scaIndex: cmd=$commanded, livré=$delivered, manq=$missing")
+                    
+                    totalCommanded += commanded
+                    totalDelivered += delivered
+                    totalMissing += missing
+                }
+                
+                android.util.Log.d("RuptureHistory", "Totaux après cette rupture: cmd=$totalCommanded, livré=$totalDelivered, manq=$totalMissing")
+            }
+            
+            val deliveryRate = if (totalCommanded > 0) {
+                (totalDelivered.toDouble() / totalCommanded.toDouble()) * 100
+            } else {
+                0.0
+            }
+            
+            android.util.Log.d("RuptureHistory", "Statistiques calculées: $totalRuptures ruptures, $totalCommanded cmd, $totalDelivered livré, ${deliveryRate}% taux")
+            
+            RuptureSummary(
+                totalRuptures = totalRuptures,
+                totalCommanded = totalCommanded,
+                totalDelivered = totalDelivered,
+                totalMissing = totalMissing,
+                deliveryRate = deliveryRate,
+                periodStart = "01/10"
+            )
+            
+        } catch (e: Exception) {
+            android.util.Log.e("RuptureHistory", "Erreur calcul statistiques: ${e.message}", e)
+            RuptureSummary()
         }
     }
     

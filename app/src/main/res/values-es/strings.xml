@@ -197,15 +197,25 @@
     <string name="rupture_history_subtitle">Ver roturas pasadas para este producto</string>
     <string name="no_ruptures_found">No se encontraron roturas</string>
     <string name="no_ruptures_description">Este producto no tiene historial de roturas</string>
-    <string name="week_format">Semana %d/%d</string>
+    <string name="date_time_separator">a las</string>
+    <string name="error_loading_rupture_history">Error al cargar datos: %s</string>
+    <string name="week_format" formatted="false">Semana %d/%d</string>
     <string name="missing_label">Faltante</string>
     <string name="products_count_label">Productos</string>
     <string name="product_details_title">Detalles del producto</string>
     <string name="available_stock_label">Stock disponible</string>
     <string name="supplier_label">Proveedor</string>
+    <string name="commanded_short">Ped</string>
+    <string name="available_short">Disp</string>
+    <string name="missing_short">Falt</string>
     <string name="scas_affected_title">SCA afectadas</string>
     <string name="no_scas_affected">Ninguna SCA afectada</string>
     <string name="undefined_supplier">No definido</string>
+    <string name="rupture_summary_title">Resumen de Roturas</string>
+    <string name="period_since_october">Desde el 1 de octubre</string>
+    <string name="total_ruptures_label">Total\nRoturas</string>
+    <string name="delivery_stats_label">Pedido vs Entregado</string>
+    <string name="delivery_rate_label">Tasa de Entrega</string>
     
     <!-- Product card labels -->
     <string name="sca_prefix">SCA:</string>
