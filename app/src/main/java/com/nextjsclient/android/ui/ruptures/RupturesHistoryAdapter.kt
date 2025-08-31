@@ -80,7 +80,7 @@ class RupturesHistoryAdapter : ListAdapter<RuptureHistory, RupturesHistoryAdapte
             binding.expandButton.setOnClickListener {
                 isExpanded = !isExpanded
                 binding.expandedContent.visibility = if (isExpanded) View.VISIBLE else View.GONE
-                binding.expandButton.setImageResource(
+                binding.expandButton.setIconResource(
                     if (isExpanded) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down
                 )
             }
