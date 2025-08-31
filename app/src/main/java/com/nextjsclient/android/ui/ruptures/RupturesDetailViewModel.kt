@@ -30,7 +30,6 @@ class RupturesDetailViewModel : ViewModel() {
         android.util.Log.d("RupturesViewModel", "Chargement pour codeProduit: '$codeProduit', supplier: '$supplier'")
         
         viewModelScope.launch {
-            _isLoading.value = true
             _errorMessage.value = null
             
             try {
@@ -51,7 +50,6 @@ class RupturesDetailViewModel : ViewModel() {
                 android.util.Log.e("RupturesViewModel", "Erreur dans loadRuptureHistory: ${e.message}", e)
                 _errorMessage.value = e.message ?: "Unknown error"
             } finally {
-                _isLoading.value = false
                 android.util.Log.d("RupturesViewModel", "=== FIN loadRuptureHistory ===")
             }
         }

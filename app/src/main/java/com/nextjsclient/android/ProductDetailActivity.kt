@@ -21,6 +21,7 @@ import com.nextjsclient.android.databinding.ActivityProductDetailBinding
 import com.nextjsclient.android.utils.CategoryTranslator
 import java.text.DecimalFormat
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import androidx.lifecycle.lifecycleScope
 
 class ProductDetailActivity : AppCompatActivity() {
@@ -180,7 +181,6 @@ class ProductDetailActivity : AppCompatActivity() {
         val category = intent.getStringExtra(EXTRA_CATEGORY) ?: "N/A"
         val brand = intent.getStringExtra(EXTRA_BRAND) ?: "N/A"
         val origin = intent.getStringExtra(EXTRA_ORIGIN) ?: "N/A"
-        val clientsCount = intent.getIntExtra(EXTRA_CLIENTS_COUNT, 0)
         val consecutiveWeeks = intent.getIntExtra(EXTRA_CONSECUTIVE_WEEKS, 0)
         val totalReferences = intent.getIntExtra(EXTRA_TOTAL_REFERENCES, 0)
         
@@ -326,13 +326,13 @@ class ProductDetailActivity : AppCompatActivity() {
         // La couleur du prix retenu est maintenant gérée dans sa section avec le SpannableString
         // Le prix de base reste en couleur normale, seul le pourcentage vs S-1 est coloré
         
-        // Set clients count
-        binding.clientsCount.text = clientsCount.toString()
-        
         // Load clients data
         val clientNames = intent.getStringArrayListExtra(EXTRA_CLIENTS_NAMES) ?: arrayListOf()
         val clientTypes = intent.getStringArrayListExtra(EXTRA_CLIENTS_TYPES) ?: arrayListOf()
         val clientTimes = intent.getStringArrayListExtra(EXTRA_CLIENTS_TIMES) ?: arrayListOf()
+        
+        // Set clients count with breakdown by type
+        setScaCountWithColors(clientTypes)
         
         // Peupler le LinearLayout directement
         populateClientsLayout(clientNames, clientTypes, clientTimes)
@@ -377,6 +377,43 @@ class ProductDetailActivity : AppCompatActivity() {
             "EUROPOOL" -> ContextCompat.getColor(this, android.R.color.holo_purple)
             else -> ContextCompat.getColor(this, R.color.md_theme_light_onSurfaceVariant)
         }
+    }
+    
+    private fun setScaCountWithColors(clientTypes: List<String>) {
+        // Compter les types BLL et EUROPOOL
+        val bllCount = clientTypes.count { it.uppercase() == "BLL" }
+        val europoolCount = clientTypes.count { it.uppercase() == "EUROPOOL" }
+        val totalCount = clientTypes.size
+        
+        // Utiliser la string formatée avec couleurs
+        val formattedText = getString(R.string.sca_count_format, bllCount, europoolCount, totalCount)
+        val spannable = android.text.SpannableString(formattedText)
+        
+        // Couleur orange pour BLL
+        val bllStart = formattedText.indexOf("$bllCount BLL")
+        if (bllStart >= 0) {
+            val bllEnd = bllStart + "$bllCount BLL".length
+            spannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_orange_dark)),
+                bllStart,
+                bllEnd,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        
+        // Couleur violette pour EUROPOOL
+        val europoolStart = formattedText.indexOf("$europoolCount EUROPOOL")
+        if (europoolStart >= 0) {
+            val europoolEnd = europoolStart + "$europoolCount EUROPOOL".length
+            spannable.setSpan(
+                android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_purple)),
+                europoolStart,
+                europoolEnd,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        
+        binding.clientsCount.text = spannable
     }
     
     private fun setSupplierColors(supplier: String) {
@@ -671,6 +708,28 @@ class ProductDetailActivity : AppCompatActivity() {
         val productCode = intent.getStringExtra(EXTRA_PRODUCT_CODE) ?: return
         val supplier = intent.getStringExtra(EXTRA_SUPPLIER) ?: return
         val productName = intent.getStringExtra(EXTRA_PRODUCT_NAME) ?: return
+        
+        // Précharger les données de rupture en arrière-plan
+        lifecycleScope.launch {
+            try {
+                // Précharger l'historique des ruptures et le résumé en parallèle
+                val historyDeferred = async { 
+                    firebaseRepository.getRuptureHistoryForProduct(productCode, supplier) 
+                }
+                val summaryDeferred = async { 
+                    firebaseRepository.getRuptureSummaryForProduct(productCode, supplier) 
+                }
+                
+                // Attendre que les deux requêtes se terminent
+                val preloadedHistory = historyDeferred.await()
+                val preloadedSummary = summaryDeferred.await()
+                
+                android.util.Log.d("ProductDetail", "Données préchargées: ${preloadedHistory.size} ruptures, résumé: $preloadedSummary")
+                
+            } catch (e: Exception) {
+                android.util.Log.e("ProductDetail", "Erreur préchargement ruptures: ${e.message}", e)
+            }
+        }
         
         // Créer une nouvelle activité qui contiendra le fragment des ruptures
         val intent = Intent(this, RuptureHistoryActivity::class.java).apply {

@@ -341,32 +341,15 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/clientsCount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="SCA"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorPrimary" />
-
-                        <TextView
-                            android:id="@+id/clientsCount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textStyle="bold"
-                            android:textColor="?attr/colorPrimary"
-                            android:text="3" />
-
-                    </LinearLayout>
+                        android:layout_marginBottom="12dp"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:text="SCA: 3" />
 
                     <LinearLayout
                         android:id="@+id/clientsLinearLayout"

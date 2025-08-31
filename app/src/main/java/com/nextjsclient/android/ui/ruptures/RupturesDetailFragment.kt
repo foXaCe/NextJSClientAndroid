@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -78,7 +79,6 @@ class RupturesDetailFragment : Fragment() {
         // Observer les données de rupture
         viewModel.ruptureHistory.observe(viewLifecycleOwner) { history ->
             android.util.Log.d("RupturesFragment", "Observer ruptureHistory: ${history.size} éléments reçus")
-            adapter.submitList(history)
             
             // Gérer l'affichage vide
             if (history.isEmpty()) {
@@ -88,7 +88,18 @@ class RupturesDetailFragment : Fragment() {
             } else {
                 android.util.Log.d("RupturesFragment", "Liste avec données - affichage du RecyclerView")
                 binding.emptyView.visibility = View.GONE
-                binding.rupturesRecyclerView.visibility = View.VISIBLE
+                
+                // Animation d'apparition du RecyclerView si pas déjà visible
+                if (binding.rupturesRecyclerView.visibility != View.VISIBLE) {
+                    binding.rupturesRecyclerView.visibility = View.VISIBLE
+                    val recyclerAnimation = AnimationUtils.loadAnimation(requireContext(), R.anim.card_fade_scale_in)
+                    binding.rupturesRecyclerView.startAnimation(recyclerAnimation)
+                }
+                
+                // Soumettre la liste après un petit délai pour que l'animation du container soit visible
+                binding.rupturesRecyclerView.postDelayed({
+                    adapter.submitList(history)
+                }, 200)
             }
         }
         
@@ -98,20 +109,27 @@ class RupturesDetailFragment : Fragment() {
             
             // N'afficher la carte que s'il y a des ruptures
             if (summary.totalRuptures > 0) {
-                binding.summaryCard.root.visibility = View.VISIBLE
                 // Mettre à jour les vues de la carte de résumé
                 binding.summaryCard.totalRupturesText.text = summary.totalRuptures.toString()
                 binding.summaryCard.totalCommandedText.text = summary.totalCommanded.toString()
                 binding.summaryCard.totalMissingText.text = summary.totalMissing.toString()
                 binding.summaryCard.deliveryRateText.text = String.format("%.1f%%", summary.deliveryRate)
+                
+                // Animation d'apparition de la carte de résumé
+                if (binding.summaryCard.root.visibility != View.VISIBLE) {
+                    binding.summaryCard.root.visibility = View.VISIBLE
+                    val summaryAnimation = AnimationUtils.loadAnimation(requireContext(), R.anim.card_summary_entrance)
+                    binding.summaryCard.root.startAnimation(summaryAnimation)
+                }
             } else {
                 binding.summaryCard.root.visibility = View.GONE
             }
         }
         
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
+        // Pas de loader pour cette page - données chargées instantanément
+        // viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+        //     binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        // }
         
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             error?.let {

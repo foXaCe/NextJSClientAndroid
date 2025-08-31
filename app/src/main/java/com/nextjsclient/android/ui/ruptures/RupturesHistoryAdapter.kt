@@ -3,6 +3,7 @@ package com.nextjsclient.android.ui.ruptures
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
@@ -16,6 +17,8 @@ import java.util.*
 
 class RupturesHistoryAdapter : ListAdapter<RuptureHistory, RupturesHistoryAdapter.ViewHolder>(RuptureDiffCallback()) {
     
+    private val animatedPositions = mutableSetOf<Int>()
+    
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemRuptureHistoryBinding.inflate(
             LayoutInflater.from(parent.context), 
@@ -27,6 +30,21 @@ class RupturesHistoryAdapter : ListAdapter<RuptureHistory, RupturesHistoryAdapte
     
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(getItem(position))
+        
+        // Animation d'apparition uniquement pour les nouvelles cartes
+        if (!animatedPositions.contains(position)) {
+            animatedPositions.add(position)
+            
+            // Animation d'apparition avec délai échelonné pour un effet cascade
+            val animation = AnimationUtils.loadAnimation(holder.itemView.context, R.anim.card_slide_up_fade_in)
+            animation.startOffset = (position * 80).toLong() // Délai de 80ms entre chaque carte
+            holder.itemView.startAnimation(animation)
+        }
+    }
+    
+    override fun onViewRecycled(holder: ViewHolder) {
+        super.onViewRecycled(holder)
+        holder.itemView.clearAnimation()
     }
     
     class ViewHolder(private val binding: ItemRuptureHistoryBinding) : RecyclerView.ViewHolder(binding.root) {
