@@ -1221,4 +1221,88 @@ class FirebaseRepository {
         }
     }
     
+    /**
+     * Recherche des produits dans toutes les semaines disponibles
+     */
+    suspend fun searchProductsInAllWeeks(supplier: String, query: String): List<ScamarkProduct> {
+        android.util.Log.d("SearchAllWeeks", "Starting global search for '$query' at $supplier")
+        
+        val allProducts = mutableListOf<ScamarkProduct>()
+        val queryLower = query.lowercase()
+        val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        val currentWeek = getCurrentISOWeek()
+        
+        try {
+            // Chercher dans les 10 dernières semaines disponibles pour avoir des résultats pertinents
+            val weeksToSearch = mutableListOf<Pair<Int, Int>>()
+            
+            // Ajouter la semaine courante et les 9 précédentes
+            for (i in 0..9) {
+                var week = currentWeek - i
+                var year = currentYear
+                
+                if (week <= 0) {
+                    week += 52
+                    year -= 1
+                }
+                
+                weeksToSearch.add(Pair(year, week))
+            }
+            
+            // Recherche parallèle dans toutes les semaines
+            kotlinx.coroutines.coroutineScope {
+                val deferredQueries = weeksToSearch.map { (year, week) ->
+                    async {
+                        searchProductsInWeek(supplier, year, week, queryLower)
+                    }
+                }
+                
+                deferredQueries.forEach { deferred ->
+                    allProducts.addAll(deferred.await())
+                }
+            }
+            
+            // Supprimer les doublons basés sur le nom du produit et le code
+            val uniqueProducts = allProducts.distinctBy { 
+                "${it.productName}_${it.articleInfo?.codeProduit ?: it.decisions.firstOrNull()?.codeProduit}"
+            }
+            
+            android.util.Log.d("SearchAllWeeks", "Found ${uniqueProducts.size} unique products")
+            return uniqueProducts
+            
+        } catch (e: Exception) {
+            android.util.Log.e("SearchAllWeeks", "Error during global search", e)
+            return emptyList()
+        }
+    }
+    
+    /**
+     * Recherche des produits dans une semaine spécifique
+     */
+    private suspend fun searchProductsInWeek(supplier: String, year: Int, week: Int, queryLower: String): List<ScamarkProduct> {
+        return try {
+            // Utiliser la méthode existante pour récupérer les produits de la semaine
+            val allProductsInWeek = getWeekDecisions(year, week, supplier)
+            
+            // Filtrer les produits qui correspondent à la recherche
+            val matchingProducts = allProductsInWeek.filter { product ->
+                val productName = product.productName.lowercase()
+                val clientNames = product.decisions.map { it.nomClient.lowercase() }
+                val brand = product.articleInfo?.marque?.lowercase() ?: ""
+                val category = product.articleInfo?.categorie?.lowercase() ?: ""
+                
+                productName.contains(queryLower) || 
+                clientNames.any { it.contains(queryLower) } ||
+                brand.contains(queryLower) ||
+                category.contains(queryLower)
+            }
+            
+            matchingProducts
+            
+        } catch (e: Exception) {
+            android.util.Log.w("SearchAllWeeks", "Error week $year-$week: ${e.message}")
+            emptyList()
+        }
+    }
+    
 }

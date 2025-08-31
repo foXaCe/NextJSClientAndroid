@@ -230,7 +230,7 @@
     <string name="available_stock_label">Available stock</string>
     <string name="supplier_label">Supplier</string>
     <string name="commanded_short">Cmd</string>
-    <string name="available_short">Avail</string>
+    <string name="available_short">Delivered</string>
     <string name="missing_short">Miss</string>
     <string name="scas_affected_title">Affected SCAs</string>
     <string name="no_scas_affected">No SCAs affected</string>
@@ -297,6 +297,11 @@
     <string name="notification_permission_message">Allow notifications to stay updated about imports and system updates</string>
     <string name="permission_granted">Permission granted</string>
     <string name="permission_denied">Permission denied</string>
+    
+    <!-- Search suggestions -->
+    <string name="show_all_products_hint">Show all products</string>
+    <string name="error_global_search">Error during global search: %s</string>
+    
     <string name="notifications_enabled">Notifications enabled</string>
     <string name="notifications_disabled">Notifications disabled</string>
     <string name="notifications_enabled_status">Enabled</string>

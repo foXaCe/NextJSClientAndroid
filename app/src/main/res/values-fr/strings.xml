@@ -205,7 +205,7 @@
     <string name="available_stock_label">Stock disponible</string>
     <string name="supplier_label">Fournisseur</string>
     <string name="commanded_short">Cmd</string>
-    <string name="available_short">Dispo</string>
+    <string name="available_short">Livré</string>
     <string name="missing_short">Manq</string>
     <string name="scas_affected_title">SCA affectées</string>
     <string name="no_scas_affected">Aucune SCA affectée</string>
@@ -297,6 +297,11 @@
     <string name="notification_permission_message">Autoriser les notifications pour rester informé des imports et mises à jour système</string>
     <string name="permission_granted">Permission accordée</string>
     <string name="permission_denied">Permission refusée</string>
+    
+    <!-- Search suggestions -->
+    <string name="show_all_products_hint">Afficher tous les produits</string>
+    <string name="error_global_search">Erreur lors de la recherche globale: %s</string>
+    
     <string name="notifications_enabled">Notifications activées</string>
     <string name="notifications_disabled">Notifications désactivées</string>
     <string name="notifications_enabled_status">Activées</string>

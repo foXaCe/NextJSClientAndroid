@@ -631,6 +631,17 @@ class ScamarkViewModel : ViewModel() {
                 )
             }
         
+        // Si peu de suggestions trouvées, ajouter l'option "Afficher tous les produits"
+        if (suggestions.size < 3) {
+            suggestions.add(
+                SearchSuggestion(
+                    text = query, // Garder la query originale pour la recherche globale
+                    type = SuggestionType.SHOW_ALL_PRODUCTS,
+                    matchedPart = query
+                )
+            )
+        }
+        
         // Limiter à 8 suggestions maximum
         val finalSuggestions = suggestions.take(8)
         _searchSuggestions.value = finalSuggestions
@@ -650,6 +661,10 @@ class ScamarkViewModel : ViewModel() {
                 // Pour les autres, on met le texte complet
                 suggestion.text
             }
+            SuggestionType.SHOW_ALL_PRODUCTS -> {
+                // Pour "Afficher tous les produits", utiliser la query originale
+                suggestion.text
+            }
         }
         
         _searchQuery.value = searchText
@@ -657,8 +672,41 @@ class ScamarkViewModel : ViewModel() {
         // Effacer les suggestions après sélection
         _searchSuggestions.value = emptyList()
         
-        // Filtrer les produits avec le nouveau texte de recherche
-        filterProducts()
+        // Si c'est "Afficher tous les produits", effectuer une recherche globale
+        if (suggestion.type == SuggestionType.SHOW_ALL_PRODUCTS) {
+            searchInAllWeeks(searchText)
+        } else {
+            // Filtrer les produits avec le nouveau texte de recherche
+            filterProducts()
+        }
+    }
+    
+    /**
+     * Recherche dans toutes les semaines disponibles
+     */
+    private fun searchInAllWeeks(query: String) {
+        android.util.Log.d("ScamarkViewModel", "Global search for: $query")
+        
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val supplier = _selectedSupplier.value ?: "all"
+                // Rechercher les produits correspondants dans toutes les semaines
+                val matchingProducts = repository.searchProductsInAllWeeks(supplier, query)
+                
+                android.util.Log.d("ScamarkViewModel", "Products found across all weeks: ${matchingProducts.size}")
+                
+                // Mettre à jour les produits avec les résultats de la recherche globale
+                setAllProducts(matchingProducts)
+                _products.value = matchingProducts
+                
+            } catch (e: Exception) {
+                android.util.Log.e("ScamarkViewModel", "Global search error", e)
+                _error.value = "Erreur lors de la recherche globale: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
     
     /**

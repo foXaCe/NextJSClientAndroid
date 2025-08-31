@@ -27,7 +27,8 @@ enum class SuggestionType {
     CLIENT_SCA,
     PRODUCT,
     BRAND,
-    CATEGORY
+    CATEGORY,
+    SHOW_ALL_PRODUCTS
 }
 
 class SearchSuggestionsAdapter(
@@ -105,6 +106,14 @@ class SearchSuggestionsAdapter(
                         countView.text = itemView.context.getString(R.string.search_products_count, suggestion.count)
                         countView.visibility = View.VISIBLE
                     }
+                }
+                SuggestionType.SHOW_ALL_PRODUCTS -> {
+                    icon.setImageResource(R.drawable.ic_search)
+                    typeView.text = itemView.context.getString(R.string.show_all_products_hint)
+                    typeView.visibility = View.VISIBLE
+                    countView.visibility = View.GONE
+                    // Style différent pour le bouton "Afficher tous les produits"
+                    itemView.background = ContextCompat.getDrawable(itemView.context, R.drawable.suggestion_show_all_background)
                 }
             }
 
