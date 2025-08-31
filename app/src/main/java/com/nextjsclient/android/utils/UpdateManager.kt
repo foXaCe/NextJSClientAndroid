@@ -686,7 +686,7 @@ class UpdateManager(private val context: Context) {
         }
     }
     
-    private suspend fun getCommitsBetweenVersions(currentVersion: String, latestTag: String): List<CommitInfo> {
+    private suspend fun getCommitsBetweenVersions(@Suppress("UNUSED_PARAMETER") currentVersion: String, @Suppress("UNUSED_PARAMETER") latestTag: String): List<CommitInfo> {
         return try {
             // Obtenir le commit hash actuel depuis BuildConfig
             val currentCommit = com.nextjsclient.android.BuildConfig.COMMIT_HASH

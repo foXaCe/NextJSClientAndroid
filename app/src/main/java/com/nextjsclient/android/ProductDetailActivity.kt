@@ -189,7 +189,6 @@ class ProductDetailActivity : AppCompatActivity() {
         val consecutiveSpannable = android.text.SpannableString(consecutiveText)
         val consecutiveStart = consecutiveText.indexOf("$consecutiveWeeks")
         if (consecutiveStart != -1) {
-            val weeksText = getString(R.string.weeks)
             val consecutiveEnd = consecutiveStart + "$consecutiveWeeks".length
             consecutiveSpannable.setSpan(
                 android.text.style.ForegroundColorSpan(ContextCompat.getColor(this, android.R.color.holo_blue_dark)),

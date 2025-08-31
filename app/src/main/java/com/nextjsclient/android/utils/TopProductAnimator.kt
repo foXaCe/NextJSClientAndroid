@@ -39,7 +39,7 @@ object TopProductAnimator {
         val animatorSet = AnimatorSet()
         val animations = mutableListOf<AnimatorSet>()
         
-        products.take(3).forEachIndexed { index, product ->
+        products.take(3).forEachIndexed { index, _ ->
             val item = topItems.getOrNull(index) ?: return@forEachIndexed
             
             // Rendre visible avant l'animation
@@ -74,7 +74,7 @@ object TopProductAnimator {
             scaTextView?.let { textView ->
                 // Délai pour le comptage après l'apparition de l'élément
                 item.postDelayed({
-                    CountUpAnimator.animateCountUp(textView, product.totalScas, 800L, "", " SCA")
+                    CountUpAnimator.animateCountUp(textView, products[index].totalScas, 800L, "", " SCA")
                 }, itemAnimatorSet.startDelay + 400L)
             }
         }
@@ -99,7 +99,7 @@ object TopProductAnimator {
             parentView.findViewById<View>(com.nextjsclient.android.R.id.topSca3)
         )
         
-        products.take(3).forEachIndexed { index, product ->
+        products.take(3).forEachIndexed { index, _ ->
             val item = topItems.getOrNull(index) ?: return@forEachIndexed
             
             // Animation de pulsation légère
@@ -124,7 +124,7 @@ object TopProductAnimator {
                 item.postDelayed({
                     CountUpAnimator.animateCountFromTo(textView, 
                         textView.text.toString().replace(" SCA", "").toIntOrNull() ?: 0,
-                        product.totalScas, 400L, "", " SCA")
+                        products[index].totalScas, 400L, "", " SCA")
                 }, animatorSet.startDelay + 150L)
             }
         }
@@ -134,7 +134,7 @@ object TopProductAnimator {
      * Animation de transition élégante entre différents fournisseurs
      */
     fun animateTopProductsTransition(
-        oldProducts: List<ScamarkProduct>,
+        @Suppress("UNUSED_PARAMETER") oldProducts: List<ScamarkProduct>,
         newProducts: List<ScamarkProduct>, 
         parentView: View,
         onComplete: () -> Unit = {}
@@ -183,7 +183,7 @@ object TopProductAnimator {
             parentView.findViewById<View>(com.nextjsclient.android.R.id.topSca3)
         )
         
-        products.take(3).forEachIndexed { index, product ->
+        products.take(3).forEachIndexed { index, _ ->
             val item = topItems.getOrNull(index) ?: return@forEachIndexed
             
             // Effet de révélation de gauche à droite

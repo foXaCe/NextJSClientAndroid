@@ -216,6 +216,21 @@
     <string name="logo_desc">Anecoop logo</string>
     <string name="error_icon">Error</string>
     
+    <!-- Historique des ruptures -->
+    <string name="rupture_history_title">Rupture history</string>
+    <string name="rupture_history_subtitle">View past ruptures for this product</string>
+    <string name="no_ruptures_found">No ruptures found</string>
+    <string name="no_ruptures_description">This product has no rupture history</string>
+    <string name="week_format">Week %d/%d</string>
+    <string name="missing_label">Missing</string>
+    <string name="products_count_label">Products</string>
+    <string name="product_details_title">Product details</string>
+    <string name="available_stock_label">Available stock</string>
+    <string name="supplier_label">Supplier</string>
+    <string name="scas_affected_title">Affected SCAs</string>
+    <string name="no_scas_affected">No SCAs affected</string>
+    <string name="undefined_supplier">Undefined</string>
+    
     <!-- Filter messages -->
     <string name="filter_incoming_message">🟢 Showing incoming products • Pull down to refresh</string>
     <string name="filter_outgoing_message">🔴 Showing outgoing products • Pull down to refresh</string>
@@ -247,7 +262,6 @@
     <!-- Week selector -->
     <string name="week_selector_current">Actuelle</string>
     <string name="week_selector_history">Historique</string>
-    <string name="week_format">WEEK %d</string>
     
     <!-- Overview expressive -->
     <string name="week_progress_label">Progression de la semaine</string>

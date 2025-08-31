@@ -34,7 +34,7 @@ class RupturesHistoryAdapter : ListAdapter<RuptureHistory, RupturesHistoryAdapte
         fun bind(rupture: RuptureHistory) {
             // Date et heure
             binding.dateText.text = "${rupture.date} à ${rupture.time}"
-            binding.weekText.text = "Semaine ${rupture.week}/${rupture.year}"
+            binding.weekText.text = binding.root.context.getString(R.string.week_format, rupture.week, rupture.year)
             
             // Statistiques globales
             binding.totalMissingText.text = "${rupture.totalMissing}"
@@ -53,7 +53,7 @@ class RupturesHistoryAdapter : ListAdapter<RuptureHistory, RupturesHistoryAdapte
                 binding.approvisionneurText.text = if (approv.nom.isNotEmpty()) {
                     "${approv.prenom} ${approv.nom}"
                 } else {
-                    "Non défini"
+                    binding.root.context.getString(R.string.undefined_supplier)
                 }
                 
                 // Liste des SCA affectées

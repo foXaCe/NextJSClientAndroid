@@ -377,52 +377,14 @@ class ScamarkFragment : Fragment() {
     private fun setupSwipeRefresh() {
         val swipeRefresh = binding.root.findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(R.id.swipeRefresh)
         
-        // Observer le chargement avec durée minimale pour éviter les clignotements
+        // Observer le chargement
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             val loadingOverlay = binding.root.findViewById<View>(R.id.loadingOverlay)
             
             if (isLoading) {
-                // Annuler toute animation en cours
-                loadingOverlay?.animate()?.cancel()
-                loaderAnimator?.cancel()
-                
-                // Animation d'apparition ultra fluide avec scale + alpha
-                loaderShownTime = System.currentTimeMillis()
                 loadingOverlay?.visibility = View.VISIBLE
-                loadingOverlay?.alpha = 0f
-                loadingOverlay?.scaleX = 0.8f
-                loadingOverlay?.scaleY = 0.8f
-                
-                // Animation combinée pour un effet plus fluide
-                loadingOverlay?.animate()
-                    ?.alpha(1f)
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.setDuration(200)
-                    ?.setInterpolator(android.view.animation.DecelerateInterpolator(1.2f))
-                    ?.start()
             } else {
-                // Calculer combien de temps le loader a été affiché
-                val elapsedTime = System.currentTimeMillis() - loaderShownTime
-                val remainingTime = (MIN_LOADER_DURATION - elapsedTime).coerceAtLeast(0)
-                
-                // Attendre le temps minimum avant de masquer pour éviter les clignotements
-                loadingOverlay?.postDelayed({
-                    // Animation de disparition fluide avec scale + alpha
-                    loadingOverlay.animate()
-                        ?.alpha(0f)
-                        ?.scaleX(0.9f)
-                        ?.scaleY(0.9f)
-                        ?.setDuration(250)
-                        ?.setInterpolator(android.view.animation.AccelerateInterpolator(1.5f))
-                        ?.withEndAction {
-                            loadingOverlay.visibility = View.GONE
-                            loadingOverlay.scaleX = 1f
-                            loadingOverlay.scaleY = 1f
-                        }
-                        ?.start()
-                }, remainingTime)
-                
+                loadingOverlay?.visibility = View.GONE
                 swipeRefresh?.isRefreshing = false
             }
         }

@@ -2,6 +2,7 @@ package com.nextjsclient.android
 
 import android.content.Context
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.nextjsclient.android.databinding.ActivityRuptureHistoryBinding
 import com.nextjsclient.android.ui.ruptures.RupturesDetailFragment
@@ -52,5 +53,12 @@ class RuptureHistoryActivity : AppCompatActivity() {
                 .replace(binding.fragmentContainer.id, fragment)
                 .commit()
         }
+        
+        // Gérer le bouton retour avec l'approche moderne
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finish()
+            }
+        })
     }
 }

@@ -49,7 +49,7 @@ class RupturesDetailFragment : Fragment() {
         
         // Bouton de retour
         binding.backButton.setOnClickListener {
-            parentFragmentManager.popBackStack()
+            requireActivity().finish()
         }
     }
     

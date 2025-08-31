@@ -88,7 +88,7 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
     /**
      * Met à jour les valeurs numériques dans la card
      */
-    private fun updateCardValues(card: View, stats: ScamarkStats, comingFromContinuousAnimation: Boolean = false) {
+    private fun updateCardValues(card: View, stats: ScamarkStats, @Suppress("UNUSED_PARAMETER") comingFromContinuousAnimation: Boolean = false) {
         // Animation simple depuis la valeur actuelle (probablement 0) vers la vraie valeur
         updateValuesWithSimpleAnimation(card, stats)
         
@@ -180,10 +180,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         val outValue = card.findViewById<TextView>(R.id.productsOutValue)
         
         // Extraire les valeurs actuelles pour la transition
-        val currentTotal = totalValue?.text?.toString()?.toIntOrNull() ?: 0
-        val currentIn = inValue?.text?.toString()?.toIntOrNull() ?: 0
-        val currentOut = outValue?.text?.toString()?.toIntOrNull() ?: 0
-        
         
         // Arrêter l'animation continue et transitionner vers les vraies valeurs
         totalValue?.let { 
@@ -244,7 +240,6 @@ class ModernOverviewHelper(private val fragment: OverviewFragment) {
         
         // Total produits avec animation plus rapide
         val totalValue = card.findViewById<TextView>(R.id.totalProductsValue)
-        val currentTotal = totalValue?.text?.toString()?.toIntOrNull() ?: 0
         
         totalValue?.let { 
             com.nextjsclient.android.utils.CountUpAnimator.animateCountUp(

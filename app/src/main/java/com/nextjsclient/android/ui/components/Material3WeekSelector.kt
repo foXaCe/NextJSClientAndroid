@@ -3,11 +3,13 @@ package com.nextjsclient.android.ui.components
 import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -25,7 +27,7 @@ class Material3WeekSelector @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : MaterialCardView(context, attrs, defStyleAttr) {
 
-    private lateinit var weekNumberDisplay: TextView
+    private lateinit var weekNumberDisplay: MaterialButton
     private lateinit var dateRangeDisplay: TextView
     private lateinit var yearDisplay: TextView
     private lateinit var previousWeekButton: MaterialButton
@@ -97,23 +99,8 @@ class Material3WeekSelector @JvmOverloads constructor(
     }
     
     private fun animateWeekChange(direction: Int) {
-        // Subtle Material 3 animations - no loading, just update
         changeWeek(direction)
         updateWeekDisplay()
-        
-        // Light pulse feedback
-        animate()
-            .scaleX(1.01f)
-            .scaleY(1.01f)
-            .setDuration(100)
-            .withEndAction {
-                animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(100)
-                    .start()
-            }
-            .start()
     }
     
     private fun changeWeek(direction: Int) {
@@ -152,7 +139,7 @@ class Material3WeekSelector @JvmOverloads constructor(
         val endStr = dateFormat.format(endDate)
         val separator = context.getString(R.string.date_range_separator)
         
-        weekNumberDisplay.text = context.getString(R.string.week_format, currentWeek)
+        weekNumberDisplay.text = context.getString(R.string.week_with_number, currentWeek)
         dateRangeDisplay.text = "$startStr $separator $endStr"
         yearDisplay.text = currentYear.toString()
         

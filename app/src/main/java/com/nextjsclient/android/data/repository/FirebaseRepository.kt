@@ -498,8 +498,6 @@ class FirebaseRepository {
         
         
         // 4. Traitement et enrichissement
-        val processStartTime = System.currentTimeMillis()
-        
         val finalProducts = allDecisions.map { decision ->
             val article = articlesMap[decision.codeProduit]
             
@@ -963,6 +961,7 @@ class FirebaseRepository {
             for (document in snapshot.documents) {
                 val data = document.data ?: continue
                 
+                @Suppress("UNCHECKED_CAST")
                 val products = (data["products"] as? List<Map<String, Any>>) ?: continue
                 
                 // Vérifier si ce produit est présent dans cette rupture
@@ -998,6 +997,7 @@ class FirebaseRepository {
     /**
      * Parse un produit de rupture depuis les données Firebase
      */
+    @Suppress("UNCHECKED_CAST")
     private fun parseRuptureProduct(productMap: Map<String, Any>): RuptureProduct? {
         return try {
             val scasAffectedList = (productMap["scasAffected"] as? List<Map<String, Any>>) ?: emptyList()

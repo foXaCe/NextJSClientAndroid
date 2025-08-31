@@ -64,7 +64,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Manquant"
+                        android:text="@string/missing_label"
                         android:textAppearance="?attr/textAppearanceLabelSmall"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -87,7 +87,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Produits"
+                        android:text="@string/products_count_label"
                         android:textAppearance="?attr/textAppearanceLabelSmall"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -144,7 +144,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Détails du produit"
+                        android:text="@string/product_details_title"
                         android:textAppearance="?attr/textAppearanceTitleSmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginBottom="12dp" />
@@ -164,7 +164,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Stock disponible"
+                                android:text="@string/available_stock_label"
                                 android:textAppearance="?attr/textAppearanceLabelSmall"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -188,7 +188,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Manquant"
+                                android:text="@string/missing_label"
                                 android:textAppearance="?attr/textAppearanceLabelSmall"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -207,7 +207,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Approvisionneur"
+                        android:text="@string/supplier_label"
                         android:textAppearance="?attr/textAppearanceLabelSmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginTop="16dp" />
@@ -228,7 +228,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="SCA affectées"
+                android:text="@string/scas_affected_title"
                 android:textAppearance="?attr/textAppearanceTitleSmall"
                 android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="8dp" />
@@ -243,7 +243,7 @@
                 android:id="@+id/noScasText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Aucune SCA affectée"
+                android:text="@string/no_scas_affected"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_gravity="center"

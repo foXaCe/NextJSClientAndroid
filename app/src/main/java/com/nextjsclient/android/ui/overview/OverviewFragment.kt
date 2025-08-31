@@ -91,7 +91,6 @@ class OverviewFragment : Fragment() {
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val startTime = System.currentTimeMillis()
         
         // Initialiser les préférences fournisseurs
         supplierPreferences = SupplierPreferences(requireContext())
@@ -254,7 +253,6 @@ class OverviewFragment : Fragment() {
         val solagoraDataComplete = !supplierPreferences.isSolagoraEnabled || preloadedSolagoraProducts.isNotEmpty()
         
         // IMPORTANT: Vérifier si on vient de naviguer depuis un fournisseur (données potentiellement partielles)
-        val currentFilter = viewModel.productFilter.value
         val currentSupplier = viewModel.selectedSupplier.value
         val comingFromSupplierPage = currentSupplier != null && currentSupplier != "all"
         
@@ -420,14 +418,12 @@ class OverviewFragment : Fragment() {
         
         android.util.Log.d("OverviewFragment", "📥 loadDataForWeek called for year: $year, week: $week")
         isLoadingData = true
-        val loadStartTime = System.currentTimeMillis()
         
         viewModel.viewModelScope.launch {
             try {
                 val repository = com.nextjsclient.android.data.repository.FirebaseRepository()
                 
                 // Optimisation: charger les données en parallèle avec coroutines
-                val allDataStartTime = System.currentTimeMillis()
                 
                 val weekProductsDeferred = async { repository.getWeekDecisions(year, week, "all") }
                 
@@ -458,7 +454,6 @@ class OverviewFragment : Fragment() {
                 // Mettre à jour l'UI
                 activity?.runOnUiThread {
                     if (_binding != null && isAdded) {
-                        val uiStartTime = System.currentTimeMillis()
                         
                         android.util.Log.d("OverviewFragment", "✅ Data loaded - ${weekProducts.size} products for week $week/$year")
                         
@@ -543,8 +538,9 @@ class OverviewFragment : Fragment() {
             setOnClickListener {
                 if (isClickable) {
                     // Retour haptique léger
+                    @Suppress("DEPRECATION")
                     it.performHapticFeedback(
-                        android.view.HapticFeedbackConstants.VIRTUAL_KEY,
+                        android.view.HapticFeedbackConstants.LONG_PRESS,
                         android.view.HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
                     )
                     
@@ -578,8 +574,9 @@ class OverviewFragment : Fragment() {
             setOnClickListener {
                 if (isClickable) {
                     // Retour haptique léger
+                    @Suppress("DEPRECATION")
                     it.performHapticFeedback(
-                        android.view.HapticFeedbackConstants.VIRTUAL_KEY,
+                        android.view.HapticFeedbackConstants.LONG_PRESS,
                         android.view.HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
                     )
                     
@@ -609,6 +606,12 @@ class OverviewFragment : Fragment() {
         
         // Setup close button for top SCA card
         topScaCard?.findViewById<View>(R.id.closeTopScaButton)?.setOnClickListener {
+            // Retour haptique
+            @Suppress("DEPRECATION")
+            it.performHapticFeedback(
+                android.view.HapticFeedbackConstants.LONG_PRESS,
+                android.view.HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+            )
             hideTopSca()
         }
     }
@@ -637,7 +640,6 @@ class OverviewFragment : Fragment() {
         
         // Si le top SCA est visible, l'animer aussi
         if (isShowingTopSca) {
-            val topScaCard = binding.root.findViewById<View>(R.id.topScaCard)
             // Pas d'animation sur les top products pour le moment
         }
     }
@@ -752,14 +754,6 @@ class OverviewFragment : Fragment() {
         
         // DEBUG: Vérifier les valeurs finales après 3 secondes
         binding.root.postDelayed({
-            val anecoopCard = binding.root.findViewById<View>(R.id.anecoopModernCard)
-            val solagoraCard = binding.root.findViewById<View>(R.id.solagoraModernCard)
-            val anecoopTotal = anecoopCard?.findViewById<TextView>(R.id.totalProductsValue)?.text
-            val anecoopIn = anecoopCard?.findViewById<TextView>(R.id.productsInValue)?.text
-            val anecoopOut = anecoopCard?.findViewById<TextView>(R.id.productsOutValue)?.text
-            val solagoraTotal = solagoraCard?.findViewById<TextView>(R.id.totalProductsValue)?.text
-            val solagoraIn = solagoraCard?.findViewById<TextView>(R.id.productsInValue)?.text
-            val solagoraOut = solagoraCard?.findViewById<TextView>(R.id.productsOutValue)?.text
         }, 3000L)
     }
     
@@ -1500,7 +1494,6 @@ class OverviewFragment : Fragment() {
         
         android.util.Log.d("OverviewFragment", "📊 calculateAndDisplayStats called with ${products.size} products")
         isCalculatingStats = true
-        val startTime = System.currentTimeMillis()
         
         try {
             // VÉRIFICATION CRITIQUE: S'assurer que les données ne sont pas contaminées par des filtres
@@ -1511,7 +1504,6 @@ class OverviewFragment : Fragment() {
             }
             
             // DEBUG: Analyser les fournisseurs présents dans les données
-            val supplierCounts = products.groupingBy { it.supplier.lowercase() }.eachCount()
             
             // Appliquer le filtre fournisseur selon les préférences
             val filteredProducts = products.filter { product ->
@@ -1549,12 +1541,10 @@ class OverviewFragment : Fragment() {
             
             
             // Calculer les stats
-            val statsStartTime = System.currentTimeMillis()
             val anecoopStats = calculateStatsForProducts(anecoopProducts, previousAnecoopProducts)
             val solagoraStats = calculateStatsForProducts(solagoraProducts, previousSolagoraProducts)
             
             // Mettre à jour les dashboards simultanément
-            val updateStartTime = System.currentTimeMillis()
             updateSupplierDashboard("anecoop", anecoopStats)
             updateSupplierDashboard("solagora", solagoraStats)
             

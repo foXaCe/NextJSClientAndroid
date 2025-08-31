@@ -191,6 +191,21 @@
     <string name="theme_system">Système</string>
     <string name="available">disponible</string>
     
+    <!-- Historique des ruptures -->
+    <string name="rupture_history_title">Historique des ruptures</string>
+    <string name="rupture_history_subtitle">Voir les ruptures passées pour ce produit</string>
+    <string name="no_ruptures_found">Aucune rupture trouvée</string>
+    <string name="no_ruptures_description">Ce produit n\'a pas d\'historique de ruptures</string>
+    <string name="week_format">Semaine %d/%d</string>
+    <string name="missing_label">Manquant</string>
+    <string name="products_count_label">Produits</string>
+    <string name="product_details_title">Détails du produit</string>
+    <string name="available_stock_label">Stock disponible</string>
+    <string name="supplier_label">Fournisseur</string>
+    <string name="scas_affected_title">SCA affectées</string>
+    <string name="no_scas_affected">Aucune SCA affectée</string>
+    <string name="undefined_supplier">Non défini</string>
+    
     <!-- Content descriptions -->
     <string name="close_search">Fermer la recherche</string>
     <string name="clear_search">Effacer la recherche</string>
@@ -247,7 +262,6 @@
     <!-- Week selector -->
     <string name="week_selector_current">Actuelle</string>
     <string name="week_selector_history">Historique</string>
-    <string name="week_format">SEMAINE %d</string>
     
     <!-- Overview expressive -->
     <string name="week_progress_label">Progression de la semaine</string>

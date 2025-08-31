@@ -557,7 +557,7 @@ class MainActivity : AppCompatActivity() {
         
         // Trouver l'icône de recherche dans la BottomNavigationView
         val bottomNav = binding.bottomNavigation
-        android.util.Log.d("MainActivity", "BottomNavigation found: ${bottomNav != null}")
+        android.util.Log.d("MainActivity", "BottomNavigation found")
         
         // Méthode plus simple : animer toute l'icône directement
         try {

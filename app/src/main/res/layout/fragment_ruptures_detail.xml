@@ -43,7 +43,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Historique des ruptures"
+                        android:text="@string/rupture_history_title"
                         android:textAppearance="?attr/textAppearanceTitleMedium"
                         android:textColor="?attr/colorOnSurface" />
 
@@ -103,7 +103,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Aucune rupture trouvée"
+                    android:text="@string/no_ruptures_found"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:textColor="?attr/colorOnSurface"
                     android:layout_marginBottom="8dp" />
@@ -111,7 +111,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ce produit n'a pas d'historique de ruptures"
+                    android:text="@string/no_ruptures_description"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:gravity="center" />
