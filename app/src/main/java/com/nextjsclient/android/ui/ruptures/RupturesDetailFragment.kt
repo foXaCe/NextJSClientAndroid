@@ -85,12 +85,10 @@ class RupturesDetailFragment : Fragment() {
                 android.util.Log.d("RupturesFragment", "Liste vide - affichage du message vide")
                 binding.emptyView.visibility = View.VISIBLE
                 binding.rupturesRecyclerView.visibility = View.GONE
-                binding.summaryCard.root.visibility = View.GONE
             } else {
                 android.util.Log.d("RupturesFragment", "Liste avec données - affichage du RecyclerView")
                 binding.emptyView.visibility = View.GONE
                 binding.rupturesRecyclerView.visibility = View.VISIBLE
-                binding.summaryCard.root.visibility = View.VISIBLE
             }
         }
         
@@ -98,12 +96,17 @@ class RupturesDetailFragment : Fragment() {
         viewModel.ruptureSummary.observe(viewLifecycleOwner) { summary ->
             android.util.Log.d("RupturesFragment", "Observer ruptureSummary: $summary")
             
-            // Mettre à jour les vues de la carte de résumé
-            binding.summaryCard.totalRupturesText.text = summary.totalRuptures.toString()
-            binding.summaryCard.totalCommandedText.text = summary.totalCommanded.toString()
-            binding.summaryCard.totalMissingText.text = summary.totalMissing.toString()
-            binding.summaryCard.deliveryRateText.text = String.format("%.1f%%", summary.deliveryRate)
-            binding.summaryCard.periodText.text = summary.periodStart
+            // N'afficher la carte que s'il y a des ruptures
+            if (summary.totalRuptures > 0) {
+                binding.summaryCard.root.visibility = View.VISIBLE
+                // Mettre à jour les vues de la carte de résumé
+                binding.summaryCard.totalRupturesText.text = summary.totalRuptures.toString()
+                binding.summaryCard.totalCommandedText.text = summary.totalCommanded.toString()
+                binding.summaryCard.totalMissingText.text = summary.totalMissing.toString()
+                binding.summaryCard.deliveryRateText.text = String.format("%.1f%%", summary.deliveryRate)
+            } else {
+                binding.summaryCard.root.visibility = View.GONE
+            }
         }
         
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->

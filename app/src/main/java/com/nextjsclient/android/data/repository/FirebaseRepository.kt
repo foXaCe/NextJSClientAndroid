@@ -1097,15 +1097,21 @@ class FirebaseRepository {
             val ruptures = (data["ruptures"] as? List<Map<String, Any>>) ?: emptyList()
             android.util.Log.d("RuptureHistory", "Nombre total de ruptures dans le document: ${ruptures.size}")
             
-            // Filtrer les ruptures depuis le 1er octobre 2024 (année fixe car nous sommes en 2025)
+            // Filtrer les ruptures depuis le 1er octobre de l'année courante
+            // Si nous sommes avant octobre, prendre octobre de l'année précédente
+            val currentDate = java.util.Calendar.getInstance()
             val octoberStart = java.util.Calendar.getInstance().apply {
-                set(java.util.Calendar.YEAR, 2024)
                 set(java.util.Calendar.MONTH, java.util.Calendar.OCTOBER)
                 set(java.util.Calendar.DAY_OF_MONTH, 1)
                 set(java.util.Calendar.HOUR_OF_DAY, 0)
                 set(java.util.Calendar.MINUTE, 0)
                 set(java.util.Calendar.SECOND, 0)
                 set(java.util.Calendar.MILLISECOND, 0)
+                
+                // Si nous sommes entre janvier et septembre, prendre octobre de l'année précédente
+                if (currentDate.get(java.util.Calendar.MONTH) < java.util.Calendar.OCTOBER) {
+                    add(java.util.Calendar.YEAR, -1)
+                }
             }.timeInMillis
             
             android.util.Log.d("RuptureHistory", "Seuil octobre (timestamp): $octoberStart")
