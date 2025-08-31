@@ -49,12 +49,14 @@
 
                     <TextView
                         android:id="@+id/productNameText"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:maxLines="3"
-                        android:lineSpacingMultiplier="1.1" />
+                        android:lineSpacingMultiplier="1.1"
+                        android:breakStrategy="balanced" />
 
                 </LinearLayout>
 
