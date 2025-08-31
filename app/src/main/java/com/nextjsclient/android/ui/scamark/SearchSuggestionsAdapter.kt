@@ -52,6 +52,13 @@ class SearchSuggestionsAdapter(
         private val countView: TextView = itemView.findViewById(R.id.suggestionCount)
 
         fun bind(suggestion: SearchSuggestion) {
+            // Réinitialiser le style par défaut de la card
+            if (itemView is com.google.android.material.card.MaterialCardView) {
+                val cardView = itemView as com.google.android.material.card.MaterialCardView
+                cardView.setCardBackgroundColor(ContextCompat.getColor(itemView.context, android.R.color.transparent))
+                cardView.strokeWidth = 0
+            }
+            
             // Mettre en évidence la partie correspondante
             val spannableText = SpannableString(suggestion.text)
             val matchIndex = suggestion.text.lowercase().indexOf(suggestion.matchedPart.lowercase())
@@ -113,7 +120,21 @@ class SearchSuggestionsAdapter(
                     typeView.visibility = View.VISIBLE
                     countView.visibility = View.GONE
                     // Style différent pour le bouton "Afficher tous les produits"
-                    itemView.background = ContextCompat.getDrawable(itemView.context, R.drawable.suggestion_show_all_background)
+                    if (itemView is com.google.android.material.card.MaterialCardView) {
+                        val cardView = itemView as com.google.android.material.card.MaterialCardView
+                        // Utiliser les couleurs de thème dynamiques
+                        val typedValue = android.util.TypedValue()
+                        val theme = itemView.context.theme
+                        
+                        // Couleur de fond
+                        theme.resolveAttribute(com.google.android.material.R.attr.colorPrimaryContainer, typedValue, true)
+                        cardView.setCardBackgroundColor(typedValue.data)
+                        
+                        // Couleur de bordure
+                        theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+                        cardView.strokeColor = typedValue.data
+                        cardView.strokeWidth = 2
+                    }
                 }
             }
 
