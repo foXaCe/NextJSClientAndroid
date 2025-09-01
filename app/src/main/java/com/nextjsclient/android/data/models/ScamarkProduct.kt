@@ -90,7 +90,9 @@ data class ScamarkProduct(
     val isPromo: Boolean = false,
     val articleInfo: Article? = null,
     val decisions: List<ClientDecision> = emptyList(),
-    val totalScas: Int = 0
+    val totalScas: Int = 0,
+    val lastReferenceWeek: Int? = null,
+    val lastReferenceYear: Int? = null
 )
 
 /**

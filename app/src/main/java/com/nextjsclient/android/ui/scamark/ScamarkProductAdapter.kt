@@ -230,44 +230,61 @@ class ScamarkProductAdapter(
                 }
             }
             
-            // Nombre de clients par type avec couleurs
-            val bllCount = product.decisions.count { decision ->
-                decision.clientInfo?.typeCaisse?.uppercase() == "BLL"
-            }
-            val europoolCount = product.decisions.count { decision ->
-                decision.clientInfo?.typeCaisse?.uppercase() == "EUROPOOL"
-            }
-            val totalCount = product.totalScas
-            
-            // Créer le texte avec couleurs
-            val text = itemView.context.getString(R.string.sca_count_format, bllCount, europoolCount, totalCount)
-            val spannableString = SpannableString(text)
-            
-            // Couleur orange pour BLL
-            val bllStart = text.indexOf("$bllCount BLL")
-            val bllEnd = bllStart + "$bllCount BLL".length
-            if (bllStart >= 0) {
+            // Vérifier si ce produit a une information de dernière référence
+            if (product.lastReferenceWeek != null && product.lastReferenceYear != null) {
+                // Afficher l'information de dernière référence au lieu du comptage SCA
+                val lastRefText = "Référencé pour la dernière fois la semaine ${product.lastReferenceWeek}/${product.lastReferenceYear}"
+                val spannableString = SpannableString(lastRefText)
+                
+                // Afficher tout le texte en blanc
                 spannableString.setSpan(
-                    ForegroundColorSpan(ContextCompat.getColor(itemView.context, android.R.color.holo_orange_dark)),
-                    bllStart,
-                    bllEnd,
+                    ForegroundColorSpan(ContextCompat.getColor(itemView.context, android.R.color.white)),
+                    0,
+                    lastRefText.length,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
+                
+                clientsCountTextView.text = spannableString
+            } else {
+                // Affichage normal des SCA
+                val bllCount = product.decisions.count { decision ->
+                    decision.clientInfo?.typeCaisse?.uppercase() == "BLL"
+                }
+                val europoolCount = product.decisions.count { decision ->
+                    decision.clientInfo?.typeCaisse?.uppercase() == "EUROPOOL"
+                }
+                val totalCount = product.totalScas
+                
+                // Créer le texte avec couleurs
+                val text = itemView.context.getString(R.string.sca_count_format, bllCount, europoolCount, totalCount)
+                val spannableString = SpannableString(text)
+                
+                // Couleur orange pour BLL
+                val bllStart = text.indexOf("$bllCount BLL")
+                val bllEnd = bllStart + "$bllCount BLL".length
+                if (bllStart >= 0) {
+                    spannableString.setSpan(
+                        ForegroundColorSpan(ContextCompat.getColor(itemView.context, android.R.color.holo_orange_dark)),
+                        bllStart,
+                        bllEnd,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+                
+                // Couleur violette pour EUROPOOL
+                val europoolStart = text.indexOf("$europoolCount EUROPOOL")
+                val europoolEnd = europoolStart + "$europoolCount EUROPOOL".length
+                if (europoolStart >= 0) {
+                    spannableString.setSpan(
+                        ForegroundColorSpan(ContextCompat.getColor(itemView.context, android.R.color.holo_purple)),
+                        europoolStart,
+                        europoolEnd,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+                
+                clientsCountTextView.text = spannableString
             }
-            
-            // Couleur violette pour EUROPOOL
-            val europoolStart = text.indexOf("$europoolCount EUROPOOL")
-            val europoolEnd = europoolStart + "$europoolCount EUROPOOL".length
-            if (europoolStart >= 0) {
-                spannableString.setSpan(
-                    ForegroundColorSpan(ContextCompat.getColor(itemView.context, android.R.color.holo_purple)),
-                    europoolStart,
-                    europoolEnd,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-            
-            clientsCountTextView.text = spannableString
             
             // Catégorie et marques - masquer si non défini
             val category = product.articleInfo?.categorie

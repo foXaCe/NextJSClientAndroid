@@ -3,6 +3,7 @@
     <!-- Anecoop Colors (Green theme) -->
     <color name="anecoop_primary">#43A047</color>
     <color name="anecoop_primary_variant">#2E7D32</color>
+    <color name="anecoop_primary_container">#C8E6C9</color>
     <color name="anecoop_secondary">#66BB6A</color>
     <color name="anecoop_background">#F1F8E9</color>
     <color name="anecoop_surface">#FFFFFF</color>
@@ -14,6 +15,7 @@
     <!-- Solagora Colors (Orange theme) -->
     <color name="solagora_primary">#FF6F00</color>
     <color name="solagora_primary_variant">#E65100</color>
+    <color name="solagora_primary_container">#FFE0B2</color>
     <color name="solagora_secondary">#FFB74D</color>
     <color name="solagora_background">#FFF3E0</color>
     <color name="solagora_surface">#FFFFFF</color>

@@ -1262,10 +1262,27 @@ class FirebaseRepository {
                 }
             }
             
-            // Supprimer les doublons basés sur le nom du produit et le code
-            val uniqueProducts = allProducts.distinctBy { 
-                "${it.productName}_${it.articleInfo?.codeProduit ?: it.decisions.firstOrNull()?.codeProduit}"
+            // Regrouper les produits par nom/code et conserver la plus récente référence
+            val productsByKey = mutableMapOf<String, ScamarkProduct>()
+            
+            for (product in allProducts) {
+                val key = "${product.productName}_${product.articleInfo?.codeProduit ?: product.decisions.firstOrNull()?.codeProduit}"
+                val existing = productsByKey[key]
+                
+                if (existing == null) {
+                    productsByKey[key] = product
+                } else {
+                    // Comparer les dates et garder la plus récente
+                    val existingWeekScore = (existing.lastReferenceYear ?: 0) * 100 + (existing.lastReferenceWeek ?: 0)
+                    val currentWeekScore = (product.lastReferenceYear ?: 0) * 100 + (product.lastReferenceWeek ?: 0)
+                    
+                    if (currentWeekScore > existingWeekScore) {
+                        productsByKey[key] = product
+                    }
+                }
             }
+            
+            val uniqueProducts = productsByKey.values.toList()
             
             android.util.Log.d("SearchAllWeeks", "Found ${uniqueProducts.size} unique products")
             return uniqueProducts
@@ -1285,19 +1302,30 @@ class FirebaseRepository {
             val allProductsInWeek = getWeekDecisions(year, week, supplier)
             
             // Filtrer les produits qui correspondent à la recherche
-            val matchingProducts = allProductsInWeek.filter { product ->
-                val productName = product.productName.lowercase()
-                val clientNames = product.decisions.map { it.nomClient.lowercase() }
-                val brand = product.articleInfo?.marque?.lowercase() ?: ""
-                val category = product.articleInfo?.categorie?.lowercase() ?: ""
-                
-                productName.contains(queryLower) || 
-                clientNames.any { it.contains(queryLower) } ||
-                brand.contains(queryLower) ||
-                category.contains(queryLower)
+            val matchingProducts = if (queryLower.isBlank()) {
+                // Si la query est vide, retourner une liste vide au lieu de tous les produits
+                emptyList()
+            } else {
+                allProductsInWeek.filter { product ->
+                    val productName = product.productName.lowercase()
+                    val clientNames = product.decisions.map { it.nomClient.lowercase() }
+                    val brand = product.articleInfo?.marque?.lowercase() ?: ""
+                    val category = product.articleInfo?.categorie?.lowercase() ?: ""
+                    
+                    productName.contains(queryLower) || 
+                    clientNames.any { it.contains(queryLower) } ||
+                    brand.contains(queryLower) ||
+                    category.contains(queryLower)
+                }
             }
             
-            matchingProducts
+            // Ajouter l'information de semaine de référence à chaque produit trouvé
+            matchingProducts.map { product ->
+                product.copy(
+                    lastReferenceWeek = week,
+                    lastReferenceYear = year
+                )
+            }
             
         } catch (e: Exception) {
             android.util.Log.w("SearchAllWeeks", "Error week $year-$week: ${e.message}")

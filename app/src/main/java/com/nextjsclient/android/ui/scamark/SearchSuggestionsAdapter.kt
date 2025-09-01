@@ -32,7 +32,8 @@ enum class SuggestionType {
 }
 
 class SearchSuggestionsAdapter(
-    private val onSuggestionClick: (SearchSuggestion) -> Unit
+    private val onSuggestionClick: (SearchSuggestion) -> Unit,
+    private val getCurrentSupplier: () -> String? = { null }
 ) : ListAdapter<SearchSuggestion, SearchSuggestionsAdapter.SuggestionViewHolder>(SuggestionDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuggestionViewHolder {
@@ -122,18 +123,49 @@ class SearchSuggestionsAdapter(
                     // Style différent pour le bouton "Afficher tous les produits"
                     if (itemView is com.google.android.material.card.MaterialCardView) {
                         val cardView = itemView as com.google.android.material.card.MaterialCardView
-                        // Utiliser les couleurs de thème dynamiques
-                        val typedValue = android.util.TypedValue()
-                        val theme = itemView.context.theme
                         
-                        // Couleur de fond
-                        theme.resolveAttribute(com.google.android.material.R.attr.colorPrimaryContainer, typedValue, true)
-                        cardView.setCardBackgroundColor(typedValue.data)
+                        val currentSupplier = getCurrentSupplier()?.lowercase()
                         
-                        // Couleur de bordure
-                        theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
-                        cardView.strokeColor = typedValue.data
-                        cardView.strokeWidth = 2
+                        when (currentSupplier) {
+                            "anecoop" -> {
+                                // Couleurs vertes douces pour Anecoop
+                                cardView.setCardBackgroundColor(ContextCompat.getColor(itemView.context, R.color.anecoop_background))
+                                cardView.strokeColor = ContextCompat.getColor(itemView.context, R.color.anecoop_primary)
+                                cardView.strokeWidth = 2
+                                // Texte foncé lisible
+                                textView.setTextColor(ContextCompat.getColor(itemView.context, android.R.color.black))
+                                typeView.setTextColor(ContextCompat.getColor(itemView.context, R.color.anecoop_primary_variant))
+                            }
+                            "solagora" -> {
+                                // Couleurs oranges douces pour Solagora
+                                cardView.setCardBackgroundColor(ContextCompat.getColor(itemView.context, R.color.solagora_background))
+                                cardView.strokeColor = ContextCompat.getColor(itemView.context, R.color.solagora_primary)
+                                cardView.strokeWidth = 2
+                                // Texte foncé lisible
+                                textView.setTextColor(ContextCompat.getColor(itemView.context, android.R.color.black))
+                                typeView.setTextColor(ContextCompat.getColor(itemView.context, R.color.solagora_primary_variant))
+                            }
+                            else -> {
+                                // Couleurs par défaut (Material 3)
+                                val typedValue = android.util.TypedValue()
+                                val theme = itemView.context.theme
+                                
+                                // Couleur de fond
+                                theme.resolveAttribute(com.google.android.material.R.attr.colorPrimaryContainer, typedValue, true)
+                                cardView.setCardBackgroundColor(typedValue.data)
+                                
+                                // Couleur de bordure
+                                theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+                                cardView.strokeColor = typedValue.data
+                                cardView.strokeWidth = 2
+                                
+                                // Couleurs de texte par défaut
+                                theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true)
+                                textView.setTextColor(typedValue.data)
+                                theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+                                typeView.setTextColor(typedValue.data)
+                            }
+                        }
                     }
                 }
             }

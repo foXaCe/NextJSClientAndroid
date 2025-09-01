@@ -305,6 +305,9 @@ class ScamarkFragment : Fragment() {
         viewModel.products.observe(viewLifecycleOwner) { products ->
             // Animation fluide pour l'apparition des produits
             animateProductsUpdate(products)
+            
+            // Gérer l'affichage de la vue vide
+            updateEmptyView(products)
         }
         
         
@@ -430,43 +433,46 @@ class ScamarkFragment : Fragment() {
     
     private fun setupSearchSuggestions() {
         // Initialiser l'adapter des suggestions
-        suggestionsAdapter = SearchSuggestionsAdapter { suggestion ->
-            // Quand on clique sur une suggestion
-            viewModel.applySuggestion(suggestion)
-            
-            // Obtenir les références aux vues
-            val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
-            val searchInput = searchContainer?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
-            val suggestionsCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.suggestionsCard)
-            
-            // Mettre à jour le texte de recherche avec seulement les 2 premiers mots
-            val limitedText = suggestion.text.split(" ").take(2).joinToString(" ")
-            searchInput?.setText(limitedText)
-            searchInput?.setSelection(limitedText.length)
-            
-            // Masquer les suggestions
-            suggestionsCard?.visibility = View.GONE
-            
-            // Fermer le clavier avec plusieurs méthodes pour assurer la fermeture
-            searchInput?.let { input ->
-                // Retirer le focus d'abord
-                input.clearFocus()
+        suggestionsAdapter = SearchSuggestionsAdapter(
+            onSuggestionClick = { suggestion ->
+                // Quand on clique sur une suggestion
+                viewModel.applySuggestion(suggestion)
                 
-                // Fermer le clavier avec un délai pour être sûr
-                view?.post {
-                    val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                // Obtenir les références aux vues
+                val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
+                val searchInput = searchContainer?.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.searchInput)
+                val suggestionsCard = searchContainer?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.suggestionsCard)
+                
+                // Mettre à jour le texte de recherche avec seulement les 2 premiers mots
+                val limitedText = suggestion.text.split(" ").take(2).joinToString(" ")
+                searchInput?.setText(limitedText)
+                searchInput?.setSelection(limitedText.length)
+                
+                // Masquer les suggestions
+                suggestionsCard?.visibility = View.GONE
+                
+                // Fermer le clavier avec plusieurs méthodes pour assurer la fermeture
+                searchInput?.let { input ->
+                    // Retirer le focus d'abord
+                    input.clearFocus()
                     
-                    // Essayer plusieurs approches pour fermer le clavier
-                    imm?.hideSoftInputFromWindow(input.windowToken, android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS)
-                    imm?.hideSoftInputFromWindow(input.windowToken, 0)
-                    
-                    // Force avec la vue principale si nécessaire
-                    activity?.currentFocus?.let { focusedView ->
-                        imm?.hideSoftInputFromWindow(focusedView.windowToken, 0)
+                    // Fermer le clavier avec un délai pour être sûr
+                    view?.post {
+                        val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                        
+                        // Essayer plusieurs approches pour fermer le clavier
+                        imm?.hideSoftInputFromWindow(input.windowToken, android.view.inputmethod.InputMethodManager.HIDE_NOT_ALWAYS)
+                        imm?.hideSoftInputFromWindow(input.windowToken, 0)
+                        
+                        // Force avec la vue principale si nécessaire
+                        activity?.currentFocus?.let { focusedView ->
+                            imm?.hideSoftInputFromWindow(focusedView.windowToken, 0)
+                        }
                     }
                 }
-            }
-        }
+            },
+            getCurrentSupplier = { viewModel.selectedSupplier.value }
+        )
         
         // Configurer la RecyclerView des suggestions
         val searchContainer = binding.root.findViewById<LinearLayout>(R.id.searchBar)
@@ -852,6 +858,43 @@ class ScamarkFragment : Fragment() {
                         .start()
                 }
             }, 50) // Court délai pour s'assurer que la liste vide est affichée
+        }
+    }
+
+    /**
+     * Met à jour l'affichage de la vue vide selon les produits et le contexte de recherche
+     */
+    private fun updateEmptyView(products: List<com.nextjsclient.android.data.models.ScamarkProduct>) {
+        val emptyView = binding.root.findViewById<View>(R.id.emptyView)
+        val emptyText = binding.root.findViewById<TextView>(R.id.emptyText)
+        val emptySubtext = binding.root.findViewById<TextView>(R.id.emptySubtext)
+        val recyclerView = binding.recyclerView
+        
+        val searchQuery = viewModel.searchQuery.value
+        val hasSearchQuery = !searchQuery.isNullOrBlank()
+        
+        if (products.isEmpty() && hasSearchQuery) {
+            // Pas de produits trouvés dans la recherche
+            emptyView.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+            
+            emptyText.text = "Ce produit n'est pas référencé cette semaine"
+            emptyText.textAlignment = View.TEXT_ALIGNMENT_CENTER
+            emptySubtext.text = "Cliquez sur \"Afficher tous les produits\" dans les suggestions pour voir les semaines passées"
+            emptySubtext.textAlignment = View.TEXT_ALIGNMENT_CENTER
+            
+        } else if (products.isEmpty()) {
+            // Pas de produits mais pas de recherche active
+            emptyView.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+            
+            emptyText.text = getString(R.string.no_products_found)
+            emptySubtext.text = getString(R.string.add_products_start)
+            
+        } else {
+            // Il y a des produits à afficher
+            emptyView.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
         }
     }
 
