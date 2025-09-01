@@ -60,9 +60,13 @@
             <LinearLayout
                 android:id="@+id/emptyView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
                 android:orientation="vertical"
-                android:gravity="center"
+                android:gravity="center_horizontal"
+                android:paddingTop="80dp"
+                android:paddingBottom="32dp"
+                android:paddingHorizontal="24dp"
                 android:visibility="gone">
 
                 <ProgressBar
@@ -74,29 +78,34 @@
 
                 <ImageView
                     android:id="@+id/emptyIcon"
-                    android:layout_width="200dp"
-                    android:layout_height="120dp"
+                    android:layout_width="100dp"
+                    android:layout_height="60dp"
+                    android:layout_marginBottom="24dp"
                     android:src="@drawable/anecoop"
                     android:scaleType="centerInside"
                     android:adjustViewBounds="true" />
 
                 <TextView
                     android:id="@+id/emptyText"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="12dp"
                     android:text="@string/no_products_found"
-                    android:textSize="18sp"
-                    android:textColor="@color/gray" />
+                    android:textSize="16sp"
+                    android:textColor="@color/gray"
+                    android:textAlignment="center"
+                    android:gravity="center" />
 
                 <TextView
                     android:id="@+id/emptySubtext"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:text="@string/add_products_start"
                     android:textSize="14sp"
-                    android:textColor="@color/gray" />
+                    android:textColor="@color/gray"
+                    android:textAlignment="center"
+                    android:gravity="center"
+                    android:lineSpacingMultiplier="1.2" />
 
             </LinearLayout>
 

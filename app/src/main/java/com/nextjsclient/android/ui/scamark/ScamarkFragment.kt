@@ -873,8 +873,10 @@ class ScamarkFragment : Fragment() {
         val searchQuery = viewModel.searchQuery.value
         val hasSearchQuery = !searchQuery.isNullOrBlank()
         
+        // La vue vide s'affiche maintenant même avec les suggestions visibles
+        
         if (products.isEmpty() && hasSearchQuery) {
-            // Pas de produits trouvés dans la recherche
+            // Pas de produits trouvés dans la recherche - afficher même si suggestions visibles
             emptyView.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
             
@@ -883,7 +885,7 @@ class ScamarkFragment : Fragment() {
             emptySubtext.text = "Cliquez sur \"Afficher tous les produits\" dans les suggestions pour voir les semaines passées"
             emptySubtext.textAlignment = View.TEXT_ALIGNMENT_CENTER
             
-        } else if (products.isEmpty()) {
+        } else if (products.isEmpty() && !hasSearchQuery) {
             // Pas de produits mais pas de recherche active
             emptyView.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
@@ -892,9 +894,9 @@ class ScamarkFragment : Fragment() {
             emptySubtext.text = getString(R.string.add_products_start)
             
         } else {
-            // Il y a des produits à afficher
+            // Il y a des produits à afficher ou les suggestions sont visibles
             emptyView.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
+            recyclerView.visibility = if (products.isNotEmpty()) View.VISIBLE else View.GONE
         }
     }
 
