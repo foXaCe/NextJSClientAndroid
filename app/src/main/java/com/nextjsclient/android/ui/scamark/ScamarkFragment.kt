@@ -868,10 +868,21 @@ class ScamarkFragment : Fragment() {
         val emptyView = binding.root.findViewById<View>(R.id.emptyView)
         val emptyText = binding.root.findViewById<TextView>(R.id.emptyText)
         val emptySubtext = binding.root.findViewById<TextView>(R.id.emptySubtext)
+        val emptyIcon = binding.root.findViewById<android.widget.ImageView>(R.id.emptyIcon)
         val recyclerView = binding.recyclerView
         
         val searchQuery = viewModel.searchQuery.value
         val hasSearchQuery = !searchQuery.isNullOrBlank()
+        
+        // Ne pas afficher la vue vide si on est en cours d'animation de changement de produits
+        if (binding.recyclerView.alpha < 1f) {
+            // RecyclerView en cours d'animation, ne pas afficher la vue vide
+            emptyView.visibility = View.GONE
+            return
+        }
+        
+        // Mettre à jour l'icône selon le fournisseur sélectionné
+        updateEmptyViewIcon(emptyIcon)
         
         // La vue vide s'affiche maintenant même avec les suggestions visibles
         
@@ -897,6 +908,20 @@ class ScamarkFragment : Fragment() {
             // Il y a des produits à afficher ou les suggestions sont visibles
             emptyView.visibility = View.GONE
             recyclerView.visibility = if (products.isNotEmpty()) View.VISIBLE else View.GONE
+        }
+    }
+    
+    /**
+     * Met à jour l'icône de la vue vide selon le fournisseur sélectionné
+     */
+    private fun updateEmptyViewIcon(emptyIcon: android.widget.ImageView?) {
+        val supplier = viewModel.selectedSupplier.value
+        emptyIcon?.let { icon ->
+            when (supplier?.lowercase()) {
+                "anecoop" -> icon.setImageResource(R.drawable.anecoop)
+                "solagora" -> icon.setImageResource(R.drawable.solagora)
+                else -> icon.setImageResource(R.drawable.anecoop) // Par défaut
+            }
         }
     }
 
