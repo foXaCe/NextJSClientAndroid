@@ -919,7 +919,7 @@ class ScamarkFragment : Fragment() {
         emptyIcon?.let { icon ->
             when (supplier?.lowercase()) {
                 "anecoop" -> icon.setImageResource(R.drawable.anecoop)
-                "solagora" -> icon.setImageResource(R.drawable.solagora)
+                "solagora" -> icon.setImageResource(R.drawable.ic_solagora)
                 else -> icon.setImageResource(R.drawable.anecoop) // Par défaut
             }
         }
