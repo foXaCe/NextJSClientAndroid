@@ -353,9 +353,16 @@ class ScamarkViewModel : ViewModel() {
      * Charge les données de la semaine sélectionnée avec debounce
      */
     fun loadWeekData() {
-        val year = _selectedYear.value ?: return
-        val week = _selectedWeek.value ?: return
+        val year = _selectedYear.value
+        val week = _selectedWeek.value
         val supplier = _selectedSupplier.value ?: "all"
+        
+        android.util.Log.d("ScamarkViewModel", "📅 loadWeekData called - year: $year, week: $week, supplier: $supplier")
+        
+        if (year == null || week == null) {
+            android.util.Log.w("ScamarkViewModel", "❌ Missing year ($year) or week ($week), skipping load")
+            return
+        }
         
         // Annuler le job précédent s'il existe (debounce)
         loadWeekDataJob?.cancel()
@@ -436,6 +443,9 @@ class ScamarkViewModel : ViewModel() {
      * Change le fournisseur sélectionné
      */
     fun selectSupplier(supplier: String, resetFilter: Boolean = false) {
+        android.util.Log.d("ScamarkViewModel", "🏭 selectSupplier called: '$supplier', resetFilter: $resetFilter")
+        android.util.Log.d("ScamarkViewModel", "Current supplier: ${_selectedSupplier.value}")
+        
         if (_selectedSupplier.value != supplier) {
             // IMPORTANT: Vider immédiatement toutes les listes pour éviter l'affichage flash ET le mélange de fournisseurs
             _allProducts.value = emptyList()

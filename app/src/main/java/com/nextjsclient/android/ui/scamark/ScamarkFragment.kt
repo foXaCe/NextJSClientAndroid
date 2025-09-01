@@ -38,6 +38,11 @@ class ScamarkFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        // IMPORTANT: Forcer la vue vide à être cachée au démarrage
+        val emptyView = binding.root.findViewById<View>(R.id.emptyView)
+        emptyView?.visibility = View.GONE
+        android.util.Log.d("ScamarkFragment", "🙈 Forced emptyView to GONE at startup")
+        
         // Read supplier parameter from arguments
         val supplierFromArgs = arguments?.getString("supplier")
         
@@ -303,11 +308,22 @@ class ScamarkFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.products.observe(viewLifecycleOwner) { products ->
-            // Animation fluide pour l'apparition des produits
-            animateProductsUpdate(products)
+            android.util.Log.d("ScamarkFragment", "📦 Products updated: ${products.size} products")
             
-            // Gérer l'affichage de la vue vide
-            updateEmptyView(products)
+            // SIMPLE: Juste soumettre les produits sans animation complexe
+            productsAdapter.submitList(products)
+            binding.recyclerView.alpha = 1f
+            binding.recyclerView.visibility = View.VISIBLE
+            
+            // Gérer la vue vide SEULEMENT si vraiment pas de produits
+            if (products.isEmpty()) {
+                android.util.Log.d("ScamarkFragment", "📭 No products - showing empty view")
+                updateEmptyView(products)
+            } else {
+                android.util.Log.d("ScamarkFragment", "📦 Has products - hiding empty view")
+                val emptyView = binding.root.findViewById<View>(R.id.emptyView)
+                emptyView?.visibility = View.GONE
+            }
         }
         
         
@@ -828,6 +844,9 @@ class ScamarkFragment : Fragment() {
         viewModel.searchProducts(query)
     }
 
+    // Variable pour suivre si on est en cours de transition de fournisseur
+    private var isSupplierTransition = false
+
     /**
      * Animation fluide et cohérente pour la mise à jour des produits
      */
@@ -843,72 +862,80 @@ class ScamarkFragment : Fragment() {
             return
         }
         
-        // Pour éviter l'affichage flash, masquer immédiatement et vider la liste
-        binding.recyclerView.alpha = 0f
-        productsAdapter.submitList(emptyList()) {
-            // Attendre un court délai pour s'assurer que la liste est bien vide
-            binding.recyclerView.postDelayed({
-                // Maintenant soumettre les nouveaux produits
-                productsAdapter.submitList(products) {
-                    // Afficher avec une animation fade-in douce
-                    binding.recyclerView.animate()
-                        .alpha(1f)
-                        .setDuration(200)
-                        .setInterpolator(android.view.animation.DecelerateInterpolator())
-                        .start()
-                }
-            }, 50) // Court délai pour s'assurer que la liste vide est affichée
+        
+        // Détecter si on change de fournisseur (liste actuelle non vide vers nouvelle liste)
+        val isChangingSupplier = productsAdapter.currentList.isNotEmpty() && products.isNotEmpty()
+        
+        if (isChangingSupplier) {
+            // Marquer qu'on est en transition de fournisseur
+            isSupplierTransition = true
+            
+            // Pour éviter l'affichage flash, masquer immédiatement et vider la liste
+            binding.recyclerView.alpha = 0f
+            productsAdapter.submitList(emptyList()) {
+                // Attendre un court délai pour s'assurer que la liste est bien vide
+                binding.recyclerView.postDelayed({
+                    // Maintenant soumettre les nouveaux produits
+                    productsAdapter.submitList(products) {
+                        // Marquer la fin de la transition
+                        isSupplierTransition = false
+                        // Afficher avec une animation fade-in douce
+                        binding.recyclerView.animate()
+                            .alpha(1f)
+                            .setDuration(200)
+                            .setInterpolator(android.view.animation.DecelerateInterpolator())
+                            .start()
+                    }
+                }, 50) // Court délai pour s'assurer que la liste vide est affichée
+            }
+        } else {
+            // Navigation normale, pas de changement de fournisseur
+            isSupplierTransition = false
+            productsAdapter.submitList(products)
+            binding.recyclerView.alpha = 1f
         }
     }
 
     /**
-     * Met à jour l'affichage de la vue vide selon les produits et le contexte de recherche
+     * Met à jour l'affichage de la vue vide avec animation seulement quand il n'y a pas de produits
+     * SIMPLIFIÉE pour éviter le masquage des données
      */
     private fun updateEmptyView(products: List<com.nextjsclient.android.data.models.ScamarkProduct>) {
+        android.util.Log.d("EmptyView", "=== updateEmptyView called (SIMPLIFIED) ===")
+        android.util.Log.d("EmptyView", "Products count: ${products.size}")
+        
         val emptyView = binding.root.findViewById<View>(R.id.emptyView)
         val emptyText = binding.root.findViewById<TextView>(R.id.emptyText)
         val emptySubtext = binding.root.findViewById<TextView>(R.id.emptySubtext)
         val emptyIcon = binding.root.findViewById<android.widget.ImageView>(R.id.emptyIcon)
-        val recyclerView = binding.recyclerView
         
-        val searchQuery = viewModel.searchQuery.value
-        val hasSearchQuery = !searchQuery.isNullOrBlank()
-        
-        // Ne pas afficher la vue vide si on est en cours d'animation de changement de produits
-        if (binding.recyclerView.alpha < 1f) {
-            // RecyclerView en cours d'animation, ne pas afficher la vue vide
-            emptyView.visibility = View.GONE
-            return
-        }
-        
-        // Mettre à jour l'icône selon le fournisseur sélectionné
-        updateEmptyViewIcon(emptyIcon)
-        
-        // La vue vide s'affiche maintenant même avec les suggestions visibles
-        
-        if (products.isEmpty() && hasSearchQuery) {
-            // Pas de produits trouvés dans la recherche - afficher même si suggestions visibles
-            emptyView.visibility = View.VISIBLE
-            recyclerView.visibility = View.GONE
+        // SEULEMENT si vraiment pas de produits ET pas de transition en cours
+        if (products.isEmpty() && !isSupplierTransition) {
+            android.util.Log.d("EmptyView", "✅ Showing empty view - no products and no transition")
             
-            emptyText.text = "Ce produit n'est pas référencé cette semaine"
-            emptyText.textAlignment = View.TEXT_ALIGNMENT_CENTER
-            emptySubtext.text = "Cliquez sur \"Afficher tous les produits\" dans les suggestions pour voir les semaines passées"
-            emptySubtext.textAlignment = View.TEXT_ALIGNMENT_CENTER
+            // Mettre à jour l'icône selon le fournisseur sélectionné
+            updateEmptyViewIcon(emptyIcon)
             
-        } else if (products.isEmpty() && !hasSearchQuery) {
-            // Pas de produits mais pas de recherche active
-            emptyView.visibility = View.VISIBLE
-            recyclerView.visibility = View.GONE
+            val searchQuery = viewModel.searchQuery.value
+            val hasSearchQuery = !searchQuery.isNullOrBlank()
             
-            emptyText.text = getString(R.string.no_products_found)
-            emptySubtext.text = getString(R.string.add_products_start)
+            if (hasSearchQuery) {
+                emptyText?.text = "Ce produit n'est pas référencé cette semaine"
+                emptySubtext?.text = "Cliquez sur \"Afficher tous les produits\" dans les suggestions pour voir les semaines passées"
+            } else {
+                emptyText?.text = getString(R.string.no_products_found)
+                emptySubtext?.text = getString(R.string.add_products_start)
+            }
+            
+            // Animation simple et directe
+            showEmptyViewWithAnimation(emptyView, emptyIcon, emptyText, emptySubtext)
             
         } else {
-            // Il y a des produits à afficher ou les suggestions sont visibles
-            emptyView.visibility = View.GONE
-            recyclerView.visibility = if (products.isNotEmpty()) View.VISIBLE else View.GONE
+            android.util.Log.d("EmptyView", "❌ Not showing empty view - has products (${products.size}) or transition ($isSupplierTransition)")
+            hideEmptyView(emptyView)
         }
+        
+        android.util.Log.d("EmptyView", "=== updateEmptyView end ===")
     }
     
     /**
@@ -924,6 +951,98 @@ class ScamarkFragment : Fragment() {
             }
         }
     }
+    
+    /**
+     * Affiche la vue vide avec une animation expressive
+     */
+    private fun showEmptyViewWithAnimation(
+        emptyView: View?,
+        emptyIcon: android.widget.ImageView?,
+        emptyText: TextView?,
+        emptySubtext: TextView?
+    ) {
+        android.util.Log.d("EmptyView", "🎬 showEmptyViewWithAnimation called")
+        emptyView?.let { view ->
+            if (view.visibility == View.VISIBLE) {
+                android.util.Log.d("EmptyView", "❌ Already visible, skipping animation")
+                return // Déjà visible
+            }
+            
+            android.util.Log.d("EmptyView", "✨ Starting empty view animation sequence")
+            view.visibility = View.VISIBLE
+            view.alpha = 1f
+            
+            // Animation séquentielle : logo → texte → sous-texte
+            emptyIcon?.let { icon ->
+                android.util.Log.d("EmptyView", "🎯 Animating logo")
+                icon.alpha = 0f
+                icon.scaleX = 0.3f
+                icon.scaleY = 0.3f
+                icon.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(400)
+                    .setInterpolator(android.view.animation.OvershootInterpolator(1.2f))
+                    .withEndAction {
+                        android.util.Log.d("EmptyView", "📝 Logo done, animating text")
+                        // Après le logo, afficher le texte
+                        emptyText?.let { text ->
+                            text.alpha = 0f
+                            text.translationY = 30f
+                            text.animate()
+                                .alpha(1f)
+                                .translationY(0f)
+                                .setDuration(300)
+                                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                                .withEndAction {
+                                    android.util.Log.d("EmptyView", "💬 Text done, animating subtext")
+                                    // Après le texte, afficher le sous-texte
+                                    emptySubtext?.let { subtext ->
+                                        subtext.alpha = 0f
+                                        subtext.translationY = 20f
+                                        subtext.animate()
+                                            .alpha(1f)
+                                            .translationY(0f)
+                                            .setDuration(250)
+                                            .setInterpolator(android.view.animation.DecelerateInterpolator())
+                                            .withEndAction {
+                                                android.util.Log.d("EmptyView", "🎉 Animation sequence complete")
+                                            }
+                                            .start()
+                                    }
+                                }
+                                .start()
+                        }
+                    }
+                    .start()
+            }
+        }
+    }
+    
+    /**
+     * Masque la vue vide
+     */
+    private fun hideEmptyView(emptyView: View?) {
+        emptyView?.let { view ->
+            if (view.visibility == View.GONE) {
+                android.util.Log.d("EmptyView", "🙈 Already hidden, skipping hide")
+                return // Déjà masquée
+            }
+            
+            android.util.Log.d("EmptyView", "🫥 Hiding empty view")
+            view.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction {
+                    view.visibility = View.GONE
+                    view.alpha = 1f
+                    android.util.Log.d("EmptyView", "✅ Empty view hidden")
+                }
+                .start()
+        }
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
